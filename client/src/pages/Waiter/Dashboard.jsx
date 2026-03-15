@@ -27,14 +27,14 @@ const OrderCard = memo(({ order, formatPrice, onCancel }) => {
     return (
         <div className={`
             ${tColor} ${isReady ? 'animate-pulse' : ''}
-            p-5 rounded-2xl border-l-[10px] shadow-lg transition-all duration-200 flex flex-col group token-tap 
-            hover:shadow-2xl hover:border-l-[12px] active:scale-95
+            p-3 sm:p-5 rounded-2xl border-l-[6px] sm:border-l-[10px] shadow-lg transition-all duration-200 flex flex-col group token-tap
+            hover:shadow-2xl active:scale-95
         `}>
             <div className="flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-2.5 gap-2">
                     <div className="min-w-0 text-left">
-                        <h3 className="font-extrabold text-inherit text-base tracking-tight">{order.orderNumber}</h3>
-                        <p className="text-[10px] text-inherit opacity-70 uppercase tracking-[0.15em] font-black mt-1">
+                        <h3 className="font-extrabold text-inherit text-sm sm:text-base tracking-tight">{order.orderNumber}</h3>
+                        <p className="text-[9px] sm:text-[10px] text-inherit opacity-70 uppercase tracking-[0.1em] font-black mt-0.5">
                             {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId || '?'}` : `Token ${order.tokenNumber}`}
                         </p>
                     </div>
@@ -79,11 +79,12 @@ const WaiterDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [tables, setTables] = useState([]);
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'cancelled'
+    const [statusFilter, setStatusFilter] = useState(null); // null | 'pending' | 'preparing' | 'ready'
     const [showTables, setShowTables] = useState(false);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, item: null });
-    const { user, socket, formatPrice } = useContext(AuthContext);
+    const { user, socket, formatPrice, settings } = useContext(AuthContext);
     const navigate = useNavigate();
 
     // ── Reserve a table manually from the Table Map ───────────────────────────
@@ -179,13 +180,21 @@ const WaiterDashboard = () => {
 
     const counts = {
         pending: orders.filter(o => o.orderStatus === 'pending').length,
-        preparing: orders.filter(o => o.orderStatus === 'preparing' || o.orderStatus === 'accepted').length,
+        accepted: orders.filter(o => o.orderStatus === 'accepted').length,
+        preparing: orders.filter(o => o.orderStatus === 'preparing').length,
         ready: orders.filter(o => o.orderStatus === 'ready').length,
         cancelled: orders.filter(o => o.orderStatus === 'cancelled').length,
     };
 
     const filteredOrders = activeTab === 'active'
-        ? orders.filter(o => !['completed', 'cancelled'].includes(o.orderStatus))
+        ? orders.filter(o => {
+            if (['completed', 'cancelled'].includes(o.orderStatus)) return false;
+            if (statusFilter === 'pending') return o.orderStatus === 'pending';
+            if (statusFilter === 'accepted') return o.orderStatus === 'accepted';
+            if (statusFilter === 'preparing') return o.orderStatus === 'preparing';
+            if (statusFilter === 'ready') return o.orderStatus === 'ready';
+            return true;
+        })
         : orders.filter(o => o.orderStatus === 'cancelled');
 
     return (
@@ -198,37 +207,37 @@ const WaiterDashboard = () => {
                         <Utensils className="text-orange-500" size={24} />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-slate-800 tracking-tight">Waiter Console</h1>
-                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Live Service Monitoring</p>
+                        <h1 className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">Waiter Console</h1>
+                        <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Live Service Monitoring</p>
                     </div>
                 </div>
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-2 xs:grid-cols-3 gap-2 lg:flex lg:gap-3">
                     <button
                         onClick={() => setShowTables(t => !t)}
                         className={`
-                            flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-[11px] uppercase tracking-widest transition-all min-h-[44px] border
+                            flex items-center justify-center gap-1.5 lg:gap-2.5 px-2 sm:px-3 lg:px-6 py-3 rounded-2xl font-bold text-[9px] xs:text-[10px] lg:text-[11px] uppercase tracking-widest transition-all min-h-[44px] border
                             ${showTables
                                 ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                             }
                         `}
                     >
-                        <Grid size={16} />
+                        <Grid size={14} />
                         <span>Table Map</span>
                     </button>
                     <button
                         onClick={() => navigate('/dine-in')}
-                        className="flex items-center gap-2.5 px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 min-h-[44px]"
+                        className="flex items-center justify-center gap-1.5 lg:gap-2.5 px-2 sm:px-3 lg:px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-bold text-[9px] xs:text-[10px] lg:text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 min-h-[44px]"
                     >
-                        <Utensils size={17} />
+                        <Utensils size={14} />
                         <span>Dine In</span>
                     </button>
                     <button
                         onClick={() => navigate('/take-away')}
-                        className="flex items-center gap-2.5 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 min-h-[44px]"
+                        className="col-span-2 xs:col-span-1 flex items-center justify-center gap-1.5 lg:gap-2.5 px-2 sm:px-3 lg:px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-[9px] xs:text-[10px] lg:text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 min-h-[44px]"
                     >
-                        <Package size={17} />
+                        <Package size={14} />
                         <span>Take Away</span>
                     </button>
                 </div>
@@ -238,14 +247,14 @@ const WaiterDashboard = () => {
             <div className="flex flex-col gap-6">
                 <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl w-full sm:w-fit border border-slate-200">
                     <button
-                        onClick={() => setActiveTab('active')}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-6 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => { setActiveTab('active'); setStatusFilter(null); }}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-6 py-2.5 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <ShoppingBag size={14} />
-                        Active ({counts.pending + counts.preparing + counts.ready})
+                        Active ({counts.pending + counts.accepted + counts.preparing + counts.ready})
                     </button>
                     <button
-                        onClick={() => setActiveTab('cancelled')}
+                        onClick={() => { setActiveTab('cancelled'); setStatusFilter(null); }}
                         className={`flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-6 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all ${activeTab === 'cancelled' ? 'bg-white text-red-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <History size={14} />
@@ -254,28 +263,47 @@ const WaiterDashboard = () => {
                 </div>
 
                 {activeTab === 'active' && (
-                    <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-5">
-                        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center">
-                            <p className="text-2xl sm:text-3xl font-bold text-slate-800">{counts.pending}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                        <button
+                            onClick={() => setStatusFilter(f => f === 'pending' ? null : 'pending')}
+                            className={`rounded-2xl p-4 shadow-sm flex flex-col items-center transition-all border active:scale-95 ${statusFilter === 'pending' ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-400/30' : 'bg-white border-slate-200 hover:border-blue-300'}`}
+                        >
+                            <p className={`text-2xl sm:text-3xl font-bold ${statusFilter === 'pending' ? 'text-blue-600' : 'text-slate-800'}`}>{counts.pending}</p>
                             <div className="flex items-center gap-1.5 mt-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Pending</p>
+                                <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === 'pending' ? 'text-blue-500' : 'text-slate-400'}`}>Pending</p>
                             </div>
-                        </div>
-                        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center">
-                            <p className="text-2xl sm:text-3xl font-bold text-slate-800">{counts.preparing}</p>
+                        </button>
+                        <button
+                            onClick={() => setStatusFilter(f => f === 'accepted' ? null : 'accepted')}
+                            className={`rounded-2xl p-4 shadow-sm flex flex-col items-center transition-all border active:scale-95 ${statusFilter === 'accepted' ? 'bg-orange-50 border-orange-400 ring-2 ring-orange-400/30' : 'bg-white border-slate-200 hover:border-orange-300'}`}
+                        >
+                            <p className={`text-2xl sm:text-3xl font-bold ${statusFilter === 'accepted' ? 'text-orange-600' : 'text-slate-800'}`}>{counts.accepted}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                                <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === 'accepted' ? 'text-orange-500' : 'text-slate-400'}`}>Accepted</p>
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => setStatusFilter(f => f === 'preparing' ? null : 'preparing')}
+                            className={`rounded-2xl p-4 shadow-sm flex flex-col items-center transition-all border active:scale-95 ${statusFilter === 'preparing' ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-400/30' : 'bg-white border-slate-200 hover:border-amber-300'}`}
+                        >
+                            <p className={`text-2xl sm:text-3xl font-bold ${statusFilter === 'preparing' ? 'text-amber-600' : 'text-slate-800'}`}>{counts.preparing}</p>
                             <div className="flex items-center gap-1.5 mt-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Cooking</p>
+                                <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === 'preparing' ? 'text-amber-500' : 'text-slate-400'}`}>Cooking</p>
                             </div>
-                        </div>
-                        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center">
-                            <p className="text-2xl sm:text-3xl font-bold text-slate-800">{counts.ready}</p>
+                        </button>
+                        <button
+                            onClick={() => setStatusFilter(f => f === 'ready' ? null : 'ready')}
+                            className={`rounded-2xl p-4 shadow-sm flex flex-col items-center transition-all border active:scale-95 ${statusFilter === 'ready' ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-400/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}
+                        >
+                            <p className={`text-2xl sm:text-3xl font-bold ${statusFilter === 'ready' ? 'text-emerald-600' : 'text-slate-800'}`}>{counts.ready}</p>
                             <div className="flex items-center gap-1.5 mt-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Ready</p>
+                                <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === 'ready' ? 'text-emerald-500' : 'text-slate-400'}`}>Ready</p>
                             </div>
-                        </div>
+                        </button>
                     </div>
                 )}
             </div>
@@ -316,7 +344,7 @@ const WaiterDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {filteredOrders.map(order => (
                         <div key={order._id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
                             <OrderCard
@@ -336,6 +364,7 @@ const WaiterDashboard = () => {
                 formatPrice={formatPrice}
                 userRole={user.role}
                 onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
+                settings={settings}
             />
 
             <CancelOrderModal

@@ -149,7 +149,7 @@ const Analytics = () => {
                     <h1 className="text-2xl font-bold text-[var(--theme-text-main)]">Business Analytics</h1>
                     <p className="text-sm text-[var(--theme-text-muted)] mt-1">Real-time performance metrics and revenue insights</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 bg-[var(--theme-bg-hover)] p-1 rounded-xl border border-[var(--theme-border)]">
                         {['today', 'week', 'month', 'year'].map(r => (
                             <button
@@ -177,10 +177,10 @@ const Analytics = () => {
                     </button>
                     <button
                         onClick={exportPDF}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl font-bold transition-all shadow-glow-orange active:scale-95"
+                        className="p-2.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl transition-all shadow-glow-orange active:scale-95"
+                        title="Export PDF"
                     >
                         <Download size={18} />
-                        <span>Export PDF</span>
                     </button>
                 </div>
             </div>

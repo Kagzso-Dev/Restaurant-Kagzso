@@ -128,7 +128,7 @@ const TopBar = ({ onMenuClick, sidebarCollapsed }) => {
 
     return (
         <header
-            className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 lg:px-8 h-16 backdrop-blur-md border-b border-[var(--theme-border)] flex-shrink-0"
+            className="sticky top-0 z-30 flex items-center justify-between px-3 md:px-6 h-16 backdrop-blur-md border-b border-[var(--theme-border)] flex-shrink-0 pt-safe transition-all"
             style={{ backgroundColor: 'var(--theme-topbar-bg)' }}
         >
             {/* ── Left: Hamburger + Title ──────────────────────────────── */}
@@ -148,17 +148,16 @@ const TopBar = ({ onMenuClick, sidebarCollapsed }) => {
                 </button>
 
                 <div className="min-w-0">
-                    <h1 className="text-lg font-bold text-[var(--theme-text-main)] truncate leading-tight">
+                    <h1 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] truncate leading-tight">
                         {getPageTitle()}
                     </h1>
-                    {/* Breadcrumb – tablet+ only */}
-                    <div className="hidden md:flex items-center gap-1 text-xs mt-0.5">
-                        {getBreadcrumb()}
+                    {/* Status Badge – mobile+ */}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${serverStatus === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
+                        <p className="text-[9px] sm:text-xs text-[var(--theme-text-subtle)] font-bold uppercase tracking-wider truncate">
+                            {serverStatus === 'online' ? 'Live' : 'Offline'} • {user?.username}
+                        </p>
                     </div>
-                    {/* Welcome text – mobile only */}
-                    <p className="md:hidden text-xs text-[var(--theme-text-subtle)] mt-0.5 truncate">
-                        {user?.username}
-                    </p>
                 </div>
             </div>
 

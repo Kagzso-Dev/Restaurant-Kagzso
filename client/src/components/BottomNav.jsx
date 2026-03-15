@@ -58,11 +58,8 @@ const BottomNav = memo(() => {
     return (
         <nav className="
             lg:hidden fixed bottom-0 left-0 right-0 z-40
-            bg-[var(--theme-sidebar-bg)]/95 backdrop-blur-lg
-            border-t border-[var(--theme-border)]
-            flex items-stretch
-            bottom-nav-safe
-            shadow-[0_-4px_24px_-6px_rgba(0,0,0,0.5)]
+            mobile-nav-glass flex items-stretch
+            bottom-nav-safe shadow-2xl
         ">
             {navItems.map(({ to, icon: Icon, label }) => {
                 const active = isActive(to);

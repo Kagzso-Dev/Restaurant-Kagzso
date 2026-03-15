@@ -6,6 +6,7 @@ import api from '../../api';
 import PaymentModal from '../../components/PaymentModal';
 import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
+import { printBill } from '../../components/BillPrint';
 import {
     Printer, Banknote, ChefHat, CheckCircle,
     ShoppingBag, RefreshCw, ArrowLeft, X,
@@ -331,7 +332,7 @@ const CashierDashboard = () => {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-5 md:h-[calc(100dvh-220px)]">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-5 md:h-[calc(100dvh-180px)]">
 
                     {/* ── Left: Order List ──────────────── */}
                     <div className={`
@@ -432,7 +433,7 @@ const CashierDashboard = () => {
                                         </div>
                                         <div className="flex gap-3 flex-wrap">
                                             <button
-                                                onClick={() => window.print()}
+                                                onClick={() => printBill(selectedOrder, formatPrice, settings)}
                                                 className="flex items-center gap-2 px-4 md:px-5 py-3 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-main)] rounded-xl font-semibold text-sm transition-colors min-h-[44px] border border-[var(--theme-border)]"
                                             >
                                                 <Printer size={17} />

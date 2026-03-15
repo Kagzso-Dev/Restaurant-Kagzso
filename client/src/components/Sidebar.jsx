@@ -95,7 +95,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
         >
 
             {/* ── Header ─────────────────────────────────────────────── */}
-            <div className={`flex items-center border-b border-[var(--theme-border)] flex-shrink-0 ${collapsed ? 'justify-center p-4' : 'px-5 py-5 space-x-3'}`}>
+            <div className={`flex items-center border-b border-[var(--theme-border)] flex-shrink-0 pt-safe ${collapsed ? 'justify-center p-4' : 'px-5 py-5 space-x-3'}`}>
                 {/* Logo / Brand */}
                 <div
                     onClick={() => handleNav('/')}

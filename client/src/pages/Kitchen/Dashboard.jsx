@@ -10,7 +10,7 @@ import { tokenColors } from '../../utils/tokenColors';
 /* ── Status badge color ──────────────────────────────────────────────────── */
 const ticketBg = {
     pending: { bar: 'bg-blue-500', badge: 'bg-blue-500/15 text-blue-400', glow: 'hover:shadow-blue-500/10' },
-    accepted: { bar: 'bg-indigo-500', badge: 'bg-indigo-500/15 text-indigo-400', glow: 'hover:shadow-indigo-500/10' },
+    accepted: { bar: 'bg-orange-500', badge: 'bg-orange-500/15 text-orange-600', glow: 'hover:shadow-orange-500/10' },
     preparing: { bar: 'bg-orange-500', badge: 'bg-orange-500/15 text-orange-400', glow: 'hover:shadow-orange-500/10' },
     ready: { bar: 'bg-green-500', badge: 'bg-green-500/15 text-green-400', glow: 'hover:shadow-green-500/10' },
 };
@@ -46,57 +46,57 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
 
     return (
         <div className={`
-            relative rounded-xl overflow-hidden border-l-8 transition-all duration-300
-            flex flex-col shadow-md sm:hover:scale-[1.02] sm:hover:shadow-xl
+            relative rounded-xl overflow-hidden border-l-4 transition-all duration-300
+            flex flex-col shadow-sm sm:hover:scale-[1.01] sm:hover:shadow-lg
             ${tColor}
             ${isReady ? 'animate-pulse' : ''}
             ${urgency ? 'ring-2 ring-red-500/30' : ''}
             animate-fade-in
         `}>
             {/* Ticket Header */}
-            <div className="p-4 border-b border-black/5 text-left">
-                <div className="flex items-start justify-between gap-2">
+            <div className="p-2.5 border-b border-black/5 text-left">
+                <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                        <p className="text-[10px] text-inherit opacity-70 uppercase tracking-widest font-semibold">Order</p>
-                        <h3 className="text-base font-black text-inherit leading-none mt-0.5 whitespace-nowrap">{order.orderNumber}</h3>
+                        <p className="text-[9px] text-inherit opacity-70 uppercase tracking-widest font-semibold">Order</p>
+                        <h3 className="text-sm font-black text-inherit leading-none mt-0.5 whitespace-nowrap">{order.orderNumber}</h3>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                         {(order.orderStatus === 'pending' || order.orderStatus === 'accepted' || order.orderStatus === 'preparing') && (
                             <button
                                 onClick={() => onCancel(order)}
-                                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/20"
+                                className="p-1 text-red-500 hover:bg-red-500/10 rounded-md transition-colors border border-red-500/20"
                                 title="Cancel Order"
                             >
-                                <XCircle size={14} />
+                                <XCircle size={12} />
                             </button>
                         )}
                         <StatusBadge status={order.orderStatus} />
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-3 text-xs text-inherit opacity-60">
-                    <span className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between mt-1.5 text-[10px] text-inherit opacity-60">
+                    <span className="flex items-center gap-1">
                         {order.orderType === 'dine-in'
-                            ? <><Utensils size={12} /> Table {order.tableId?.number || order.tableId || '?'}</>
-                            : <><ChefHat size={12} /> Token {order.tokenNumber}</>
+                            ? <><Utensils size={10} /> Table {order.tableId?.number || order.tableId || '?'}</>
+                            : <><ChefHat size={10} /> Token {order.tokenNumber}</>
                         }
                     </span>
                     <span className={`flex items-center gap-1 font-mono ${urgency ? 'text-red-400 font-bold' : ''}`}>
-                        <Clock size={11} />
+                        <Clock size={10} />
                         {elapsed}
                     </span>
                 </div>
             </div>
 
             {/* Items List */}
-            <div className="flex-1 p-3 sm:p-4 space-y-2 sm:space-y-2.5 overflow-y-auto max-h-[40vh] sm:max-h-[280px] custom-scrollbar">
+            <div className="flex-1 p-2.5 space-y-1.5 overflow-y-auto max-h-[180px] custom-scrollbar">
                 {order.items.map(item => (
-                    <div key={item._id} className="flex flex-col gap-1.5">
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-start gap-2.5 min-w-0">
+                    <div key={item._id} className="flex flex-col gap-1">
+                        <div className="flex items-start justify-between gap-1.5">
+                            <div className="flex items-start gap-2 min-w-0">
                                 <div className={`
-                                    w-6 h-6 rounded-lg flex-shrink-0
-                                    flex items-center justify-center text-xs font-bold
+                                    w-5 h-5 rounded-md flex-shrink-0
+                                    flex items-center justify-center text-[10px] font-bold
                                     ${item.status === 'READY' || item.status === 'ready' ? 'bg-green-500/20 text-green-400' :
                                         item.status === 'PREPARING' || item.status === 'preparing' ? 'bg-orange-500/20 text-orange-400' :
                                             item.status === 'CANCELLED' ? 'bg-red-500/10 text-red-400 opacity-50' :
@@ -105,29 +105,28 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                     {item.quantity}
                                 </div>
                                 <div className="min-w-0 text-left">
-                                    <p className={`text-sm font-semibold leading-tight ${['READY', 'ready'].includes(item.status) ? 'text-green-600 line-through' :
+                                    <p className={`text-xs font-semibold leading-tight ${['READY', 'ready'].includes(item.status) ? 'text-green-600 line-through' :
                                         item.status === 'CANCELLED' ? 'text-red-600/50 line-through' :
                                             'text-inherit'
                                         }`}>
                                         {item.name}
                                     </p>
                                     {item.notes && item.status !== 'CANCELLED' && (
-                                        <p className="text-[10px] text-inherit opacity-70 italic mt-0.5 truncate">
+                                        <p className="text-[9px] text-inherit opacity-70 italic mt-0.5 truncate">
                                             "{item.notes}"
                                         </p>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                                {/* Item action – kitchen only */}
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
                                 {userRole === 'kitchen' && order.orderStatus !== 'ready' && item.status === 'PENDING' && (
                                     <button
                                         onClick={() => onUpdateItemStatus(order._id, item._id, 'PREPARING')}
-                                        className="p-1.5 text-orange-400 hover:bg-orange-400/10 rounded-lg transition-colors"
+                                        className="p-1 text-orange-400 hover:bg-orange-400/10 rounded-md transition-colors"
                                         title="Start Preparing"
                                     >
-                                        <CheckCheck size={14} />
+                                        <CheckCheck size={12} />
                                     </button>
                                 )}
 
@@ -135,21 +134,21 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                     (item.status?.toUpperCase() === 'PENDING' || item.status?.toUpperCase() === 'PREPARING') && (
                                         <button
                                             onClick={() => onCancelItem(order, item)}
-                                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                            className="p-1 text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
                                             title="Cancel Item"
                                         >
-                                            <XCircle size={14} />
+                                            <XCircle size={12} />
                                         </button>
                                     )}
                             </div>
                         </div>
 
                         {item.status === 'CANCELLED' && (
-                            <div className="ml-8 mt-1 p-2 bg-red-500/10 rounded-lg border border-red-500/10">
+                            <div className="ml-7 p-1.5 bg-red-500/10 rounded-md border border-red-500/10">
                                 <p className="text-[9px] text-red-400 font-bold uppercase tracking-tighter">
                                     Cancelled by {item.cancelledBy}
                                 </p>
-                                <p className="text-[10px] text-red-400/60 italic leading-tight mt-0.5">
+                                <p className="text-[9px] text-red-400/60 italic leading-tight mt-0.5">
                                     "{item.cancelReason}"
                                 </p>
                             </div>
@@ -160,11 +159,11 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
 
             {/* Action Buttons */}
             {(userRole === 'kitchen' || userRole === 'admin') && (
-                <div className="p-3 border-t border-[var(--theme-border)] flex gap-2 text-left">
+                <div className="p-2.5 border-t border-[var(--theme-border)] flex gap-2 text-left">
                     {order.orderStatus === 'pending' && (
                         <button
                             onClick={() => onUpdateStatus(order._id, 'accepted')}
-                            className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95 min-h-[44px]"
+                            className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg shadow-md transition-all active:scale-95"
                         >
                             Accept
                         </button>
@@ -172,7 +171,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                     {(order.orderStatus === 'accepted' || order.orderStatus === 'preparing') && (
                         <button
                             onClick={() => onUpdateStatus(order._id, order.orderStatus === 'accepted' ? 'preparing' : 'ready')}
-                            className={`flex-1 py-2.5 text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95 min-h-[44px] ${order.orderStatus === 'accepted' ? 'bg-orange-600 hover:bg-orange-500' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+                            className={`flex-1 py-2 text-white text-xs font-bold rounded-lg shadow-md transition-all active:scale-95 ${order.orderStatus === 'accepted' ? 'bg-orange-600 hover:bg-orange-500' : 'bg-emerald-600 hover:bg-emerald-500'}`}
                         >
                             {order.orderStatus === 'accepted' ? 'Start Cooking' : 'Mark Ready ✓'}
                         </button>
@@ -383,8 +382,8 @@ const KitchenDashboard = () => {
 
             {/* ── KOT Grid ────────────────────────────────────────────── */}
             {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {Array(8).fill(0).map((_, i) => <div key={i} className="skeleton rounded-2xl h-64" />)}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {Array(8).fill(0).map((_, i) => <div key={i} className="skeleton rounded-xl h-48" />)}
                 </div>
             ) : displayOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-[var(--theme-text-muted)]">
@@ -409,7 +408,7 @@ const KitchenDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {displayOrders.map(order => (
                         <KotTicket
                             key={order._id}

@@ -42,7 +42,7 @@ const Login = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--theme-bg-dark)] relative overflow-hidden">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--theme-bg-dark)] relative overflow-y-auto overflow-x-hidden">
             {/* Background Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
                 <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
@@ -57,11 +57,6 @@ const Login = () => {
                         <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/10 p-1 shadow-md">
                             <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
                         </div>
-                        {/* Connection Status Dot */}
-                        <div
-                            className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[var(--theme-bg-dark)] ${serverStatus === 'online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 animate-pulse'}`}
-                            title={serverStatus === 'online' ? 'Server Connected' : 'Server Offline'}
-                        ></div>
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-black text-[var(--theme-text-main)] tracking-widest uppercase">{settings.restaurantName || 'KAGSZO'}</h1>
                 </div>
@@ -161,7 +156,7 @@ const Login = () => {
             </div>
 
             {/* Footer */}
-            <div className="absolute bottom-6 text-center text-xs text-[var(--theme-text-subtle)] z-10">
+            <div className="mt-8 mb-6 text-center text-xs text-[var(--theme-text-subtle)] z-10">
                 &copy; {new Date().getFullYear()} {settings.restaurantName} Management System. All rights reserved.
             </div>
 

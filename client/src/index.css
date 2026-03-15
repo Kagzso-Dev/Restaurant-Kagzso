@@ -139,11 +139,24 @@
 html {
   overflow-x: hidden;
   scroll-behavior: smooth;
+  /* ── Use dynamic viewport height (handles mobile browser chrome) */
+  height: 100%;
+  /* ── Prevent elastic/bounce scroll on iOS outside scrollable areas */
+  overscroll-behavior: none;
   /* ── Optimization: Prevent layout shifts on theme change ─────── */
   background-color: var(--theme-bg-dark);
   color: var(--theme-text-main);
   /* ── Smooth theme transitions ─────────────────────────────────── */
   transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+  /* ── Font smoothing for all platforms ──────────────────────────── */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  height: 100%;
+  overscroll-behavior: none;
 }
 
 body {
@@ -454,7 +467,8 @@ textarea:focus {
 
 /* ─── Bottom Nav Safe Area ───────────────────────────────────────────────── */
 .bottom-nav-safe {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+  min-height: calc(3.5rem + env(safe-area-inset-bottom, 12px));
 }
 
 /* ─── Overlay backdrop ───────────────────────────────────────────────────── */
@@ -894,4 +908,40 @@ a:not([class]) {
   select {
     font-size: 16px;
   }
+}
+
+/* ─── Bottom nav safe offset (for modals above bottom nav) ──────────────── */
+/* Used by OrderDetailsModal to clear bottom nav + iOS home bar              */
+.bottom-nav-offset {
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 12px));
+}
+
+@media (min-width: 768px) {
+  .bottom-nav-offset {
+    bottom: 0;
+  }
+}
+
+/* ─── Premium Mobile Glassmorphism ────────────────────────────────────────── */
+.mobile-nav-glass {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .mobile-nav-glass {
+  background: rgba(255, 255, 255, 0.8);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* ─── Viewport Height Fix for Mobile Browsers ────────────────────────────── */
+.h-dynamic-screen {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.min-h-dynamic-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
 }

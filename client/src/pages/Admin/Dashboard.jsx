@@ -253,7 +253,7 @@ const AdminDashboard = () => {
                         {settings?.restaurantName}
                         <span className="text-[var(--theme-text-muted)] font-normal ml-2 text-base md:text-xl">Analytics</span>
                     </h1>
-                    <p className="text-sm text-[var(--theme-text-subtle)] mt-0.5">Multi-Branch Performance Overview</p>
+
                 </div>
                 <div className="flex gap-2 flex-wrap">
                     <button
@@ -285,7 +285,7 @@ const AdminDashboard = () => {
                         <StatCard
                             title="Total Revenue (30d)"
                             value={formatPrice(totalRevenue)}
-                            subtitle={`${orderCount} paid order${orderCount !== 1 ? 's' : ''} this month`}
+                            subtitle={null}
                             icon={DollarSign}
                             color="orange"
                             badge={
@@ -301,7 +301,7 @@ const AdminDashboard = () => {
                         <StatCard
                             title="Active Orders"
                             value={activeCount}
-                            subtitle="Currently in progress"
+                            subtitle={null}
                             icon={ShoppingBag}
                             color="blue"
                             badge={
@@ -314,7 +314,7 @@ const AdminDashboard = () => {
                         <StatCard
                             title="Completed Today"
                             value={completedCount}
-                            subtitle={`${allTimeCount} total all-time`}
+                            subtitle={null}
                             icon={Clock}
                             color="amber"
                             badge={null}
@@ -323,7 +323,7 @@ const AdminDashboard = () => {
                         <StatCard
                             title="Avg Order Value"
                             value={formatPrice(avgOrderValue)}
-                            subtitle="30-day average"
+                            subtitle={null}
                             icon={TrendingUp}
                             color="emerald"
                             badge={null}

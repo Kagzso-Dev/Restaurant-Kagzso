@@ -20,6 +20,7 @@ const Layout = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     // Check initial window width to determine if sidebar should be collapsed
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1025);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth >= 768 && window.innerWidth < 1025);
 
@@ -38,6 +39,7 @@ const Layout = () => {
         const handleResize = () => {
             const width = window.innerWidth;
             const tabletRange = width >= 768 && width < 1025;
+            setIsMobile(width < 768);
             setIsTablet(tabletRange);
 
             if (width >= 1025) {
@@ -45,6 +47,9 @@ const Layout = () => {
                 setSidebarCollapsed(false);
             } else if (tabletRange) {
                 setSidebarCollapsed(true);
+            } else {
+                // Mobile
+                setSidebarCollapsed(false);
             }
         };
         window.addEventListener('resize', handleResize);
@@ -68,7 +73,7 @@ const Layout = () => {
     }
 
     return (
-        <div className="flex h-screen text-[var(--theme-text-main)] font-sans overflow-hidden" style={{ backgroundColor: 'var(--theme-bg-dark)' }}>
+        <div className="flex h-dynamic-screen text-[var(--theme-text-main)] font-sans overflow-hidden" style={{ backgroundColor: 'var(--theme-bg-dark)' }}>
 
             {/* ── Mobile: Overlay backdrop when drawer open ─────── */}
             {drawerOpen && (
@@ -91,14 +96,14 @@ const Layout = () => {
                     transition-all duration-300 ease-in-out
                     ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}
                     md:translate-x-0 md:relative md:flex-shrink-0
+                    w-72 md:w-auto
                 `}
                 style={{
-                    width: sidebarCollapsed ? '80px' : '288px',
-                    minWidth: sidebarCollapsed ? '80px' : '288px',
+                    width: isMobile ? '288px' : (sidebarCollapsed ? '80px' : '288px'),
                 }}
             >
                 <Sidebar
-                    collapsed={sidebarCollapsed}
+                    collapsed={isMobile ? false : sidebarCollapsed}
                     onToggleCollapse={() => setSidebarCollapsed(c => !c)}
                     onClose={closeDrawer}
                 />
@@ -110,16 +115,16 @@ const Layout = () => {
                 <TopBar onMenuClick={openDrawer} sidebarCollapsed={sidebarCollapsed} />
 
                 {/* Page Content */}
-                <main className="flex-1 overflow-y-auto overflow-x-hidden">
-                    <div className="p-3 md:p-4 lg:p-4 xl:p-6 pb-24 md:pb-6 animate-fade-in">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden pt-safe">
+                    <div className="p-3 sm:p-4 lg:p-6 pb-28 lg:pb-6 animate-fade-in max-w-[1600px] mx-auto w-full">
                         <Outlet />
                     </div>
                 </main>
             </div>
 
             {/* ── Mobile Bottom Nav ────────────────────────────────────── */}
-            {/* Only show on mobile screens (<768px) where sidebar is drawer */}
-            <div className="md:hidden">
+            {/* Only show on screens where sidebar is drawer (lg) */}
+            <div className="lg:hidden">
                 <BottomNav />
             </div>
         </div>

@@ -263,7 +263,8 @@ const NotificationBell = () => {
             {/* ── Dropdown Panel ──────────────────────────────────────────── */}
             {isOpen && (
                 <div className="
-                    absolute top-full right-0 mt-2 w-[340px] sm:w-[380px]
+                    absolute top-full right-[-1rem] sm:right-0 mt-2 
+                    w-[calc(100vw-2rem)] sm:w-[380px] max-w-[400px]
                     bg-[var(--theme-bg-card)] border border-[var(--theme-border)] rounded-2xl
                     shadow-2xl shadow-black/50 overflow-hidden z-50
                     animate-fade-in
