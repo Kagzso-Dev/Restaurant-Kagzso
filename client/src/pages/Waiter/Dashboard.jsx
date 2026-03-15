@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, memo, useMemo } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
@@ -19,7 +19,7 @@ const statusStyle = {
 };
 
 /* ── Order Card ──────────────────────────────────────────────────────────── */
-const OrderCard = ({ order, formatPrice, onCancel }) => {
+const OrderCard = memo(({ order, formatPrice, onCancel }) => {
     const s = statusStyle[order.orderStatus] || statusStyle.pending;
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-main)]';
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
@@ -27,51 +27,52 @@ const OrderCard = ({ order, formatPrice, onCancel }) => {
     return (
         <div className={`
             ${tColor} ${isReady ? 'animate-pulse' : ''}
-            p-5 rounded-xl border-l-8 shadow-md transition-all duration-300 flex flex-col group tap-scale
+            p-5 rounded-2xl border-l-[10px] shadow-lg transition-all duration-200 flex flex-col group token-tap 
+            hover:shadow-2xl hover:border-l-[12px] active:scale-95
         `}>
             <div className="flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-2 gap-2">
+                <div className="flex justify-between items-start mb-2.5 gap-2">
                     <div className="min-w-0 text-left">
-                        <h3 className="font-bold text-inherit text-base truncate">{order.orderNumber}</h3>
-                        <p className="text-[10px] text-inherit opacity-70 uppercase tracking-widest font-semibold mt-0.5">
+                        <h3 className="font-extrabold text-inherit text-base tracking-tight">{order.orderNumber}</h3>
+                        <p className="text-[10px] text-inherit opacity-70 uppercase tracking-[0.15em] font-black mt-1">
                             {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId || '?'}` : `Token ${order.tokenNumber}`}
                         </p>
                     </div>
                     <StatusBadge status={order.orderStatus} />
                 </div>
 
-                <p className="text-sm text-inherit opacity-80 line-clamp-2 flex-1 text-left">
+                <p className="text-sm text-inherit opacity-85 line-clamp-2 flex-1 text-left font-medium">
                     {order.items?.map(i => `${i.quantity}× ${i.name}`).join(', ') || 'No items'}
                 </p>
 
                 {order.orderStatus === 'cancelled' && (
-                    <div className="mt-2 text-[10px] text-red-400/80 italic text-left">
-                        Cancelled by {order.cancelledBy}: {order.cancelReason}
+                    <div className="mt-2 text-[10px] text-red-400 font-bold italic text-left bg-red-500/10 px-2 py-1 rounded">
+                        {order.cancelledBy}: {order.cancelReason}
                     </div>
                 )}
 
-                <div className="flex justify-between items-center border-t border-black/5 mt-3 pt-3">
-                    <div className="flex items-center gap-1 text-xs text-inherit opacity-60">
-                        <Clock size={11} />
-                        {new Date(order.createdAt).toLocaleTimeString()}
+                <div className="flex justify-between items-center border-t border-white/10 mt-4 pt-3">
+                    <div className="flex items-center gap-1.5 text-[10px] text-inherit opacity-60 font-bold uppercase">
+                        <Clock size={12} />
+                        {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         {order.orderStatus === 'pending' && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); onCancel(order); }}
-                                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                className="p-2 text-red-500 hover:bg-red-500/15 rounded-xl transition-all"
                                 title="Cancel Order"
                             >
-                                <XCircle size={16} />
+                                <XCircle size={18} />
                             </button>
                         )}
-                        <span className="font-bold text-inherit">{formatPrice(order.finalAmount)}</span>
+                        <span className="font-black text-inherit text-base">{formatPrice(order.finalAmount)}</span>
                     </div>
                 </div>
             </div>
         </div>
     );
-};
+});
 
 /* ── Main Component ───────────────────────────────────────────────────────── */
 const WaiterDashboard = () => {
@@ -191,36 +192,41 @@ const WaiterDashboard = () => {
         <div className="space-y-5 animate-fade-in pb-10 text-left">
 
             {/* ── Header ─────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] rounded-2xl p-4 sm:p-5 border border-[var(--theme-border)]">
-                <div>
-                    <h1 className="text-xl font-bold text-[var(--theme-text-main)]">Waiter Console</h1>
-                    <p className="text-sm text-[var(--theme-text-subtle)] mt-0.5">Manage live service and KOTs</p>
+            <div className="flex flex-col lg:flex-row sm:items-center justify-between gap-6 bg-white rounded-3xl p-6 lg:p-7 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center border border-orange-100 flex-shrink-0">
+                        <Utensils className="text-orange-500" size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-slate-800 tracking-tight">Waiter Console</h1>
+                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Live Service Monitoring</p>
+                    </div>
                 </div>
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                     <button
                         onClick={() => setShowTables(t => !t)}
                         className={`
-                            flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all min-h-[44px]
+                            flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-[11px] uppercase tracking-widest transition-all min-h-[44px] border
                             ${showTables
-                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                                : 'bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] border border-[var(--theme-border)]'
+                                ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                             }
                         `}
                     >
-                        <Grid size={17} />
+                        <Grid size={16} />
                         <span>Table Map</span>
                     </button>
                     <button
                         onClick={() => navigate('/dine-in')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-500 hover:scale-105 text-white rounded-xl font-bold text-sm transition-all shadow-glow-orange min-h-[44px]"
+                        className="flex items-center gap-2.5 px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 min-h-[44px]"
                     >
                         <Utensils size={17} />
                         <span>Dine In</span>
                     </button>
                     <button
                         onClick={() => navigate('/take-away')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 hover:scale-105 text-white rounded-xl font-bold text-sm transition-all min-h-[44px]"
+                        className="flex items-center gap-2.5 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 min-h-[44px]"
                     >
                         <Package size={17} />
                         <span>Take Away</span>
@@ -229,37 +235,46 @@ const WaiterDashboard = () => {
             </div>
 
             {/* ── Tabs & Counters ─────────────────────────────────────── */}
-            <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 p-1.5 bg-[var(--theme-bg-hover)] rounded-2xl border border-[var(--theme-border)] w-full sm:w-fit">
+            <div className="flex flex-col gap-6">
+                <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl w-full sm:w-fit border border-slate-200">
                     <button
                         onClick={() => setActiveTab('active')}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'active' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-6 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <ShoppingBag size={16} />
+                        <ShoppingBag size={14} />
                         Active ({counts.pending + counts.preparing + counts.ready})
                     </button>
                     <button
                         onClick={() => setActiveTab('cancelled')}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'cancelled' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-6 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all ${activeTab === 'cancelled' ? 'bg-white text-red-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <History size={16} />
-                        Cancelled ({counts.cancelled})
+                        <History size={14} />
+                        History ({counts.cancelled})
                     </button>
                 </div>
 
                 {activeTab === 'active' && (
-                    <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-2 sm:px-4 py-3 text-center">
-                            <p className="text-xl sm:text-2xl font-black text-blue-400">{counts.pending}</p>
-                            <p className="text-[9px] sm:text-[10px] uppercase font-bold text-blue-500 tracking-widest">Pending</p>
+                    <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-5">
+                        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center">
+                            <p className="text-2xl sm:text-3xl font-bold text-slate-800">{counts.pending}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Pending</p>
+                            </div>
                         </div>
-                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-2 sm:px-4 py-3 text-center">
-                            <p className="text-xl sm:text-2xl font-black text-amber-400">{counts.preparing}</p>
-                            <p className="text-[9px] sm:text-[10px] uppercase font-bold text-amber-500 tracking-widest">Cooking</p>
+                        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center">
+                            <p className="text-2xl sm:text-3xl font-bold text-slate-800">{counts.preparing}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Cooking</p>
+                            </div>
                         </div>
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-2 sm:px-4 py-3 text-center">
-                            <p className="text-xl sm:text-2xl font-black text-emerald-400">{counts.ready}</p>
-                            <p className="text-[9px] sm:text-[10px] uppercase font-bold text-emerald-500 tracking-widest">Ready</p>
+                        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col items-center">
+                            <p className="text-2xl sm:text-3xl font-bold text-slate-800">{counts.ready}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Ready</p>
+                            </div>
                         </div>
                     </div>
                 )}

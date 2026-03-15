@@ -81,10 +81,22 @@ async function fixSchemas() {
         console.log('Fixing MENU_ITEMS collection...');
         await ensureAttribute(COLLECTIONS.menu_items, 'description', 'string', { size: 1000, required: false });
         await ensureAttribute(COLLECTIONS.menu_items, 'image', 'string', { size: 500, required: false });
-        // Ensure price is double (float in this script's terms)
         await ensureAttribute(COLLECTIONS.menu_items, 'price', 'float', { required: true });
         await ensureAttribute(COLLECTIONS.menu_items, 'is_veg', 'boolean', { required: true, def: true });
         await ensureAttribute(COLLECTIONS.menu_items, 'availability', 'boolean', { required: true, def: true });
+
+        // --- SETTINGS ---
+        console.log('Fixing SETTINGS collection...');
+        await ensureAttribute(COLLECTIONS.settings, 'restaurant_name', 'string', { required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'address', 'string', { size: 500, required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'currency', 'string', { required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'currency_symbol', 'string', { required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'tax_rate', 'float', { required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'gst_number', 'string', { required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'standard_qr_url', 'string', { size: 500, required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'secondary_qr_url', 'string', { size: 500, required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'standard_qr_file_id', 'string', { required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'secondary_qr_file_id', 'string', { required: false });
 
         console.log('--- ALL MISSING SCHEMAS FIXED ---');
     } catch (err) {

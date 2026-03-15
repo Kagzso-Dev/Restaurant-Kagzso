@@ -1,12 +1,140 @@
 import { useState, useEffect, useContext } from 'react';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
-import { Save, Lock, Settings as SettingsIcon, DollarSign, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Save, Lock, Settings as SettingsIcon, DollarSign, CheckCircle2, AlertCircle, QrCode, Upload, Camera, Loader2 } from 'lucide-react';
 
+/* ── QR Upload Card ───────────────────────────────────────────────────────── */
+const QrCard = ({ label, currentUrl, type, token, onUploaded, isSecondary }) => {
+    const [preview, setPreview] = useState(currentUrl || null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [localMsg, setLocalMsg] = useState(null);
+
+    // Sync if parent url changes (e.g. on first load)
+    useEffect(() => { setPreview(currentUrl || null); }, [currentUrl]);
+
+    const handleFile = (file) => {
+        if (!file) return;
+        setSelectedFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => setPreview(reader.result);
+        reader.readAsDataURL(file);
+    };
+
+    const handleUpload = async () => {
+        if (!selectedFile) return;
+        setUploading(true);
+        setLocalMsg(null);
+        try {
+            const formData = new FormData();
+            formData.append('type', type);
+            formData.append('qr', selectedFile);
+
+            const res = await api.post('/api/settings/qr', formData, {
+                headers: { 
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}` 
+                }
+            });
+            setLocalMsg({ ok: true, text: 'QR uploaded!' });
+            onUploaded(res.data);
+            setSelectedFile(null); // Reset after upload
+        } catch (err) {
+            setLocalMsg({ ok: false, text: err.response?.data?.message || 'Upload failed' });
+        }
+        setUploading(false);
+    };
+
+    const galleryId = `gallery-${type}`;
+    const cameraId  = `camera-${type}`;
+
+    return (
+        <div className="flex flex-col gap-4 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-5">
+            <div className="flex items-center justify-between">
+                <p className="text-sm font-black text-[var(--theme-text-main)] uppercase tracking-widest">{label}</p>
+                {isSecondary && (
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">TEMPORARY</span>
+                )}
+            </div>
+
+            {/* Preview */}
+            <div className="flex items-center justify-center bg-white rounded-xl overflow-hidden h-44 border border-gray-200">
+                {preview
+                    ? <img src={preview} alt="QR preview" className="h-full w-full object-contain" />
+                    : <div className="flex flex-col items-center gap-2 text-gray-400">
+                        <QrCode size={40} strokeWidth={1} />
+                        <p className="text-xs">No QR uploaded</p>
+                    </div>
+                }
+            </div>
+
+            {/* Buttons — using <label> so the browser opens the picker/camera natively without blocked programmatic click */}
+            <div className={`grid gap-2 ${isSecondary ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {/* Gallery / File upload */}
+                <label
+                    htmlFor={galleryId}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600/10 hover:bg-violet-600/20 border border-violet-500/30 text-violet-400 text-xs font-bold transition-all cursor-pointer"
+                >
+                    <Upload size={14} /> Upload Image
+                </label>
+                <input
+                    id={galleryId}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => handleFile(e.target.files?.[0])}
+                />
+
+                {/* Camera (secondary only) — capture="environment" opens rear camera directly */}
+                {isSecondary && (
+                    <>
+                        <label
+                            htmlFor={cameraId}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold transition-all cursor-pointer"
+                        >
+                            <Camera size={14} /> Take Photo
+                        </label>
+                        <input
+                            id={cameraId}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={e => handleFile(e.target.files?.[0])}
+                        />
+                    </>
+                )}
+            </div>
+
+            {/* Save button — shown only when a new file is selected */}
+            {selectedFile && (
+                <button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-widest transition-all disabled:opacity-60"
+                >
+                    {uploading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                    {uploading ? 'Uploading…' : 'Save QR'}
+                </button>
+            )}
+
+            {localMsg && (
+                <p className={`text-xs font-medium flex items-center gap-1.5 ${localMsg.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {localMsg.ok ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+                    {localMsg.text}
+                </p>
+            )}
+        </div>
+    );
+};
+
+/* ── Main Settings Page ───────────────────────────────────────────────────── */
 const Settings = () => {
     const { user, settings, fetchSettings } = useContext(AuthContext);
     const [generalConfig, setGeneralConfig] = useState({
         restaurantName: '',
+        address: '',
         currency: 'USD',
         currencySymbol: '$',
         taxRate: 5,
@@ -19,6 +147,7 @@ const Settings = () => {
         confirmPassword: ''
     });
 
+    const [qrUrls, setQrUrls] = useState({ standardQrUrl: null, secondaryQrUrl: null });
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
 
@@ -33,6 +162,7 @@ const Settings = () => {
         if (settings) {
             setGeneralConfig({
                 restaurantName: settings.restaurantName || '',
+                address: settings.address || '',
                 currency: settings.currency || 'USD',
                 currencySymbol: settings.currencySymbol || '$',
                 taxRate: settings.taxRate || 0,
@@ -41,11 +171,16 @@ const Settings = () => {
         }
     }, [settings]);
 
+    // Load current QR URLs on mount
+    useEffect(() => {
+        api.get('/api/settings/qr')
+            .then(res => setQrUrls(res.data))
+            .catch(() => {});
+    }, []);
+
     const handleConfigChange = (e) => {
         const { name, value } = e.target;
         setGeneralConfig(prev => ({ ...prev, [name]: value }));
-
-        // Auto-set symbol based on currency selection
         if (name === 'currency') {
             let symbol = '$';
             if (value === 'INR') symbol = '₹';
@@ -61,7 +196,7 @@ const Settings = () => {
             await api.put('/api/settings', generalConfig, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
-            await fetchSettings(); // Refresh context
+            await fetchSettings();
             setMessage({ type: 'success', text: 'Settings updated successfully!' });
         } catch (error) {
             console.error(error);
@@ -76,19 +211,14 @@ const Settings = () => {
             setMessage({ type: 'error', text: 'Passwords do not match!' });
             return;
         }
-
         if (passwordData.newPassword.length < 6) {
             setMessage({ type: 'error', text: 'Password must be at least 6 characters.' });
             return;
         }
-
         setLoading(true);
         try {
             await api.post('/api/settings/change-password',
-                {
-                    role: passwordData.role,
-                    newPassword: passwordData.newPassword
-                },
+                { role: passwordData.role, newPassword: passwordData.newPassword },
                 { headers: { Authorization: `Bearer ${user.token}` } }
             );
             setMessage({ type: 'success', text: `Password for ${passwordData.role} updated successfully!` });
@@ -100,6 +230,11 @@ const Settings = () => {
         setLoading(false);
     };
 
+    const handleQrUploaded = (data) => {
+        setQrUrls({ standardQrUrl: data.standardQrUrl, secondaryQrUrl: data.secondaryQrUrl });
+        setMessage({ type: 'success', text: 'QR code updated successfully!' });
+    };
+
     return (
         <div className="space-y-8 max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-[var(--theme-text-main)] flex items-center gap-3">
@@ -109,8 +244,8 @@ const Settings = () => {
 
             {message && (
                 <div className={`
-                    fixed top-20 right-6 z-[100] min-w-[320px] 
-                    p-4 rounded-2xl shadow-2xl border flex items-center gap-3 
+                    fixed top-20 right-6 z-[100] min-w-[320px]
+                    p-4 rounded-2xl shadow-2xl border flex items-center gap-3
                     animate-slide-in-right transform transition-all
                     ${message.type === 'success'
                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
@@ -149,6 +284,18 @@ const Settings = () => {
                                 onChange={handleConfigChange}
                                 className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl p-4 border border-[var(--theme-border)] focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none font-medium"
                                 placeholder="Enter Brand Name"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-subtle)] ml-1">Restaurant Address</label>
+                            <input
+                                type="text"
+                                name="address"
+                                value={generalConfig.address}
+                                onChange={handleConfigChange}
+                                className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl p-4 border border-[var(--theme-border)] focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none font-medium"
+                                placeholder="Enter Full Address"
                             />
                         </div>
 
@@ -207,6 +354,42 @@ const Settings = () => {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* QR Payment Management */}
+            <div className="bg-[var(--theme-bg-card)] rounded-3xl shadow-xl border border-[var(--theme-border)] overflow-hidden">
+                <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/5 px-5 py-4 sm:px-8 sm:py-5 border-b border-[var(--theme-border)] flex items-center justify-between">
+                    <h3 className="text-lg font-black text-[var(--theme-text-main)] flex items-center gap-2 uppercase tracking-widest">
+                        <QrCode size={20} className="text-violet-500" />
+                        QR Payment Management
+                    </h3>
+                    <span className="text-[10px] font-bold text-violet-500 bg-violet-500/10 px-2 py-0.5 rounded-full border border-violet-500/20">CASHIER</span>
+                </div>
+
+                <div className="p-5 sm:p-8">
+                    <p className="text-xs text-[var(--theme-text-muted)] mb-6">
+                        Upload QR codes displayed to customers on the cashier payment screen.
+                        Secondary QR can be taken as a live photo (useful for temporary/rotating QR codes).
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <QrCard
+                            label="Standard QR"
+                            type="standard"
+                            currentUrl={qrUrls.standardQrUrl}
+                            token={user?.token}
+                            onUploaded={handleQrUploaded}
+                            isSecondary={false}
+                        />
+                        <QrCard
+                            label="Secondary QR"
+                            type="secondary"
+                            currentUrl={qrUrls.secondaryQrUrl}
+                            token={user?.token}
+                            onUploaded={handleQrUploaded}
+                            isSecondary={true}
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Security Settings */}
@@ -275,4 +458,3 @@ const Settings = () => {
 };
 
 export default Settings;
-

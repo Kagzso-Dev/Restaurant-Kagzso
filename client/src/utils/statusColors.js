@@ -1,13 +1,13 @@
 export const statusColors = {
-    pending: "bg-yellow-500/20 backdrop-blur-md text-yellow-500 border border-yellow-500/20",
-    preparing: "bg-blue-500/20 backdrop-blur-md text-blue-400 border border-blue-500/20",
-    ready: "bg-green-500/20 backdrop-blur-md text-green-400 border border-green-500/20 animate-pulse",
-    completed: "bg-slate-500/20 backdrop-blur-md text-slate-300 border border-slate-500/20",
-    cancelled: "bg-red-500/20 backdrop-blur-md text-red-400 border border-red-500/20",
+    pending: "bg-amber-100 text-amber-800 border-none",
+    preparing: "bg-blue-100 text-blue-800 border-none",
+    ready: "bg-emerald-100 text-emerald-800 border-none",
+    completed: "bg-slate-100 text-slate-800 border-none",
+    cancelled: "bg-rose-100 text-rose-800 border-none",
     // Capitalized versions
-    Pending: "bg-yellow-500/20 backdrop-blur-md text-yellow-500 border border-yellow-500/20",
-    Preparing: "bg-blue-500/20 backdrop-blur-md text-blue-400 border border-blue-500/20",
-    Ready: "bg-green-500/20 backdrop-blur-md text-green-400 border border-green-500/20 animate-pulse",
-    Completed: "bg-slate-500/20 backdrop-blur-md text-slate-300 border border-slate-500/20",
-    Cancelled: "bg-red-500/20 backdrop-blur-md text-red-400 border border-red-500/20",
+    Pending: "bg-amber-100 text-amber-800 border-none",
+    Preparing: "bg-blue-100 text-blue-800 border-none",
+    Ready: "bg-emerald-100 text-emerald-800 border-none",
+    Completed: "bg-slate-100 text-slate-800 border-none",
+    Cancelled: "bg-rose-100 text-rose-800 border-none",
 };

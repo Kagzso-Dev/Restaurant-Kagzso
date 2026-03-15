@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
     const [serverStatus, setServerStatus] = useState('online');
     const [settings, setSettings] = useState({
         restaurantName: 'KAGSZO',
+        address: '',
         currency: 'INR',
         currencySymbol: '₹',
         taxRate: 5,

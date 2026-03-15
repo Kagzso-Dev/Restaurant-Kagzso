@@ -1,5 +1,6 @@
 const Setting = require('../models/Setting');
 const User = require('../models/User');
+const { storage, storageBucketId, InputFile, ID } = require('../config/appwrite');
 
 // GET /api/settings
 const getSettings = async (req, res) => {
@@ -52,4 +53,86 @@ const changePassword = async (req, res) => {
     }
 };
 
-module.exports = { getSettings, updateSettings, changePassword };
+// GET /api/settings/qr
+const getQrSettings = async (req, res) => {
+    try {
+        const settings = await Setting.get();
+        res.json({
+            standardQrUrl:  settings.standardQrUrl  || null,
+            secondaryQrUrl: settings.secondaryQrUrl || null,
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching QR settings' });
+    }
+};
+
+// POST /api/settings/qr
+// Body (Multipart/form-data): type, qr (file)
+const uploadQr = async (req, res) => {
+    try {
+        console.log("Body:", req.body);
+        console.log("File:", req.file);
+
+        const type = req.body?.type;
+        const file = req.file;
+
+        if (!type) {
+            return res.status(400).json({
+                message: "QR type is required (standard or secondary)"
+            });
+        }
+
+        if (!['standard', 'secondary'].includes(type)) {
+            return res.status(400).json({ message: 'type must be standard or secondary' });
+        }
+        if (!file) {
+            return res.status(400).json({ message: 'QR image file is required' });
+        }
+        if (!storageBucketId) {
+            return res.status(500).json({ message: 'Storage bucket not configured. Set APPWRITE_STORAGE_BUCKET_ID.' });
+        }
+
+        // Delete old file if one exists
+        const current = await Setting.get();
+        const oldFileId = type === 'standard' ? current.standardQrFileId : current.secondaryQrFileId;
+        if (oldFileId) {
+            try { await storage.deleteFile(storageBucketId, oldFileId); } catch (_) { /* ignore */ }
+        }
+
+        // Upload to Appwrite Storage
+        const fileId = ID.unique();
+        const uploadName = `${type}_qr_${Date.now()}_${file.originalname}`;
+        
+        await storage.createFile(
+            storageBucketId,
+            fileId,
+            InputFile.fromBuffer(file.buffer, uploadName, file.mimetype)
+        );
+
+        // Build public view URL
+        const endpoint = process.env.APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1';
+        const projectId = process.env.APPWRITE_PROJECT_ID;
+        const url = `${endpoint}/storage/buckets/${storageBucketId}/files/${fileId}/view?project=${projectId}`;
+
+        // Persist in settings
+        const settings = await Setting.updateQr({ type, fileId, url });
+
+        // Broadcast update to all clients
+        req.app.get('socketio').to('restaurant_main').emit('settings-updated', settings);
+
+        res.json({
+            message: `${type} QR updated successfully`,
+            url,
+            standardQrUrl:  settings.standardQrUrl,
+            secondaryQrUrl: settings.secondaryQrUrl,
+        });
+    } catch (error) {
+        console.error('QR upload error:', error);
+        res.status(500).json({ 
+            message: "QR upload failed",
+            error: error.message 
+        });
+    }
+};
+
+module.exports = { getSettings, updateSettings, changePassword, getQrSettings, uploadQr };

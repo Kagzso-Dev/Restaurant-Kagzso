@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, memo } from 'react';
 import logoImg from '../../assets/logo.png';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -32,45 +32,48 @@ const paymentMethodIcon = (method) => {
 };
 
 /* ── Order List Item ──────────────────────────────────────────────────────── */
-const OrderItem = ({ order, selected, onClick, formatPrice }) => {
+const OrderItem = memo(({ order, selected, onClick, formatPrice }) => {
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-main)]';
     return (
         <button
             onClick={onClick}
             className={`
-                w-full text-left p-5 rounded-xl border-l-8 transition-all duration-300 group
+                w-full text-left p-5 rounded-2xl border-l-[10px] transition-all duration-200 group token-tap
                 ${tColor}
-                ${selected ? 'ring-2 ring-orange-500/40 shadow-xl scale-[1.05]' : 'hover:scale-[1.05] shadow-md'}
+                ${selected ? 'ring-2 ring-orange-500 shadow-2xl scale-[1.02]' : 'hover:scale-[1.01] shadow-lg'}
             `}
         >
-            <div className="flex justify-between items-start mb-1.5">
-                <h3 className="font-bold text-inherit text-sm truncate pr-2">{order.orderNumber}</h3>
+            <div className="flex justify-between items-start mb-2">
+                <h3 className="font-extrabold text-inherit text-base tracking-tight truncate pr-2">{order.orderNumber}</h3>
                 <StatusBadge status={order.orderStatus} />
             </div>
             <div className="flex justify-between items-end mt-1">
-                <p className="text-xs text-inherit opacity-70">
+                <p className="text-[10px] text-inherit opacity-70 uppercase font-black tracking-widest">
                     {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId || '?'}` : `Token ${order.tokenNumber}`}
                 </p>
-                <p className="font-bold text-inherit text-sm">{formatPrice(order.finalAmount)}</p>
+                <p className="font-black text-inherit text-base">{formatPrice(order.finalAmount)}</p>
             </div>
-            <div className="flex justify-between items-center mt-1">
-                <p className="text-[10px] text-inherit opacity-60">
-                    {order.items?.length || 0} items • {new Date(order.createdAt).toLocaleTimeString()}
-                </p>
-                {order.paymentStatus === 'payment_pending' && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">
-                        PAYING
-                    </span>
-                )}
-                {order.orderStatus === 'ready' && order.paymentStatus !== 'payment_pending' && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-bold animate-pulse">
-                        READY FOR BILL
-                    </span>
-                )}
+            <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+                <div className="flex items-center gap-1.5 text-[9px] text-inherit opacity-60 font-bold uppercase">
+                    <Clock size={12} />
+                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div className="flex gap-1.5">
+                    {order.paymentStatus === 'payment_pending' && (
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20 font-black tracking-tighter uppercase">
+                            PAYING
+                        </span>
+                    )}
+                    {order.orderStatus === 'ready' && order.paymentStatus !== 'payment_pending' && (
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/20 font-black tracking-tighter uppercase animate-pulse">
+                            READY
+                        </span>
+                    )}
+                </div>
             </div>
         </button>
     );
-};
+});
 
 /* ── Receipt ──────────────────────────────────────────────────────────────── */
 const Receipt = ({ order, formatPrice, settings }) => (
@@ -85,9 +88,9 @@ const Receipt = ({ order, formatPrice, settings }) => (
         {/* Header */}
         <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4 relative z-10">
             <h1 className="text-2xl font-extrabold tracking-tight">{settings?.restaurantName}</h1>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mt-0.5">Main Branch</p>
-            <p className="text-[10px] text-gray-400 mt-1">123 Culinary Ave, Food City</p>
-            <p className="text-[10px] text-gray-400">GSTIN: 29ABCDE1234F1Z5</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mt-0.5">Kitchen Order Ticket</p>
+            <p className="text-[10px] text-gray-400 mt-1">{settings?.address || 'Restaurant Address'}</p>
+            {settings?.gstNumber && <p className="text-[10px] text-gray-400">GSTIN: {settings.gstNumber}</p>}
         </div>
 
         {/* Meta */}

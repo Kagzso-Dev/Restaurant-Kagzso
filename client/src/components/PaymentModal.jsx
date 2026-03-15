@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-    X, Banknote, QrCode, Smartphone, CreditCard,
+    X, Banknote, QrCode,
     CheckCircle, AlertCircle, Loader2, ArrowRight
 } from 'lucide-react';
-import qrImage from '../assets/QR.png';
 
 /* ── Payment method config ────────────────────────────────────────────── */
 const METHODS = [
-    { id: 'cash', label: 'Cash', icon: Banknote, color: 'from-emerald-500 to-green-600', accent: 'emerald' },
-    { id: 'qr', label: 'QR Code', icon: QrCode, color: 'from-violet-500 to-purple-600', accent: 'violet' },
-    { id: 'upi', label: 'UPI', icon: Smartphone, color: 'from-blue-500 to-indigo-600', accent: 'blue' },
-    { id: 'credit_card', label: 'Credit Card', icon: CreditCard, color: 'from-amber-500 to-orange-600', accent: 'amber' },
+    { id: 'cash',  label: 'Cash',    icon: Banknote, color: 'from-emerald-500 to-green-600', accent: 'emerald' },
+    { id: 'qr',   label: 'QR Code', icon: QrCode,   color: 'from-violet-500 to-purple-600', accent: 'violet'  },
+];
+
+const QR_TYPES = [
+    { id: 'standard',  label: 'Standard QR' },
+    { id: 'secondary', label: 'Secondary QR' },
 ];
 
 /* ── Success sound (tiny inline base64 beep) ──────────────────────────── */
@@ -65,6 +67,9 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
     const [transactionId, setTransactionId] = useState('');
     const [paidAmount, setPaidAmount] = useState('');
 
+    // QR state
+    const [qrUrls, setQrUrls] = useState({ standard: null, secondary: null });
+    const [selectedQrType, setSelectedQrType] = useState('standard');
 
     const modalRef = useRef(null);
     const inputRef = useRef(null);
@@ -127,6 +132,17 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
         }
     }, [step]);
 
+    /* ── Fetch QR URLs when QR method is chosen ──────────────────── */
+    useEffect(() => {
+        if (method?.id !== 'qr') return;
+        api.get('/api/settings/qr')
+            .then(res => setQrUrls({
+                standard:  res.data.standardQrUrl  || null,
+                secondary: res.data.secondaryQrUrl || null,
+            }))
+            .catch(() => {});
+    }, [method, api]);
+
     /* ── Select method ────────────────────────────────────────────── */
     const selectMethod = (m) => {
         setMethod(m);
@@ -135,6 +151,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
         setTransactionId('');
         setPaidAmount(String(total));
         setChange(0);
+        setSelectedQrType('standard');
         setStep('form');
     };
 
@@ -170,9 +187,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
         }
 
         // Digital methods
-        if (!transactionId.trim()) return false;
-        const paid = parseFloat(paidAmount) || 0;
-        return paid === total;
+        return true;
     };
 
     /* ── Submit payment ───────────────────────────────────────────── */
@@ -398,194 +413,58 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                             {/* ── QR Form ─────────────────────────── */}
                             {method.id === 'qr' && (
                                 <div className="space-y-4">
-                                    {/* Static QR image */}
+                                    {/* Standard / Secondary toggle */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {QR_TYPES.map(qt => (
+                                            <button
+                                                key={qt.id}
+                                                type="button"
+                                                onClick={() => setSelectedQrType(qt.id)}
+                                                className={`
+                                                    py-2 rounded-xl text-xs font-bold border transition-all
+                                                    ${selectedQrType === qt.id
+                                                        ? 'bg-violet-600 text-white border-violet-600 shadow-lg shadow-violet-500/20'
+                                                        : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-violet-500/40'
+                                                    }
+                                                `}
+                                            >
+                                                {qt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* QR image */}
                                     <div className="bg-white rounded-2xl p-5 flex flex-col items-center">
-                                        <img
-                                            src={qrImage}
-                                            alt="UPI Payment QR"
-                                            className="w-56 h-56 object-contain"
-                                        />
-                                        <p className="mt-3 text-lg font-black text-gray-900">
-                                            Pay {formatPrice(total)}
+                                        {qrUrls[selectedQrType] ? (
+                                            <>
+                                                <img
+                                                    src={qrUrls[selectedQrType]}
+                                                    alt="Payment QR"
+                                                    className="w-56 h-56 object-contain"
+                                                />
+                                                <p className="mt-3 text-lg font-black text-gray-900">
+                                                    Pay {formatPrice(total)}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                                    {selectedQrType === 'standard' ? 'Standard QR' : 'Secondary QR'} • Scan with any UPI app
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <div className="w-56 h-56 flex flex-col items-center justify-center text-center gap-3">
+                                                <AlertCircle size={40} className="text-amber-500" />
+                                                <div>
+                                                    <p className="text-sm font-black text-gray-900 leading-tight">No payment QR uploaded yet</p>
+                                                    <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">Please contact admin</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Confirmation Message */}
+                                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">
+                                        <p className="text-xs text-blue-400 font-medium">
+                                            Confirm this payment after verifying the transaction on your device.
                                         </p>
-                                        <p className="text-[10px] text-gray-400 mt-0.5">Scan with any UPI app</p>
-                                    </div>
-
-                                    {/* Transaction ID */}
-                                    <div>
-                                        <label className="text-xs text-[var(--theme-text-muted)] font-bold uppercase tracking-wider mb-2 block">
-                                            Transaction ID / UTR
-                                        </label>
-                                        <input
-                                            ref={inputRef}
-                                            type="text"
-                                            value={transactionId}
-                                            onChange={e => setTransactionId(e.target.value)}
-                                            placeholder="Enter transaction reference"
-                                            className="
-                                                w-full px-4 py-3 rounded-xl
-                                                bg-[var(--theme-input-bg)] border border-[var(--theme-border-solid)]
-                                                text-[var(--theme-text-main)] placeholder-[var(--theme-text-subtle)]
-                                                focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20
-                                                transition-all text-sm
-                                            "
-                                        />
-                                    </div>
-
-                                    {/* Paid amount confirmation */}
-                                    <div>
-                                        <label className="text-xs text-[var(--theme-text-muted)] font-bold uppercase tracking-wider mb-2 block">
-                                            Paid Amount (confirm)
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--theme-text-muted)]">₹</span>
-                                            <input
-                                                type="number"
-                                                value={paidAmount}
-                                                onChange={e => setPaidAmount(e.target.value)}
-                                                className="
-                                                    w-full pl-10 pr-4 py-3 rounded-xl text-sm font-bold
-                                                    bg-[var(--theme-input-bg)] border border-[var(--theme-border-solid)]
-                                                    text-[var(--theme-text-main)]
-                                                    focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20
-                                                    transition-all
-                                                "
-                                                min="0"
-                                                step="0.01"
-                                            />
-                                        </div>
-                                        {paidAmount && parseFloat(paidAmount) !== total && (
-                                            <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
-                                                <AlertCircle size={12} />
-                                                Amount must equal {formatPrice(total)}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ── UPI Form ────────────────────────── */}
-                            {method.id === 'upi' && (
-                                <div className="space-y-4">
-                                    {/* Static QR image */}
-                                    <div className="bg-white rounded-2xl p-5 flex flex-col items-center">
-                                        <img
-                                            src={qrImage}
-                                            alt="UPI Payment QR"
-                                            className="w-56 h-56 object-contain"
-                                        />
-                                        <p className="mt-3 text-lg font-black text-gray-900">
-                                            Pay {formatPrice(total)}
-                                        </p>
-                                        <p className="text-[10px] text-gray-400 mt-0.5">Scan with any UPI app</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs text-[var(--theme-text-muted)] font-bold uppercase tracking-wider mb-2 block">
-                                            UPI Transaction ID
-                                        </label>
-                                        <input
-                                            ref={inputRef}
-                                            type="text"
-                                            value={transactionId}
-                                            onChange={e => setTransactionId(e.target.value)}
-                                            placeholder="e.g. 412345678901"
-                                            className="
-                                                w-full px-4 py-3 rounded-xl
-                                                bg-[var(--theme-input-bg)] border border-[var(--theme-border-solid)]
-                                                text-[var(--theme-text-main)] placeholder-[var(--theme-text-subtle)]
-                                                focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
-                                                transition-all text-sm
-                                            "
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs text-[var(--theme-text-muted)] font-bold uppercase tracking-wider mb-2 block">
-                                            Paid Amount (confirm)
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--theme-text-muted)]">₹</span>
-                                            <input
-                                                type="number"
-                                                value={paidAmount}
-                                                onChange={e => setPaidAmount(e.target.value)}
-                                                className="
-                                                    w-full pl-10 pr-4 py-3 rounded-xl text-sm font-bold
-                                                    bg-[var(--theme-input-bg)] border border-[var(--theme-border-solid)]
-                                                    text-[var(--theme-text-main)]
-                                                    focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
-                                                    transition-all
-                                                "
-                                                min="0"
-                                                step="0.01"
-                                            />
-                                        </div>
-                                        {paidAmount && parseFloat(paidAmount) !== total && (
-                                            <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
-                                                <AlertCircle size={12} />
-                                                Amount must equal {formatPrice(total)}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ── Credit Card Form ────────────────── */}
-                            {method.id === 'credit_card' && (
-                                <div className="space-y-4">
-                                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center">
-                                        <p className="text-xs text-amber-400 font-bold uppercase tracking-wider mb-1">Card Payment</p>
-                                        <p className="text-2xl font-black text-amber-400">{formatPrice(total)}</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs text-[var(--theme-text-muted)] font-bold uppercase tracking-wider mb-2 block">
-                                            Approval Code / Transaction ID
-                                        </label>
-                                        <input
-                                            ref={inputRef}
-                                            type="text"
-                                            value={transactionId}
-                                            onChange={e => setTransactionId(e.target.value)}
-                                            placeholder="Enter approval code from terminal"
-                                            className="
-                                                w-full px-4 py-3 rounded-xl
-                                                bg-[var(--theme-input-bg)] border border-[var(--theme-border-solid)]
-                                                text-[var(--theme-text-main)] placeholder-[var(--theme-text-subtle)]
-                                                focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20
-                                                transition-all text-sm
-                                            "
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs text-[var(--theme-text-muted)] font-bold uppercase tracking-wider mb-2 block">
-                                            Charged Amount (confirm)
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--theme-text-muted)]">₹</span>
-                                            <input
-                                                type="number"
-                                                value={paidAmount}
-                                                onChange={e => setPaidAmount(e.target.value)}
-                                                className="
-                                                    w-full pl-10 pr-4 py-3 rounded-xl text-sm font-bold
-                                                    bg-[var(--theme-input-bg)] border border-[var(--theme-border-solid)]
-                                                    text-[var(--theme-text-main)]
-                                                    focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20
-                                                    transition-all
-                                                "
-                                                min="0"
-                                                step="0.01"
-                                            />
-                                        </div>
-                                        {paidAmount && parseFloat(paidAmount) !== total && (
-                                            <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
-                                                <AlertCircle size={12} />
-                                                Amount must equal {formatPrice(total)}
-                                            </p>
-                                        )}
                                     </div>
                                 </div>
                             )}

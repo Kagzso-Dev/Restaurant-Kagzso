@@ -77,10 +77,10 @@ const processPayment = async (req, res) => {
     const { orderId }                             = req.params;
     const { paymentMethod, amountReceived, transactionId } = req.body;
 
-    if (!paymentMethod || !['cash', 'qr', 'upi', 'credit_card'].includes(paymentMethod)) {
+    if (!paymentMethod || !['cash', 'qr'].includes(paymentMethod)) {
         return res.status(400).json({ message: 'Invalid payment method' });
     }
-    if (['qr', 'upi', 'credit_card'].includes(paymentMethod) &&
+    if (paymentMethod === 'qr' &&
         (!transactionId || !transactionId.trim())) {
         return res.status(400).json({
             message: `Transaction ID is required for ${paymentMethod.toUpperCase()} payments`,

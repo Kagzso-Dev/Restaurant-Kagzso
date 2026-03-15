@@ -1,4 +1,5 @@
-const { Client, Databases, ID, Query } = require('node-appwrite');
+const { Client, Databases, Storage, ID, Query } = require('node-appwrite');
+const { InputFile } = require('node-appwrite/file');
 
 const client = new Client();
 
@@ -8,7 +9,9 @@ client
     .setKey(process.env.APPWRITE_API_KEY);
 
 const databases = new Databases(client);
+const storage = new Storage(client);
 const databaseId = process.env.APPWRITE_DATABASE_ID;
+const storageBucketId = process.env.APPWRITE_STORAGE_BUCKET_ID;
 
 // Collection IDs
 const COLLECTIONS = {
@@ -30,6 +33,9 @@ const COLLECTIONS = {
 module.exports = {
     client,
     databases,
+    storage,
+    storageBucketId,
+    InputFile,
     databaseId,
     COLLECTIONS,
     ID,

@@ -201,6 +201,7 @@ const Order = {
                     waiter_id: data.waiterId || null,
                     order_status: 'pending',
                     payment_status: 'pending',
+                    payment_method: data.paymentMethod || null,
                     kot_status: 'Open'
                 }
             );

@@ -1,14 +1,14 @@
 export const tokenColors = {
-    // Glassmorphism - Premium look with translucent tints and glow
-    Pending: "bg-yellow-500/[0.07] backdrop-blur-2xl border-yellow-500/40 text-yellow-400 shadow-glow-yellow",
-    Preparing: "bg-blue-500/[0.07] backdrop-blur-2xl border-blue-500/40 text-blue-400 shadow-glow-blue",
-    Ready: "bg-green-500/[0.07] backdrop-blur-2xl border-green-500/40 text-green-400 shadow-glow-green animate-pulse",
-    Completed: "bg-slate-400/[0.07] backdrop-blur-2xl border-slate-400/40 text-slate-300 shadow-glow-gray",
-    Cancelled: "bg-red-500/[0.07] backdrop-blur-2xl border-red-500/40 text-red-400 shadow-glow-red",
+    // Simple & Clean - Solid light backgrounds with clear borders
+    Pending: "bg-amber-50 border-amber-200 text-amber-700",
+    Preparing: "bg-blue-50 border-blue-200 text-blue-700",
+    Ready: "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm",
+    Completed: "bg-slate-50 border-slate-200 text-slate-500",
+    Cancelled: "bg-rose-50 border-rose-200 text-rose-700",
     // Lowercase variants
-    pending: "bg-yellow-500/[0.07] backdrop-blur-2xl border-yellow-500/40 text-yellow-400 shadow-glow-yellow",
-    preparing: "bg-blue-500/[0.07] backdrop-blur-2xl border-blue-500/40 text-blue-400 shadow-glow-blue",
-    ready: "bg-green-500/[0.07] backdrop-blur-2xl border-green-500/40 text-green-400 shadow-glow-green animate-pulse",
-    completed: "bg-slate-400/[0.07] backdrop-blur-2xl border-slate-400/40 text-slate-300 shadow-glow-gray",
-    cancelled: "bg-red-500/[0.07] backdrop-blur-2xl border-red-500/40 text-red-400 shadow-glow-red",
+    pending: "bg-amber-50 border-amber-200 text-amber-700",
+    preparing: "bg-blue-50 border-blue-200 text-blue-700",
+    ready: "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm",
+    completed: "bg-slate-50 border-slate-200 text-slate-500",
+    cancelled: "bg-rose-50 border-rose-200 text-rose-700",
 };

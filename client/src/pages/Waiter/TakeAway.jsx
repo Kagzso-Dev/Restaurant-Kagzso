@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import {
     Search, ShoppingCart, ArrowLeft, ArrowRight,
-    Utensils, ChevronRight, SearchX, Trash2, Plus, Minus
+    Utensils, ChevronRight, SearchX, Trash2, Plus, Minus, Banknote, QrCode
 } from 'lucide-react';
 import ViewToggle from '../../components/ViewToggle';
 import FoodItem from '../../components/FoodItem';
@@ -22,6 +22,7 @@ const TakeAway = () => {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('cash');
     const [viewMode, setViewMode] = useState(
         () => localStorage.getItem('foodViewMode') || 'grid'
     );
@@ -89,6 +90,7 @@ const TakeAway = () => {
             tableId: null,
             items: cart.map(i => ({ menuItemId: i._id, name: i.name, price: i.price, quantity: i.quantity, notes: i.notes })),
             totalAmount, tax, finalAmount,
+            paymentMethod,
         };
 
         try {
@@ -273,6 +275,34 @@ const TakeAway = () => {
                                     <span className="text-2xl font-black text-blue-400">{formatPrice(finalAmount)}</span>
                                 </div>
                             </div>
+
+                            {/* Payment Method */}
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--theme-text-muted)] mb-2">Payment Method</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => setPaymentMethod('cash')}
+                                        className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 transition-all font-bold text-xs
+                                            ${paymentMethod === 'cash'
+                                                ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
+                                                : 'bg-[var(--theme-bg-hover)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:border-emerald-500/50'}`}
+                                    >
+                                        <Banknote size={20} />
+                                        Cash
+                                    </button>
+                                    <button
+                                        onClick={() => setPaymentMethod('qr')}
+                                        className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 transition-all font-bold text-xs
+                                            ${paymentMethod === 'qr'
+                                                ? 'bg-violet-500/15 border-violet-500 text-violet-400'
+                                                : 'bg-[var(--theme-bg-hover)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:border-violet-500/50'}`}
+                                    >
+                                        <QrCode size={20} />
+                                        QR Pay
+                                    </button>
+                                </div>
+                            </div>
+
                             <button
                                 onClick={handleSubmitOrder}
                                 disabled={cart.length === 0}

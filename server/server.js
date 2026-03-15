@@ -25,6 +25,8 @@ const hasFrontend = fs.existsSync(CLIENT_DIST);
 // ─── CORS Configuration ───────────────────────────────────────────────────────
 const allowedOrigins = [
     "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
     "http://localhost:5005",
     "https://kagzso-kot-appwrite.vercel.app",
     "https://kagzso-pos-frontend.onrender.com",
@@ -84,6 +86,7 @@ app.use(helmet({
 app.use(hpp());
 app.use(compression());
 app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(logger.requestLogger);
 app.set('trust proxy', true);
 
