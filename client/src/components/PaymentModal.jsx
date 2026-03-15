@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     X, Banknote, QrCode,
-    CheckCircle, AlertCircle, Loader2, ArrowRight
+    CheckCircle, AlertCircle, Loader2, ArrowRight, ArrowLeft
 } from 'lucide-react';
 
 /* ── Payment method config ────────────────────────────────────────────── */
@@ -324,9 +324,10 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => setStep('select')}
-                                    className="text-xs text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] underline transition-colors"
+                                    className="flex items-center gap-1 text-xs text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-colors group"
                                 >
-                                    ← Change method
+                                    <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+                                    <span>Back</span>
                                 </button>
                                 <div className={`
                                     ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg
