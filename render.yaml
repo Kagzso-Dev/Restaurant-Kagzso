@@ -23,6 +23,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: VITE_API_URL
-        value: https://kagzso-backend.onrender.com
+        value: https://restaurant-kagzso-backend.onrender.com
       - key: VITE_SOCKET_URL
-        value: https://kagzso-backend.onrender.com
+        value: https://restaurant-kagzso-backend.onrender.com

@@ -28,6 +28,7 @@ const allowedOrigins = [
     "http://localhost:5005",
     "https://kagzso-kot-appwrite.vercel.app",
     "https://kagzso-pos-frontend.onrender.com",
+    "https://restaurant-five-zeta-13.vercel.app",
     process.env.CLIENT_URL
 ].filter(Boolean).map(o => o.trim().replace(/\/$/, '')); // Trim and remove trailing slashes
 
@@ -71,7 +72,7 @@ app.use(helmet({
             scriptSrc:  ["'self'", "'unsafe-inline'"],
             styleSrc:   ["'self'", "'unsafe-inline'"],
             imgSrc:     ["'self'", 'data:', 'blob:', 'https:'],
-            connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:', "https://kagzso-backend.onrender.com"],
+            connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:', "https://restaurant-kagzso-backend.onrender.com"],
             fontSrc:    ["'self'", 'data:'],
             workerSrc:  ["'self'", 'blob:'],
         },
