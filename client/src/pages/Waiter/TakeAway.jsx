@@ -191,7 +191,7 @@ const TakeAway = () => {
                         </div>
 
                         {/* Items Grid */}
-                        <div className="flex-1 overflow-y-auto p-2 md:p-3 xl:p-4 custom-scrollbar">
+                        <div className={`flex-1 overflow-y-auto p-2 md:p-3 xl:p-4 custom-scrollbar ${cart.length > 0 ? 'pb-28 lg:pb-4' : ''}`}>
                             {filteredItems.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-64 text-[var(--theme-text-muted)]">
                                     <SearchX size={48} className="mb-4 opacity-10" />
