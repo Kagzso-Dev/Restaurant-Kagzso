@@ -111,7 +111,7 @@ const WorkingProcess = () => {
                                 </div>
                                 <div className="flex justify-between items-end">
                                     <p className="text-xs text-[var(--theme-text-muted)]">
-                                        {order.orderType === 'dine-in' ? `Table ${order.tableId}` : `Token ${order.tokenNumber}`}
+                                        {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId || '?'}` : `Token ${order.tokenNumber}`}
                                     </p>
                                     <p className="text-sm font-semibold text-[var(--theme-text-muted)]">{new Date(order.createdAt).toLocaleTimeString()}</p>
                                 </div>
@@ -175,7 +175,7 @@ const WorkingProcess = () => {
                                             <p><span className="font-bold">Time:</span> {new Date(selectedOrder.createdAt).toLocaleTimeString()}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p><span className="font-bold text-lg">{selectedOrder.orderType === 'dine-in' ? `TBL ${selectedOrder.tableId}` : `TOK ${selectedOrder.tokenNumber}`}</span></p>
+                                            <p><span className="font-bold text-lg">{selectedOrder.orderType === 'dine-in' ? `TBL ${selectedOrder.tableId?.number || selectedOrder.tableId || '?'}` : `TOK ${selectedOrder.tokenNumber}`}</span></p>
                                         </div>
                                     </div>
 

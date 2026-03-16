@@ -2,7 +2,7 @@ import { useState, useEffect, useContext, useCallback, memo, useMemo } from 'rea
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { Utensils, Package, Grid, ShoppingBag, Clock, XCircle, History } from 'lucide-react';
+import { Utensils, Package, Grid, ShoppingBag, Clock, XCircle, History, ClipboardList } from 'lucide-react';
 import TableGrid from '../../components/TableGrid';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
@@ -201,109 +201,99 @@ const WaiterDashboard = () => {
         <div className="space-y-5 animate-fade-in pb-10 text-left">
 
             {/* ── Header ─────────────────────────────────────────────── */}
-            <div className="flex flex-col lg:flex-row sm:items-center justify-between gap-6 bg-white rounded-3xl p-6 lg:p-7 border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center border border-orange-100 flex-shrink-0">
-                        <Utensils className="text-orange-500" size={24} />
+            <div className="flex flex-col lg:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl border border-[var(--theme-border)] shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange-500/20 flex-shrink-0">
+                        <Utensils className="text-orange-500" size={20} />
                     </div>
                     <div>
-                        <h1 className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">Waiter Console</h1>
-                        <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Live Service Monitoring</p>
+                        <h1 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] tracking-tight">Waiter Console</h1>
+                        <p className="text-[9px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest mt-0.5">Live Service Monitoring</p>
                     </div>
                 </div>
                 {/* Action Buttons */}
-                <div className="grid grid-cols-2 xs:grid-cols-3 gap-2 lg:flex lg:gap-3">
+                <div className="grid grid-cols-3 gap-2">
                     <button
                         onClick={() => setShowTables(t => !t)}
-                        className={`
-                            flex items-center justify-center gap-1.5 lg:gap-2.5 px-2 sm:px-3 lg:px-6 py-3 rounded-2xl font-bold text-[9px] xs:text-[10px] lg:text-[11px] uppercase tracking-widest transition-all min-h-[44px] border
-                            ${showTables
-                                ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg'
-                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                            }
-                        `}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all min-h-[38px] border ${
+                            showTables
+                                ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-600 shadow-sm'
+                                : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:border-gray-400'
+                        }`}
                     >
-                        <Grid size={14} />
-                        <span>Table Map</span>
+                        <Grid size={13} />
+                        <span>Tables</span>
                     </button>
                     <button
                         onClick={() => navigate('/dine-in')}
-                        className="flex items-center justify-center gap-1.5 lg:gap-2.5 px-2 sm:px-3 lg:px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-bold text-[9px] xs:text-[10px] lg:text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 min-h-[44px]"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-orange-500/20 active:scale-95 min-h-[38px]"
                     >
-                        <Utensils size={14} />
+                        <Utensils size={13} />
                         <span>Dine In</span>
                     </button>
                     <button
                         onClick={() => navigate('/take-away')}
-                        className="col-span-2 xs:col-span-1 flex items-center justify-center gap-1.5 lg:gap-2.5 px-2 sm:px-3 lg:px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-[9px] xs:text-[10px] lg:text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 min-h-[44px]"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-blue-600/20 active:scale-95 min-h-[38px]"
                     >
-                        <Package size={14} />
-                        <span>Take Away</span>
+                        <Package size={13} />
+                        <span>Takeaway</span>
                     </button>
                 </div>
             </div>
 
             {/* ── Tabs & Counters ─────────────────────────────────────── */}
-            <div className="flex flex-col gap-6">
-                <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl w-full sm:w-fit border border-slate-200">
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-1.5 p-1.5 bg-[var(--theme-bg-dark)] rounded-2xl w-full sm:w-fit border border-[var(--theme-border)]">
+                        <button
+                            onClick={() => { setActiveTab('active'); setStatusFilter(null); }}
+                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-[var(--theme-bg-card)] text-blue-500 shadow-sm border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                        >
+                            <ShoppingBag size={13} />
+                            Active ({counts.pending + counts.accepted + counts.preparing + counts.ready})
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('cancelled'); setStatusFilter(null); }}
+                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${activeTab === 'cancelled' ? 'bg-[var(--theme-bg-card)] text-red-500 shadow-sm border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                        >
+                            <History size={13} />
+                            History ({counts.cancelled})
+                        </button>
+                    </div>
+
                     <button
                         onClick={() => { setActiveTab('active'); setStatusFilter(null); }}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-6 py-2.5 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-95 border ${
+                            activeTab === 'active' && statusFilter === null
+                                ? 'bg-orange-500/10 border-orange-500/35 text-orange-600'
+                                : 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/30'
+                        }`}
                     >
-                        <ShoppingBag size={14} />
-                        Active ({counts.pending + counts.accepted + counts.preparing + counts.ready})
-                    </button>
-                    <button
-                        onClick={() => { setActiveTab('cancelled'); setStatusFilter(null); }}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-6 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all ${activeTab === 'cancelled' ? 'bg-white text-red-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        <History size={14} />
-                        History ({counts.cancelled})
+                        <ClipboardList size={14} />
+                        <span>View All Tokens</span>
                     </button>
                 </div>
 
                 {activeTab === 'active' && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                        <button
-                            onClick={() => setStatusFilter(f => f === 'pending' ? null : 'pending')}
-                            className={`rounded-2xl p-4 shadow-sm flex flex-col items-center transition-all border active:scale-95 ${statusFilter === 'pending' ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-400/30' : 'bg-white border-slate-200 hover:border-blue-300'}`}
-                        >
-                            <p className={`text-2xl sm:text-3xl font-bold ${statusFilter === 'pending' ? 'text-blue-600' : 'text-slate-800'}`}>{counts.pending}</p>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === 'pending' ? 'text-blue-500' : 'text-slate-400'}`}>Pending</p>
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => setStatusFilter(f => f === 'accepted' ? null : 'accepted')}
-                            className={`rounded-2xl p-4 shadow-sm flex flex-col items-center transition-all border active:scale-95 ${statusFilter === 'accepted' ? 'bg-orange-50 border-orange-400 ring-2 ring-orange-400/30' : 'bg-white border-slate-200 hover:border-orange-300'}`}
-                        >
-                            <p className={`text-2xl sm:text-3xl font-bold ${statusFilter === 'accepted' ? 'text-orange-600' : 'text-slate-800'}`}>{counts.accepted}</p>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                                <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === 'accepted' ? 'text-orange-500' : 'text-slate-400'}`}>Accepted</p>
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => setStatusFilter(f => f === 'preparing' ? null : 'preparing')}
-                            className={`rounded-2xl p-4 shadow-sm flex flex-col items-center transition-all border active:scale-95 ${statusFilter === 'preparing' ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-400/30' : 'bg-white border-slate-200 hover:border-amber-300'}`}
-                        >
-                            <p className={`text-2xl sm:text-3xl font-bold ${statusFilter === 'preparing' ? 'text-amber-600' : 'text-slate-800'}`}>{counts.preparing}</p>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === 'preparing' ? 'text-amber-500' : 'text-slate-400'}`}>Cooking</p>
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => setStatusFilter(f => f === 'ready' ? null : 'ready')}
-                            className={`rounded-2xl p-4 shadow-sm flex flex-col items-center transition-all border active:scale-95 ${statusFilter === 'ready' ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-400/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}
-                        >
-                            <p className={`text-2xl sm:text-3xl font-bold ${statusFilter === 'ready' ? 'text-emerald-600' : 'text-slate-800'}`}>{counts.ready}</p>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === 'ready' ? 'text-emerald-500' : 'text-slate-400'}`}>Ready</p>
-                            </div>
-                        </button>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {[
+                            { key: 'pending',   count: counts.pending,   dot: 'bg-blue-500',    label: 'Pending',  activeText: 'text-blue-600',   activeBg: 'bg-blue-500/10 border-blue-500/35',   hover: 'hover:border-blue-400/50' },
+                            { key: 'accepted',  count: counts.accepted,  dot: 'bg-orange-500',  label: 'Accepted', activeText: 'text-orange-600', activeBg: 'bg-orange-500/10 border-orange-500/35', hover: 'hover:border-orange-400/50' },
+                            { key: 'preparing', count: counts.preparing, dot: 'bg-amber-500',   label: 'Cooking',  activeText: 'text-amber-600',  activeBg: 'bg-amber-500/10 border-amber-500/35',  hover: 'hover:border-amber-400/50' },
+                            { key: 'ready',     count: counts.ready,     dot: 'bg-emerald-500', label: 'Ready',    activeText: 'text-emerald-600', activeBg: 'bg-emerald-500/10 border-emerald-500/35', hover: 'hover:border-emerald-400/50' },
+                        ].map(({ key, count, dot, label, activeText, activeBg, hover }) => (
+                            <button
+                                key={key}
+                                onClick={() => setStatusFilter(f => f === key ? null : key)}
+                                className={`rounded-2xl p-4 flex flex-col items-center transition-all border active:scale-95 ${statusFilter === key ? activeBg : `bg-[var(--theme-bg-card)] border-[var(--theme-border)] ${hover}`}`}
+                            >
+                                <p className={`text-2xl sm:text-3xl font-black tabular-nums ${statusFilter === key ? activeText : 'text-[var(--theme-text-main)]'}`}>{count}</p>
+                                <div className="flex items-center gap-1.5 mt-1.5">
+                                    <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+                                    <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === key ? activeText : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                                </div>
+                            </button>
+                        ))}
                     </div>
                 )}
             </div>

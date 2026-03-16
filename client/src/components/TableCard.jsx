@@ -1,51 +1,54 @@
-import { Users, Clock, Lock, Sparkles, AlertTriangle } from 'lucide-react';
+import { Users, Clock, Lock, Sparkles } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STATUS_CONFIG — single source of truth for ALL table status styles / labels.
-// Import this wherever you need status colors, labels, or icons (Admin + Waiter).
 // ─────────────────────────────────────────────────────────────────────────────
 export const STATUS_CONFIG = {
     available: {
-        bg: 'bg-emerald-900/20',
-        border: 'border-emerald-500/50',
-        hoverBg: 'hover:bg-emerald-900/30',
-        text: 'text-emerald-400',
+        bg: 'bg-emerald-500/8',
+        border: 'border-emerald-500/40',
+        hoverBg: 'hover:bg-emerald-500/10',
+        text: 'text-emerald-500',
         dot: 'bg-emerald-500',
         color: 'bg-emerald-500',
         ring: 'ring-emerald-500/30',
+        topBar: 'bg-emerald-500',
         label: 'Available',
         icon: Sparkles,
     },
     reserved: {
-        bg: 'bg-yellow-900/20',
-        border: 'border-yellow-500/50',
-        hoverBg: '',
-        text: 'text-yellow-400',
+        bg: 'bg-yellow-500/8',
+        border: 'border-yellow-500/40',
+        hoverBg: 'hover:bg-yellow-500/10',
+        text: 'text-yellow-500',
         dot: 'bg-yellow-500',
         color: 'bg-yellow-500',
         ring: 'ring-yellow-500/30',
+        topBar: 'bg-yellow-500',
         label: 'Reserved',
         icon: Lock,
     },
     occupied: {
-        bg: 'bg-red-900/20',
-        border: 'border-red-500/50',
-        hoverBg: '',
-        text: 'text-red-400',
+        bg: 'bg-red-500/8',
+        border: 'border-red-500/40',
+        hoverBg: 'hover:bg-red-500/10',
+        text: 'text-red-500',
         dot: 'bg-red-500',
         color: 'bg-red-500',
         ring: 'ring-red-500/30',
+        topBar: 'bg-red-500',
         label: 'Occupied',
         icon: Users,
     },
     cleaning: {
-        bg: 'bg-gray-700/30',
-        border: 'border-gray-500/50',
-        hoverBg: 'hover:bg-gray-700/50',
-        text: 'text-gray-400',
-        dot: 'bg-gray-500',
-        color: 'bg-gray-500',
-        ring: 'ring-gray-500/30',
+        bg: 'bg-gray-500/8',
+        border: 'border-gray-400/40',
+        hoverBg: 'hover:bg-gray-500/10',
+        text: 'text-gray-500',
+        dot: 'bg-gray-400',
+        color: 'bg-gray-400',
+        ring: 'ring-gray-400/30',
+        topBar: 'bg-gray-400',
         label: 'Cleaning',
         icon: Clock,
     },
@@ -53,18 +56,6 @@ export const STATUS_CONFIG = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TableCard — shared visual component for Admin + Waiter table maps.
-//
-// Props:
-//   table      – table object { _id, number, capacity, status }
-//   onClick    – called when card is clicked (pass undefined to make non-clickable)
-//   clickable  – boolean; adds pointer cursor, hover, and active scale effect
-//   actions    – ReactNode rendered in top-right corner on hover (action icons)
-//
-// Usage (Admin):
-//   <TableCard table={t} actions={<><ResetBtn/><DeleteBtn/></>} />
-//
-// Usage (Waiter):
-//   <TableCard table={t} clickable onClick={...} actions={<ReserveBtn/>} />
 // ─────────────────────────────────────────────────────────────────────────────
 const TableCard = ({ table, onClick, clickable = false, actions }) => {
     const config = STATUS_CONFIG[table.status] || STATUS_CONFIG.available;
@@ -78,50 +69,47 @@ const TableCard = ({ table, onClick, clickable = false, actions }) => {
             onKeyDown={clickable ? (e) => e.key === 'Enter' && onClick?.() : undefined}
             className={[
                 'relative bg-[var(--theme-bg-card)] rounded-2xl border overflow-hidden',
-                'flex flex-col items-center',
-                'p-4 min-h-[140px] sm:min-h-[155px]',
-                'transition-all duration-300 group',
+                'flex flex-col',
+                'transition-all duration-200 group',
                 config.border,
                 clickable
-                    ? `cursor-pointer hover:shadow-xl active:scale-95 ${config.hoverBg || 'hover:opacity-90'}`
+                    ? `cursor-pointer hover:shadow-lg active:scale-95 ${config.hoverBg || 'hover:opacity-90'}`
                     : 'cursor-default',
             ].join(' ')}
         >
             {/* Top status colour bar */}
-            <div className={`absolute top-0 left-0 right-0 h-1 ${config.color}`} />
+            <div className={`h-1 w-full ${config.topBar} flex-shrink-0`} />
 
             {/* Action icons (shown on hover) */}
             {actions && (
-                <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                <div className="absolute top-3 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-150 z-10">
                     {actions}
                 </div>
             )}
 
-            {/* Table number */}
-            <div className="text-center mt-2 flex-1 flex flex-col items-center justify-center">
-                <span className="text-[10px] text-[var(--theme-text-subtle)] uppercase tracking-widest font-bold">
+            {/* Body */}
+            <div className="flex flex-col items-center justify-center flex-1 px-3 py-4 gap-1">
+                <span className="text-[9px] text-[var(--theme-text-muted)] uppercase tracking-widest font-bold">
                     Table
                 </span>
-                <span className={`text-4xl sm:text-5xl font-black leading-none mt-1 ${config.text}`}>
+                <span className={`text-4xl sm:text-5xl font-black leading-none ${config.text}`}>
                     {table.number}
                 </span>
             </div>
 
-            {/* Footer: capacity + status badge */}
-            <div className="w-full border-t border-[var(--theme-border)] pt-2.5 mt-2 flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1 text-[var(--theme-text-subtle)]">
-                    <Users size={12} />
-                    {table.capacity}
-                </span>
-                <div className="flex items-center gap-1.5">
-                    <StatusIcon size={11} className={config.text} />
-                    <span className={`font-bold uppercase text-[10px] ${config.text}`}>
-                        {config.label}
+            {/* Footer */}
+            <div className="px-3 pb-3">
+                <div className="flex items-center justify-between border-t border-[var(--theme-border)] pt-2.5">
+                    <span className="flex items-center gap-1 text-[var(--theme-text-muted)] text-[10px] font-semibold">
+                        <Users size={11} />
+                        {table.capacity}
                     </span>
-                    <span
-                        className={`w-2 h-2 rounded-full ${config.color} ${table.status === 'reserved' ? 'animate-pulse' : ''
-                            }`}
-                    />
+                    <div className="flex items-center gap-1">
+                        <span className={`w-1.5 h-1.5 rounded-full ${config.dot} ${table.status === 'reserved' ? 'animate-pulse' : ''}`} />
+                        <span className={`text-[9px] font-bold uppercase tracking-wide ${config.text}`}>
+                            {config.label}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>

@@ -163,31 +163,31 @@ const AdminMenu = () => {
     const activeCategories = categories.filter(c => c.status === 'active');
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             {/* ── Header ──────────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[var(--theme-bg-card2)] p-6 rounded-xl shadow-lg border border-[var(--theme-border)] gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl shadow-sm border border-[var(--theme-border)] gap-3">
                 <div>
-                    <h2 className="text-2xl font-bold text-[var(--theme-text-main)]">Menu Management</h2>
-                    <p className="text-sm text-[var(--theme-text-muted)] mt-1">
-                        {items.length} items · {items.filter(i => i.availability).length} available
+                    <h2 className="text-xl font-bold text-[var(--theme-text-main)]">Menu Items</h2>
+                    <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
+                        {items.length} total &middot; <span className="text-emerald-400 font-semibold">{items.filter(i => i.availability).length} available</span>
                     </p>
                 </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                     <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
                     <button
                         onClick={() => openModal()}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors min-h-[40px]"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl transition-colors font-semibold text-sm min-h-[38px] shadow-md shadow-blue-600/20"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} />
                         <span>Add Item</span>
                     </button>
                 </div>
             </div>
 
             {/* ── Search + Category Filter ─────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" size={16} />
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <div className="relative w-full sm:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" size={15} />
                     <input
                         type="text"
                         placeholder="Search items..."
@@ -196,7 +196,7 @@ const AdminMenu = () => {
                         className="w-full bg-[var(--theme-bg-card)] text-[var(--theme-text-main)] rounded-xl pl-9 pr-9 py-2.5 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none text-sm"
                     />
                     {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[var(--theme-text-main)] transition-colors">
                             <SearchX size={14} />
                         </button>
                     )}
@@ -204,7 +204,7 @@ const AdminMenu = () => {
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setFilterCategory(null)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${filterCategory === null ? 'bg-blue-600 text-white border-blue-600' : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-blue-500'}`}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${filterCategory === null ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/30' : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-blue-500 hover:text-[var(--theme-text-main)]'}`}
                     >
                         All
                     </button>
@@ -212,8 +212,8 @@ const AdminMenu = () => {
                         <button
                             key={cat._id}
                             onClick={() => setFilterCategory(cat._id)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${String(filterCategory) === String(cat._id) ? 'text-white border-transparent' : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-blue-500'}`}
-                            style={String(filterCategory) === String(cat._id) ? { backgroundColor: cat.color || '#3b82f6' } : {}}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${String(filterCategory) === String(cat._id) ? 'text-white border-transparent shadow-sm' : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-blue-500 hover:text-[var(--theme-text-main)]'}`}
+                            style={String(filterCategory) === String(cat._id) ? { backgroundColor: cat.color || '#3b82f6', boxShadow: `0 2px 8px ${cat.color || '#3b82f6'}40` } : {}}
                         >
                             {cat.name}
                         </button>
@@ -223,18 +223,18 @@ const AdminMenu = () => {
 
             {/* ── Items Grid / List ────────────────────────────────────── */}
             {filteredItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-[var(--theme-text-muted)]">
-                    <Utensils size={48} className="mb-3 opacity-20" />
-                    <p className="font-bold text-lg">No items found</p>
-                    <p className="text-sm">Try a different search or category filter</p>
+                <div className="flex flex-col items-center justify-center py-24 text-[var(--theme-text-muted)]">
+                    <Utensils size={44} className="mb-3 opacity-20" />
+                    <p className="font-bold text-base">No items found</p>
+                    <p className="text-sm opacity-70 mt-1">Try a different search or category</p>
                 </div>
             ) : (
                 <div className={viewMode === 'grid'
                     ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
-                    : 'flex flex-col gap-4'
+                    : 'flex flex-col gap-3'
                 }>
                     {filteredItems.map(item => (
-                        <div key={item._id} className={!item.availability ? 'opacity-50' : ''}>
+                        <div key={item._id} className={!item.availability ? 'opacity-60' : ''}>
                             <FoodItem
                                 item={item}
                                 viewMode={viewMode}

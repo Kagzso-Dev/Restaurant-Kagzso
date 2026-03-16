@@ -149,88 +149,92 @@ const AdminTables = () => {
         <div className="space-y-5 animate-fade-in">
 
             {/* ── Header ────────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card)] rounded-2xl p-5 border border-[var(--theme-border)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl border border-[var(--theme-border)] shadow-sm">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-[var(--theme-text-main)]">Table Management</h1>
-                    <p className="text-sm text-[var(--theme-text-muted)] mt-0.5">{tables.length} tables configured</p>
+                    <h1 className="text-xl font-bold text-[var(--theme-text-main)]">Table Map</h1>
+                    <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
+                        {tables.length} tables &middot; <span className="text-emerald-500 font-semibold">{statusCounts['available'] || 0} available</span>
+                    </p>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center justify-center gap-2 px-5 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold text-sm transition-colors shadow-glow-orange min-h-[44px]"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-orange-500/20 min-h-[38px]"
                 >
-                    <Plus size={18} />
+                    <Plus size={16} />
                     Add Table
                 </button>
             </div>
 
-            {/* ── Status Strip — uses shared STATUS_CONFIG ──────────────── */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {/* ── Status Filter Pills ──────────────────────────────────── */}
+            <div className="flex flex-wrap gap-2">
+                <button
+                    onClick={() => setStatusFilter('all')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                        statusFilter === 'all'
+                            ? 'bg-[var(--theme-text-main)] text-[var(--theme-bg-dark)] border-transparent'
+                            : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-gray-400'
+                    }`}
+                >
+                    All
+                    <span className="bg-[var(--theme-bg-hover)] px-1.5 py-0.5 rounded-md tabular-nums">{tables.length}</span>
+                </button>
                 {Object.entries(STATUS_CONFIG).map(([key, config]) => (
                     <button
                         key={key}
                         onClick={() => setStatusFilter((k) => (k === key ? 'all' : key))}
-                        className={`
-                            flex items-center gap-3 p-4 rounded-xl border transition-all text-left
-                            ${statusFilter === key
-                                ? `bg-[var(--theme-bg-hover)] ${config.border}`
-                                : 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] hover:border-gray-500'
-                            }
-                        `}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                            statusFilter === key
+                                ? `${config.border} ${config.bg}`
+                                : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-gray-400'
+                        }`}
                     >
-                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${config.color}`} />
-                        <div className="min-w-0">
-                            <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-bold truncate">
-                                {config.label}
-                            </p>
-                            <p className={`text-2xl font-black ${config.text}`}>
-                                {statusCounts[key] || 0}
-                            </p>
-                        </div>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
+                        <span className={statusFilter === key ? config.text : ''}>{config.label}</span>
+                        <span className={`px-1.5 py-0.5 rounded-md tabular-nums ${statusFilter === key ? config.text : 'text-[var(--theme-text-muted)]'} bg-[var(--theme-bg-hover)]`}>
+                            {statusCounts[key] || 0}
+                        </span>
                     </button>
                 ))}
             </div>
 
             {/* ── Tables Grid — uses shared TableCard ───────────────────── */}
             {loading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {Array(12).fill(0).map((_, i) => (
-                        <div key={i} className="skeleton rounded-2xl min-h-[140px]" />
+                        <div key={i} className="skeleton rounded-2xl min-h-[130px]" />
                     ))}
                 </div>
             ) : filteredTables.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-[var(--theme-text-muted)]">
-                    <Table2 size={52} className="mb-3 opacity-20" />
-                    <p className="font-semibold text-lg">No tables found</p>
-                    <p className="text-sm mt-1">
-                        {statusFilter !== 'all'
-                            ? `No ${statusFilter} tables`
-                            : 'Add your first table to get started'}
+                <div className="flex flex-col items-center justify-center py-24 text-[var(--theme-text-muted)]">
+                    <Table2 size={44} className="mb-3 opacity-20" />
+                    <p className="font-bold text-base">No tables found</p>
+                    <p className="text-sm opacity-70 mt-1">
+                        {statusFilter !== 'all' ? `No ${statusFilter} tables` : 'Add your first table to get started'}
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {filteredTables.map((table) => (
                         <TableCard
                             key={table._id}
                             table={table}
-                            // Admin-specific action icons (visible on hover)
                             actions={
                                 <>
                                     {table.status !== 'available' && (
                                         <button
                                             onClick={() => handleForceReset(table._id)}
                                             title="Force Reset"
-                                            className="p-2 text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                            className="p-1.5 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors"
                                         >
-                                            <RotateCcw size={14} />
+                                            <RotateCcw size={13} />
                                         </button>
                                     )}
                                     <button
                                         onClick={() => handleDelete(table._id)}
                                         title="Delete"
-                                        className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                        className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                                     >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={13} />
                                     </button>
                                 </>
                             }

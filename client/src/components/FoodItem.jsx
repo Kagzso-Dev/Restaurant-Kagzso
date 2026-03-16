@@ -18,139 +18,156 @@ const FoodItem = memo(({
         return (
             <div
                 onClick={() => { if (!isAdmin && showActions) onAdd(item); }}
-                className="group bg-[var(--theme-bg-card)] rounded-xl overflow-hidden border border-[var(--theme-border)] hover:border-orange-400/60 hover:shadow-md transition-all p-3 flex items-center gap-3 animate-fade-in cursor-pointer"
+                className="group bg-[var(--theme-bg-card)] rounded-2xl overflow-hidden border border-[var(--theme-border)] hover:border-orange-400/50 hover:shadow-lg transition-all animate-fade-in cursor-pointer"
             >
-                {/* Image */}
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
-                    {item.image
-                        ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                        : <div className="w-full h-full flex items-center justify-center text-2xl">🍔</div>
-                    }
-                    <div className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                </div>
+                <div className="flex items-center gap-4 p-3 sm:p-4">
+                    {/* Veg/Non-veg side bar */}
+                    <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                    <h3 className="text-sm sm:text-base font-bold text-[var(--theme-text-main)] truncate leading-tight">{item.name}</h3>
-                    <p
-                        className="text-[9px] font-bold uppercase tracking-widest mt-1 px-1.5 py-0.5 rounded-full inline-block border"
-                        style={{
-                            backgroundColor: `${item.category?.color || '#3b82f6'}15`,
-                            color: item.category?.color || '#3b82f6',
-                            borderColor: `${item.category?.color || '#3b82f6'}30`
-                        }}
-                    >
-                        {item.category?.name || 'Uncategorized'}
-                    </p>
-                    {item.description && (
-                        <p className="text-[10px] text-[var(--theme-text-subtle)] truncate mt-0.5 hidden sm:block">{item.description}</p>
-                    )}
-                </div>
+                    {/* Image */}
+                    <div className="relative w-[72px] h-[72px] rounded-xl overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0 shadow-sm">
+                        {item.image
+                            ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            : <div className="w-full h-full flex items-center justify-center text-3xl">🍔</div>
+                        }
+                        {item.availability === false && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <span className="text-white text-[8px] font-bold uppercase">Off</span>
+                            </div>
+                        )}
+                    </div>
 
-                {/* Price + Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-orange-400 font-black text-sm sm:text-base">{formatPrice(item.price)}</span>
-                    {showActions && (
-                        <div className="flex items-center gap-1">
-                            {isAdmin ? (
-                                <>
-                                    {onToggleAvailability && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onToggleAvailability(item); }}
-                                            className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-colors border ${item.availability
-                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20'
-                                                : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20'
-                                            }`}
-                                        >
-                                            {item.availability ? 'Available' : 'Unavailable'}
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-sm sm:text-[15px] font-bold text-[var(--theme-text-main)] truncate leading-tight">{item.name}</h3>
+                        <span
+                            className="text-[9px] font-bold uppercase tracking-wider mt-1.5 px-2 py-0.5 rounded-full inline-block border"
+                            style={{
+                                backgroundColor: `${item.category?.color || '#3b82f6'}15`,
+                                color: item.category?.color || '#3b82f6',
+                                borderColor: `${item.category?.color || '#3b82f6'}35`
+                            }}
+                        >
+                            {item.category?.name || 'Uncategorized'}
+                        </span>
+                        {item.description && (
+                            <p className="text-[11px] text-[var(--theme-text-subtle)] truncate mt-1 max-w-[200px] sm:max-w-xs">{item.description}</p>
+                        )}
+                    </div>
+
+                    {/* Price + Actions */}
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <span className="text-orange-400 font-black text-sm sm:text-base tabular-nums">{formatPrice(item.price)}</span>
+                        {showActions && (
+                            <div className="flex items-center gap-1">
+                                {isAdmin ? (
+                                    <>
+                                        {onToggleAvailability && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onToggleAvailability(item); }}
+                                                className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all border ${item.availability
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
+                                                    : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30'
+                                                }`}
+                                            >
+                                                {item.availability ? 'Available' : 'Unavailable'}
+                                            </button>
+                                        )}
+                                        <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-[var(--theme-text-muted)] hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors">
+                                            <Edit size={15} />
                                         </button>
-                                    )}
-                                    <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-lg transition-colors">
-                                        <Edit size={16} />
+                                        <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-2 text-[var(--theme-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onAdd(item); }}
+                                        className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center text-white hover:bg-orange-600 transition-all active:scale-95 shadow-md shadow-orange-500/30"
+                                    >
+                                        <Plus size={18} />
                                     </button>
-                                    <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </>
-                            ) : (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onAdd(item); }}
-                                    className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center text-white hover:bg-orange-600 transition-all active:scale-95 shadow-md shadow-orange-500/30"
-                                >
-                                    <Plus size={18} />
-                                </button>
-                            )}
-                        </div>
-                    )}
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         );
     }
 
-    // Grid View — Petpooja-style
+    // Grid View
     return (
         <div
             onClick={() => { if (!isAdmin && showActions) onAdd(item); }}
-            className="group relative bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)] hover:border-orange-400/60 hover:shadow-lg transition-all flex flex-col h-full animate-fade-in cursor-pointer active:scale-[0.97]"
+            className="group relative bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)] hover:border-orange-400/50 hover:shadow-xl transition-all flex flex-col h-full animate-fade-in cursor-pointer active:scale-[0.97] overflow-hidden"
         >
             {/* Image */}
-            <div className="relative w-full aspect-square rounded-t-2xl overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
+            <div className="relative w-full aspect-[4/3] overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
                 {item.image
                     ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     : <div className="w-full h-full flex items-center justify-center text-4xl">🍔</div>
                 }
-                {/* Veg / Non-veg dot */}
-                <div className={`absolute top-2 left-2 w-3.5 h-3.5 rounded-full border-2 border-white shadow ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                {/* Veg / Non-veg indicator */}
+                <div className={`absolute top-2 left-2 w-3 h-3 rounded-full border-2 border-white shadow-md ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                 {/* Unavailable overlay */}
                 {item.availability === false && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold uppercase tracking-wide bg-red-500 px-2 py-0.5 rounded-full">Unavailable</span>
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold uppercase tracking-wider bg-red-500/90 px-2.5 py-1 rounded-full shadow">Unavailable</span>
                     </div>
                 )}
-            </div>
-
-            {/* Content */}
-            <div className="flex flex-col flex-1 p-2.5 pt-2 min-h-0">
-                {/* Name — fixed 2-line height so all cards align */}
-                <h3 className="text-xs sm:text-sm font-bold text-[var(--theme-text-main)] line-clamp-2 leading-snug min-h-[2.4em]">{item.name}</h3>
-
-                {/* Category badge */}
+                {/* Category badge on image */}
                 <span
-                    className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md self-start border leading-none mt-1"
+                    className="absolute bottom-2 left-2 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border backdrop-blur-sm"
                     style={{
-                        backgroundColor: `${item.category?.color || '#3b82f6'}18`,
-                        color: item.category?.color || '#3b82f6',
-                        borderColor: `${item.category?.color || '#3b82f6'}35`
+                        backgroundColor: `${item.category?.color || '#3b82f6'}cc`,
+                        color: '#fff',
+                        borderColor: `${item.category?.color || '#3b82f6'}80`
                     }}
                 >
                     {item.category?.name || 'Uncategorized'}
                 </span>
+            </div>
+
+            {/* Content */}
+            <div className="flex flex-col flex-1 p-3 min-h-0 gap-2">
+                {/* Name */}
+                <h3 className="text-xs sm:text-sm font-bold text-[var(--theme-text-main)] line-clamp-2 leading-snug min-h-[2.4em]">{item.name}</h3>
 
                 {/* Price row — always pinned to bottom */}
                 <div className="flex items-center justify-between mt-auto pt-2 border-t border-[var(--theme-border)]">
-                    <span className="text-orange-400 font-black text-xs sm:text-sm">{formatPrice(item.price)}</span>
+                    <span className="text-orange-400 font-black text-sm tabular-nums">{formatPrice(item.price)}</span>
 
-                    {/* Admin-only actions (edit / delete / toggle) */}
+                    {/* Admin-only actions */}
                     {showActions && isAdmin && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5">
                             {onToggleAvailability && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onToggleAvailability(item); }}
-                                    className={`px-1.5 py-0.5 text-[9px] font-bold rounded border transition-colors ${item.availability
-                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20'
-                                        : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20'
+                                    className={`px-1.5 py-0.5 text-[9px] font-bold rounded-md border transition-all ${item.availability
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/25'
+                                        : 'bg-red-500/10 text-red-400 border-red-500/25 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/25'
                                     }`}
                                 >
-                                    {item.availability ? 'Live' : 'Hidden'}
+                                    {item.availability ? 'Live' : 'Off'}
                                 </button>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded transition-colors">
+                            <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1.5 text-[var(--theme-text-muted)] hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors">
                                 <Edit size={13} />
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded transition-colors">
+                            <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-1.5 text-[var(--theme-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                                 <Trash2 size={13} />
                             </button>
                         </div>
+                    )}
+                    {/* Waiter add button */}
+                    {showActions && !isAdmin && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onAdd(item); }}
+                            className="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center text-white hover:bg-orange-600 transition-all active:scale-95 shadow-md shadow-orange-500/30"
+                        >
+                            <Plus size={16} />
+                        </button>
                     )}
                 </div>
             </div>
