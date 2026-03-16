@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
-import { Save, Lock, Settings as SettingsIcon, DollarSign, CheckCircle2, AlertCircle, QrCode, Upload, Camera, Loader2, X } from 'lucide-react';
+import { Save, Lock, Settings as SettingsIcon, DollarSign, CheckCircle2, AlertCircle, QrCode, Upload, Camera, Loader2, X, Eye, EyeOff } from 'lucide-react';
 
 /* ── QR Upload Card ───────────────────────────────────────────────────────── */
 const QrCard = ({ label, currentUrl, type, token, onUploaded, isSecondary }) => {
@@ -153,6 +153,8 @@ const Settings = () => {
     });
 
     const [qrUrls, setQrUrls] = useState({ standardQrUrl: null, secondaryQrUrl: null });
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
 
@@ -425,24 +427,42 @@ const Settings = () => {
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-subtle)] ml-1">New Password</label>
-                            <input
-                                type="password"
-                                value={passwordData.newPassword}
-                                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl p-4 border border-[var(--theme-border)] focus:border-orange-500 outline-none transition-all font-medium"
-                                placeholder="••••••••"
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showNewPassword ? "text" : "password"}
+                                    value={passwordData.newPassword}
+                                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                    className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl p-4 pr-12 border border-[var(--theme-border)] focus:border-orange-500 outline-none transition-all font-medium"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNewPassword(!showNewPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--theme-text-subtle)] hover:text-orange-500 transition-colors focus:outline-none"
+                                >
+                                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-subtle)] ml-1">Verify Password</label>
-                            <input
-                                type="password"
-                                value={passwordData.confirmPassword}
-                                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl p-4 border border-[var(--theme-border)] focus:border-orange-500 outline-none transition-all font-medium"
-                                placeholder="••••••••"
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    value={passwordData.confirmPassword}
+                                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                    className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl p-4 pr-12 border border-[var(--theme-border)] focus:border-orange-500 outline-none transition-all font-medium"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--theme-text-subtle)] hover:text-orange-500 transition-colors focus:outline-none"
+                                >
+                                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
                         </div>
                     </div>
 

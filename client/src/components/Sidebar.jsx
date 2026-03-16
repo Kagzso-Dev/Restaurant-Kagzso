@@ -7,6 +7,7 @@ import {
     ChevronRight, X, TrendingUp, Bell
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+import ThemeSwitcher from './ThemeSwitcher';
 
 /**
  * Adaptive Sidebar
@@ -212,6 +213,11 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                 </button>
             )}
 
+
+            {/* ── Theme Switcher ───────────────────────────────────────── */}
+            <div className={`px-3 pb-1 flex-shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
+                <ThemeSwitcher collapsed={collapsed} />
+            </div>
 
             {/* ── Sign Out ─────────────────────────────────────────────── */}
             <div className={`p-3 border-t border-[var(--theme-border)] flex-shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>

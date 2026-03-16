@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { AdminRoute, KitchenRoute, CashierRoute, WaiterRoute } from './PrivateRoutes';
 import Layout from './components/Layout';
 
@@ -42,6 +43,7 @@ const PageLoader = () => (
 
 function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <Suspense fallback={<PageLoader />}>
@@ -96,6 +98,7 @@ function App() {
         </Suspense>
       </AuthProvider>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

@@ -1,7 +1,8 @@
 import { useContext } from 'react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { CalendarPlus, X } from 'lucide-react';
+import { CalendarPlus, X, LayoutGrid, List } from 'lucide-react';
+import { useState } from 'react';
 import TableCard, { STATUS_CONFIG } from './TableCard';
 import { useTablesData } from '../hooks/useTablesData';
 
@@ -25,6 +26,7 @@ const TableGrid = ({
     onReserve,
     onCancelReservation,
 }) => {
+    const [viewType, setViewType] = useState('grid');
     const { tables, setTables } = useTablesData();
     const { user } = useContext(AuthContext);
 
@@ -153,27 +155,50 @@ const TableGrid = ({
     return (
         <div>
             {/* Status Legend — powered by the canonical STATUS_CONFIG */}
-            <div className="flex flex-wrap gap-4 mb-6">
-                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
-                    const count = tables.filter((t) => t.status === key).length;
-                    return (
-                        <div key={key} className="flex items-center space-x-2 text-xs">
-                            <span className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} />
-                            <span className="text-[var(--theme-text-muted)] font-medium">{cfg.label}</span>
-                            <span className={`${cfg.text} font-bold`}>({count})</span>
-                        </div>
-                    );
-                })}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div className="flex flex-wrap gap-4">
+                    {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                        const count = tables.filter((t) => t.status === key).length;
+                        return (
+                            <div key={key} className="flex items-center space-x-2 text-xs">
+                                <span className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} />
+                                <span className="text-[var(--theme-text-muted)] font-medium">{cfg.label}</span>
+                                <span className={`${cfg.text} font-bold`}>({count})</span>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="flex items-center bg-[var(--theme-bg-dark)] p-1 rounded-xl border border-[var(--theme-border)]">
+                    <button
+                        onClick={() => setViewType('grid')}
+                        className={`p-1.5 rounded-lg transition-all ${viewType === 'grid' ? 'bg-orange-500 text-white shadow-md' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                        title="Grid View"
+                    >
+                        <LayoutGrid size={16} />
+                    </button>
+                    <button
+                        onClick={() => setViewType('list')}
+                        className={`p-1.5 rounded-lg transition-all ${viewType === 'list' ? 'bg-orange-500 text-white shadow-md' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                        title="List View"
+                    >
+                        <List size={16} />
+                    </button>
+                </div>
             </div>
 
             {/* Table Grid */}
-            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className={viewType === 'grid' 
+                ? "grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+                : "flex flex-col gap-3"
+            }>
                 {tables.map((table) => {
                     const clickable = isClickable(table);
                     return (
                         <div key={table._id} className="flex flex-col gap-2">
                             <TableCard
                                 table={table}
+                                variant={viewType}
                                 clickable={clickable}
                                 onClick={() => clickable && handleTableClick(table)}
                                 actions={getActions(table)}

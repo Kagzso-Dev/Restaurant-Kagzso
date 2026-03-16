@@ -11,7 +11,10 @@ client
 const databases = new Databases(client);
 const storage = new Storage(client);
 const databaseId = process.env.APPWRITE_DATABASE_ID;
-const storageBucketId = process.env.APPWRITE_STORAGE_BUCKET_ID;
+const storageBucketId = process.env.APPWRITE_STORAGE_BUCKET_ID || '69b6b7070031575acce8';
+if (!process.env.APPWRITE_STORAGE_BUCKET_ID) {
+    console.warn('[Appwrite] APPWRITE_STORAGE_BUCKET_ID not set in environment — using fallback value.');
+}
 
 // Collection IDs
 const COLLECTIONS = {

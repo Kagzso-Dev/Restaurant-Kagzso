@@ -126,6 +126,88 @@
 }
 
 
+/* ─── Theme: Black Glass (Glassmorphism) ─────────────────────────────────── */
+[data-theme="glass"] {
+  --theme-bg-deep:        #000000;
+  --theme-bg-dark:        #050508;
+  --theme-bg-card:        rgba(255, 255, 255, 0.05);
+  --theme-bg-card2:       rgba(255, 255, 255, 0.08);
+  --theme-bg-muted:       rgba(255, 255, 255, 0.03);
+  --theme-bg-hover:       rgba(255, 255, 255, 0.07);
+  --theme-text-main:      #f0f4ff;
+  --theme-text-muted:     #8899bb;
+  --theme-text-subtle:    #556080;
+  --theme-text-inverse:   #000000;
+  --theme-border:         rgba(255, 255, 255, 0.10);
+  --theme-border-solid:   rgba(255, 255, 255, 0.08);
+  --theme-input-bg:       rgba(255, 255, 255, 0.06);
+  --theme-sidebar-bg:     rgba(0, 0, 0, 0.60);
+  --theme-topbar-bg:      rgba(0, 0, 0, 0.55);
+  --theme-shadow:         rgba(0, 0, 0, 0.7);
+  --theme-overlay:        rgba(0, 0, 0, 0.75);
+  --theme-skeleton-a:     rgba(255, 255, 255, 0.04);
+  --theme-skeleton-b:     rgba(255, 255, 255, 0.09);
+  --theme-scrollbar:      rgba(255, 255, 255, 0.10);
+  --theme-scrollbar-h:    rgba(255, 255, 255, 0.20);
+}
+
+/* Glass theme: ambient gradient on html/body for depth */
+.theme-glass html,
+.theme-glass body {
+  background-color: #000;
+  background-image:
+    radial-gradient(ellipse at 15% 40%,  rgba(99,  60, 220, 0.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%,  rgba(30,  80, 200, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 60% 85%,  rgba(220, 40, 120, 0.06) 0%, transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Glass cards — backdrop blur + translucent fill */
+.theme-glass .card,
+.theme-glass .glass-panel {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Sidebar glass */
+.theme-glass .shadow-sidebar {
+  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.8);
+}
+
+/* Topbar glass */
+.theme-glass header {
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(0, 0, 0, 0.55) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Mobile bottom nav glass */
+.theme-glass .mobile-nav-glass {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Input glass feel */
+.theme-glass input,
+.theme-glass select,
+.theme-glass textarea {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Subtle glow on orange accents in glass theme */
+.theme-glass .shadow-glow-orange {
+  box-shadow: 0 0 28px -4px rgba(249, 115, 22, 0.55);
+}
+
 /* ─── Base Reset ─────────────────────────────────────────────────────────── */
 *,
 *::before,

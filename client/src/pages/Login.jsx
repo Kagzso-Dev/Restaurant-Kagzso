@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, CheckCircle } from 'lucide-react';
+import { User, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 // Helper: get dashboard path by role
@@ -19,6 +19,7 @@ const getDashboardPath = (role) => {
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const { user, login, loading, settings, serverStatus } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -109,13 +110,20 @@ const Login = () => {
                                     <Lock size={18} />
                                 </div>
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     autoComplete="new-password"
-                                    className="w-full pl-10 pr-4 py-3 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-[var(--theme-text-main)] placeholder-[var(--theme-text-subtle)] transition-all outline-none"
+                                    className="w-full pl-10 pr-12 py-3 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-[var(--theme-text-main)] placeholder-[var(--theme-text-subtle)] transition-all outline-none"
                                     placeholder="••••••••"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--theme-text-subtle)] hover:text-orange-500 transition-colors focus:outline-none"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
                             </div>
                         </div>
 
