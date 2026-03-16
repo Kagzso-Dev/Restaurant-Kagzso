@@ -119,11 +119,9 @@ const NotificationBell = () => {
     };
 
     // ── Initial load: unread count ───────────────────────────────────────────
+    // Socket.IO keeps the count in sync in real-time — no polling needed.
     useEffect(() => {
         fetchUnreadCount();
-        // Refresh unread count every 60s as fallback
-        const interval = setInterval(fetchUnreadCount, 60000);
-        return () => clearInterval(interval);
     }, [fetchUnreadCount]);
 
     // ── Socket: real-time notifications ──────────────────────────────────────

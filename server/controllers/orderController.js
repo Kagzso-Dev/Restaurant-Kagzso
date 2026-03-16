@@ -441,7 +441,8 @@ const searchOrders = async (req, res) => {
     try {
         const q = (req.query.q || '').trim();
         if (!q) return res.json({ orders: [] });
-        const orders = await Order.search(q);
+        const limit = Math.min(parseInt(req.query.limit) || 30, 50); // honour client hint, hard-cap at 50
+        const orders = await Order.search(q, limit);
         res.json({ orders });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -5,8 +5,6 @@ import axios from "axios";
 const API_BASE = import.meta.env.VITE_API_URL || "";
 const baseURL = API_BASE.trim().replace(/\/+$/, "");
 
-console.log("%c🔌 API URL initialized from VITE_API_URL:", "color: #f59e0b; font-weight: bold;", baseURL);
-
 // Create axios instance
 const api = axios.create({
     baseURL,
@@ -30,6 +28,21 @@ api.interceptors.request.use(
         return config;
     },
     (error) => Promise.reject(error)
+);
+
+// Response interceptor — handle token expiry globally
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Token expired or invalid — clear session and redirect to login
+            try { sessionStorage.removeItem("user"); } catch { /* ignore */ }
+            if (!window.location.pathname.includes("/login")) {
+                window.location.href = "/login";
+            }
+        }
+        return Promise.reject(error);
+    }
 );
 
 export default api;

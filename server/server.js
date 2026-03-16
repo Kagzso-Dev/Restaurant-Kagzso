@@ -84,7 +84,7 @@ app.use(helmet({
 }));
 
 app.use(hpp());
-app.use(compression());
+app.use(compression({ level: 6, threshold: 1024 })); // skip bodies < 1 KB
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(logger.requestLogger);
@@ -122,10 +122,10 @@ const io = new Server(server, {
         credentials: true
     },
     transports: ['websocket', 'polling'],
-    pingInterval: 10000,
-    pingTimeout: 30000,
+    pingInterval: 25000,  // reduced from 10s — less keepalive traffic
+    pingTimeout: 20000,
     connectionStateRecovery: {
-        maxDisconnectionDuration: 2 * 60 * 1000,
+        maxDisconnectionDuration: 30 * 1000, // reduced from 2 min — free memory faster
         skipMiddlewares: true,
     },
     maxHttpBufferSize: 1e6,
@@ -256,17 +256,22 @@ const { autoReleaseExpiredReservations } = require('./controllers/tableControlle
 setInterval(() => autoReleaseExpiredReservations(io), 2 * 60 * 1000);
 
 // ─── Health Check (JSON — always available, even without frontend build) ──────
+// DB ping result is cached for 30 s so load-balancer polling never hits Appwrite directly.
+let _healthDbCache = { status: 'unknown', ts: 0 };
 app.get('/health', async (req, res) => {
     const uptime   = process.uptime();
     const memUsage = process.memoryUsage();
 
-    // Check Appwrite connectivity (optional ping)
-    let dbStatus = 'disconnected';
-    try {
-        await databases.listDocuments(databaseId, 'users', [require('./config/appwrite').Query.limit(1)]);
-        dbStatus = 'connected';
-    } catch (e) {
-        dbStatus = 'error';
+    // Check Appwrite connectivity — cached 30 s to avoid DB load from LB probes
+    let dbStatus = _healthDbCache.status;
+    if (Date.now() - _healthDbCache.ts > 30_000) {
+        try {
+            await databases.listDocuments(databaseId, 'users', [require('./config/appwrite').Query.limit(1)]);
+            dbStatus = 'connected';
+        } catch (e) {
+            dbStatus = 'error';
+        }
+        _healthDbCache = { status: dbStatus, ts: Date.now() };
     }
 
     // Guard against a missing or malformed package.json on the VPS

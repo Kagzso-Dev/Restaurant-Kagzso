@@ -112,24 +112,21 @@ const Notification = {
     // Mark specific notifications as read for a user
     async markAsRead(notificationIds, userId) {
         if (!notificationIds.length) return;
-        
-        for (const notifId of notificationIds) {
-            try {
-                // Check if already exists to emulate INSERT IGNORE
-                const existing = await databases.listDocuments(databaseId, COLLECTIONS.notification_reads, [
-                    Query.equal('notification_id', notifId),
-                    Query.equal('user_id', userId),
-                    Query.limit(1)
-                ]);
-                
-                if (existing.total === 0) {
-                    await databases.createDocument(databaseId, COLLECTIONS.notification_reads, ID.unique(), {
-                        notification_id: notifId,
-                        user_id: userId
-                    });
-                }
-            } catch (e) {}
-        }
+
+        // Run all existence-checks + writes in parallel instead of sequentially
+        await Promise.allSettled(notificationIds.map(async (notifId) => {
+            const existing = await databases.listDocuments(databaseId, COLLECTIONS.notification_reads, [
+                Query.equal('notification_id', notifId),
+                Query.equal('user_id', userId),
+                Query.limit(1)
+            ]);
+            if (existing.total === 0) {
+                await databases.createDocument(databaseId, COLLECTIONS.notification_reads, ID.unique(), {
+                    notification_id: notifId,
+                    user_id: userId
+                });
+            }
+        }));
     },
 
     // Mark ALL role-visible notifications as read for a user

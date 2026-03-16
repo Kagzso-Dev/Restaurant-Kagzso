@@ -1,4 +1,4 @@
-import { memo, useContext } from 'react';
+import { memo, useContext, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import {
@@ -19,41 +19,31 @@ const BottomNav = memo(() => {
 
     const isActive = (path) => location.pathname === path;
 
-    // Build nav items per role
-    const getNavItems = () => {
-        if (user.role === 'admin') {
-            return [
-                { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-                { to: '/admin/orders', icon: ClipboardList, label: 'Orders' },
-                { to: '/admin/tables', icon: Monitor, label: 'Tables' },
-                { to: '/admin/menu', icon: Utensils, label: 'Menu' },
-                { to: '/admin/settings', icon: Settings, label: 'Settings' },
-            ];
-        }
-        if (user.role === 'kitchen') {
-            return [
-                { to: '/kitchen', icon: ChefHat, label: 'Kitchen' },
-            ];
-        }
-        if (user.role === 'cashier') {
-            return [
-                { to: '/cashier', icon: Monitor, label: 'POS' },
-                { to: '/cashier/working-process', icon: ClipboardList, label: 'Orders' },
-                { to: '/cashier/kitchen-view', icon: ChefHat, label: 'Kitchen' },
-            ];
-        }
-        if (user.role === 'waiter') {
-            return [
-                { to: '/waiter', icon: LayoutDashboard, label: 'Dashboard' },
-                { to: '/dine-in', icon: Utensils, label: 'Dine In' },
-                { to: '/take-away', icon: Package, label: 'Take Away' },
-                { to: '/waiter/kitchen-view', icon: ChefHat, label: 'Kitchen' },
-            ];
-        }
+    // Build nav items per role — memoised so the array is only recreated when role changes
+    const navItems = useMemo(() => {
+        if (user.role === 'admin') return [
+            { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+            { to: '/admin/orders', icon: ClipboardList, label: 'Orders' },
+            { to: '/admin/tables', icon: Monitor, label: 'Tables' },
+            { to: '/admin/menu', icon: Utensils, label: 'Menu' },
+            { to: '/admin/settings', icon: Settings, label: 'Settings' },
+        ];
+        if (user.role === 'kitchen') return [
+            { to: '/kitchen', icon: ChefHat, label: 'Kitchen' },
+        ];
+        if (user.role === 'cashier') return [
+            { to: '/cashier', icon: Monitor, label: 'POS' },
+            { to: '/cashier/working-process', icon: ClipboardList, label: 'Orders' },
+            { to: '/cashier/kitchen-view', icon: ChefHat, label: 'Kitchen' },
+        ];
+        if (user.role === 'waiter') return [
+            { to: '/waiter', icon: LayoutDashboard, label: 'Dashboard' },
+            { to: '/dine-in', icon: Utensils, label: 'Dine In' },
+            { to: '/take-away', icon: Package, label: 'Take Away' },
+            { to: '/waiter/kitchen-view', icon: ChefHat, label: 'Kitchen' },
+        ];
         return [];
-    };
-
-    const navItems = getNavItems();
+    }, [user.role]);
 
     return (
         <nav className="

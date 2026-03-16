@@ -16,11 +16,19 @@ export default defineConfig(({ mode }) => ({
         // Correctly using Function format for manualChunks to avoid Vite/Rollup errors
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // Group heavy core libraries
+            // React core — always needed
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
               return 'vendor-core';
             }
-            // Group UI and heavy utilities
+            // Charts — only used on Analytics page
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) {
+              return 'vendor-charts';
+            }
+            // PDF / canvas export — only used on bill-print / report pages
+            if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('html-to-image')) {
+              return 'vendor-pdf';
+            }
+            // UI icons + realtime — lightweight but shared
             if (id.includes('lucide-react') || id.includes('socket.io-client')) {
               return 'vendor-ui';
             }

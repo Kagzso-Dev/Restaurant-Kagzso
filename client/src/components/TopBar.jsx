@@ -1,4 +1,5 @@
-import { useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { useContext, useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+
 import { AuthContext } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 import { Search, Menu, X, Loader2, ShoppingBag } from 'lucide-react';
@@ -17,7 +18,7 @@ import useDebounce from '../hooks/useDebounce';
  *   - Results dropdown with keyboard close (Escape)
  *   - Click-outside closes dropdown
  */
-const TopBar = ({ onMenuClick, sidebarCollapsed }) => {
+const TopBar = memo(({ onMenuClick }) => {
     const { user, formatPrice, serverStatus } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
@@ -39,13 +40,12 @@ const TopBar = ({ onMenuClick, sidebarCollapsed }) => {
         }
         setSearching(true);
         try {
-            const res = await api.get(`/api/orders/search?q=${encodeURIComponent(q)}`, {
+            const res = await api.get(`/api/orders/search?q=${encodeURIComponent(q)}&limit=10`, {
                 headers: { Authorization: `Bearer ${user.token}` },
             });
             setResults(res.data.orders || []);
             setShowDropdown(true);
         } catch (err) {
-            console.error('[TopBar] Search error:', err.message);
             setResults([]);
         } finally {
             setSearching(false);
@@ -80,8 +80,8 @@ const TopBar = ({ onMenuClick, sidebarCollapsed }) => {
         navigate(`/${user.role}/orders`);
     };
 
-    // ── Page title / breadcrumb helpers ───────────────────────────────────────
-    const getPageTitle = () => {
+    // ── Page title helper (memoised — only recomputes on route change) ─────────
+    const pageTitle = useMemo(() => {
         const segments = location.pathname.split('/').filter(Boolean);
         if (!segments.length) return 'Dashboard';
         const last = segments[segments.length - 1];
@@ -94,37 +94,22 @@ const TopBar = ({ onMenuClick, sidebarCollapsed }) => {
             'dine-in': 'Dine-In Order', 'take-away': 'Take Away Order',
         };
         return titles[last] || (last.charAt(0).toUpperCase() + last.slice(1));
-    };
-
-    const getBreadcrumb = () => {
-        const segments = location.pathname.split('/').filter(Boolean);
-        return segments.map((seg, i) => {
-            const label = seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, ' ');
-            return (
-                <span key={i} className="flex items-center gap-1">
-                    {i > 0 && <span className="text-[var(--theme-text-subtle)]">/</span>}
-                    <span className={i === segments.length - 1 ? 'text-orange-400 font-semibold' : 'text-[var(--theme-text-subtle)]'}>
-                        {label}
-                    </span>
-                </span>
-            );
-        });
-    };
+    }, [location.pathname]);
 
     const isKitchenView = location.pathname.includes('kitchen');
 
     // Only show search for admin/cashier/waiter — not kitchen
     const showSearch = !isKitchenView && ['admin', 'cashier', 'waiter'].includes(user?.role);
 
-    // ── Status badge colour helper ─────────────────────────────────────────────
-    const statusColor = (status) => {
+    // ── Status badge colour helper (stable reference — no deps) ───────────────
+    const statusColor = useCallback((status) => {
         const map = {
             completed: 'text-emerald-400', pending: 'text-blue-400',
             preparing: 'text-amber-400', accepted: 'text-indigo-400',
             ready: 'text-teal-400', cancelled: 'text-red-400',
         };
         return map[status] || 'text-[var(--theme-text-muted)]';
-    };
+    }, []);
 
     return (
         <header
@@ -149,7 +134,7 @@ const TopBar = ({ onMenuClick, sidebarCollapsed }) => {
 
                 <div className="min-w-0">
                     <h1 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] truncate leading-tight">
-                        {getPageTitle()}
+                        {pageTitle}
                     </h1>
                     {/* Status Badge – mobile+ */}
                     <div className="flex items-center gap-1.5 mt-0.5">
@@ -292,6 +277,6 @@ const TopBar = ({ onMenuClick, sidebarCollapsed }) => {
             </div>
         </header>
     );
-};
+});
 
 export default TopBar;
