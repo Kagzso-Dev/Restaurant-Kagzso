@@ -4,7 +4,7 @@ const fmt = (doc, cashierDoc = null) => doc ? {
     _id:            doc.$id,
     orderId:        doc.order_id,
     paymentMethod:  doc.payment_method,
-    transactionId:  doc.transaction_id,
+
     amount:         parseFloat(doc.amount),
     amountReceived: parseFloat(doc.amount_received),
     change:         parseFloat(doc.change || 0),
@@ -52,7 +52,7 @@ const Payment = {
         }
     },
 
-    async create({ orderId, paymentMethod, transactionId, amount, amountReceived, change, cashierId }) {
+    async create({ orderId, paymentMethod, amount, amountReceived, change, cashierId }) {
         try {
             const doc = await databases.createDocument(
                 databaseId,
@@ -61,7 +61,7 @@ const Payment = {
                 {
                     order_id: orderId,
                     payment_method: paymentMethod,
-                    transaction_id: transactionId || null,
+
                     amount: parseFloat(amount),
                     amount_received: parseFloat(amountReceived || 0),
                     change: parseFloat(change || 0),

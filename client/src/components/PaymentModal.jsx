@@ -64,7 +64,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
     const [change, setChange] = useState(0);
 
     // Digital payment state
-    const [transactionId, setTransactionId] = useState('');
+
     const [paidAmount, setPaidAmount] = useState('');
 
     // QR state
@@ -148,7 +148,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
         setMethod(m);
         setError('');
         setAmountReceived('');
-        setTransactionId('');
+
         setPaidAmount(String(total));
         setChange(0);
         setSelectedQrType('standard');
@@ -203,7 +203,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                 amountReceived: method.id === 'cash'
                     ? parseFloat(amountReceived)
                     : parseFloat(paidAmount),
-                transactionId: method.id === 'cash' ? null : transactionId.trim(),
+                transactionId: null,
             };
 
             const res = await api.post(`/api/payments/${order._id}/process`, payload);
@@ -467,6 +467,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                                             Confirm this payment after verifying the transaction on your device.
                                         </p>
                                     </div>
+
                                 </div>
                             )}
 

@@ -249,7 +249,6 @@ const processPayment = async (req, res) => {
             payment = await Payment.create({
                 orderId:        order._id,
                 paymentMethod:  method,
-                transactionId:  req.body.transactionId || null,
                 amount:         order.finalAmount,
                 amountReceived: received,
                 change,

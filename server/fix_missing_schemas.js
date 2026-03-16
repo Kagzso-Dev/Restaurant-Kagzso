@@ -28,7 +28,7 @@ async function fixSchemas() {
         console.log('Fixing PAYMENTS collection...');
         await ensureAttribute(COLLECTIONS.payments, 'order_id', 'string', { required: true });
         await ensureAttribute(COLLECTIONS.payments, 'payment_method', 'string', { required: true });
-        await ensureAttribute(COLLECTIONS.payments, 'transaction_id', 'string', { required: false });
+
         await ensureAttribute(COLLECTIONS.payments, 'amount', 'float', { required: true });
         await ensureAttribute(COLLECTIONS.payments, 'amount_received', 'float', { required: true });
         await ensureAttribute(COLLECTIONS.payments, 'change', 'float', { required: false });
@@ -42,7 +42,7 @@ async function fixSchemas() {
         await ensureAttribute(COLLECTIONS.payment_audits, 'status', 'string', { required: true });
         await ensureAttribute(COLLECTIONS.payment_audits, 'amount', 'float', { required: false });
         await ensureAttribute(COLLECTIONS.payment_audits, 'payment_method', 'string', { required: false });
-        await ensureAttribute(COLLECTIONS.payment_audits, 'transaction_id', 'string', { required: false });
+
         await ensureAttribute(COLLECTIONS.payment_audits, 'performed_by', 'string', { required: false });
         await ensureAttribute(COLLECTIONS.payment_audits, 'performed_by_role', 'string', { required: false });
         await ensureAttribute(COLLECTIONS.payment_audits, 'ip_address', 'string', { required: false });

@@ -75,18 +75,11 @@ const cancelPayment = async (req, res) => {
  */
 const processPayment = async (req, res) => {
     const { orderId }                             = req.params;
-    const { paymentMethod, amountReceived, transactionId } = req.body;
+    const { paymentMethod, amountReceived } = req.body;
 
     if (!paymentMethod || !['cash', 'qr'].includes(paymentMethod)) {
         return res.status(400).json({ message: 'Invalid payment method' });
     }
-    if (paymentMethod === 'qr' &&
-        (!transactionId || !transactionId.trim())) {
-        return res.status(400).json({
-            message: `Transaction ID is required for ${paymentMethod.toUpperCase()} payments`,
-        });
-    }
-
     try {
         const order = await Order.findById(orderId);
         if (!order)                              return res.status(404).json({ message: 'Order not found' });
@@ -121,7 +114,7 @@ const processPayment = async (req, res) => {
         const payment = await Payment.create({
             orderId:        order._id,
             paymentMethod,
-            transactionId:  transactionId?.trim() || null,
+
             amount:         orderTotal,
             amountReceived: received,
             changeAmount,
@@ -172,7 +165,7 @@ const processPayment = async (req, res) => {
             status:         'success',
             amount:         orderTotal,
             paymentMethod,
-            transactionId:  payment.transactionId,
+
             performedBy:    req.userId,
             performedByRole: req.role,
             ipAddress:      req.ip,
@@ -202,7 +195,7 @@ const processPayment = async (req, res) => {
                 amount:         payment.amount,
                 amountReceived: payment.amountReceived,
                 changeAmount:   payment.changeAmount,
-                transactionId:  payment.transactionId,
+
             },
         });
     } catch (error) {

@@ -11,7 +11,7 @@ const PaymentAudit = {
         status,
         amount,
         paymentMethod,
-        transactionId,
+
         performedBy,
         performedByRole,
         ipAddress,
@@ -32,7 +32,6 @@ const PaymentAudit = {
                     status,
                     amount: amount ? parseFloat(amount) : null,
                     payment_method: paymentMethod || null,
-                    transaction_id: transactionId || null,
                     performed_by: performedBy || null,
                     performed_by_role: performedByRole || null,
                     ip_address: ipAddress || null,
