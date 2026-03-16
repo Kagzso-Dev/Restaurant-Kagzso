@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
-import { Save, Lock, Settings as SettingsIcon, DollarSign, CheckCircle2, AlertCircle, QrCode, Upload, Camera, Loader2 } from 'lucide-react';
+import { Save, Lock, Settings as SettingsIcon, DollarSign, CheckCircle2, AlertCircle, QrCode, Upload, Camera, Loader2, X } from 'lucide-react';
 
 /* ── QR Upload Card ───────────────────────────────────────────────────────── */
 const QrCard = ({ label, currentUrl, type, token, onUploaded, isSecondary }) => {
@@ -36,11 +36,12 @@ const QrCard = ({ label, currentUrl, type, token, onUploaded, isSecondary }) => 
                     Authorization: `Bearer ${token}` 
                 }
             });
-            setLocalMsg({ ok: true, text: 'QR uploaded!' });
+            setLocalMsg({ ok: true, text: 'QR uploaded successfully!' });
             onUploaded(res.data);
             setSelectedFile(null); // Reset after upload
         } catch (err) {
-            setLocalMsg({ ok: false, text: err.response?.data?.message || 'Upload failed' });
+            const msg = err.response?.data?.message || 'Upload failed';
+            setLocalMsg({ ok: false, text: msg });
         }
         setUploading(false);
     };
@@ -49,31 +50,31 @@ const QrCard = ({ label, currentUrl, type, token, onUploaded, isSecondary }) => 
     const cameraId  = `camera-${type}`;
 
     return (
-        <div className="flex flex-col gap-4 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-5">
+        <div className="flex flex-col gap-4 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-4 sm:p-5">
             <div className="flex items-center justify-between">
-                <p className="text-sm font-black text-[var(--theme-text-main)] uppercase tracking-widest">{label}</p>
+                <p className="text-[10px] sm:text-xs font-black text-[var(--theme-text-main)] uppercase tracking-widest">{label}</p>
                 {isSecondary && (
-                    <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">TEMPORARY</span>
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20 uppercase">Temporary</span>
                 )}
             </div>
 
             {/* Preview */}
-            <div className="flex items-center justify-center bg-white rounded-xl overflow-hidden h-44 border border-gray-200">
+            <div className="flex items-center justify-center bg-white rounded-xl overflow-hidden h-40 sm:h-48 border border-gray-200 shadow-inner">
                 {preview
-                    ? <img src={preview} alt="QR preview" className="h-full w-full object-contain" />
-                    : <div className="flex flex-col items-center gap-2 text-gray-400">
+                    ? <img src={preview} alt="QR preview" className="h-full w-full object-contain p-2" />
+                    : <div className="flex flex-col items-center gap-2 text-gray-300">
                         <QrCode size={40} strokeWidth={1} />
-                        <p className="text-xs">No QR uploaded</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest">No QR Found</p>
                     </div>
                 }
             </div>
 
-            {/* Buttons — using <label> so the browser opens the picker/camera natively without blocked programmatic click */}
-            <div className={`grid gap-2 ${isSecondary ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {/* Buttons stack on mobile, grid on larger */}
+            <div className={`flex flex-col sm:grid gap-2 ${isSecondary ? 'sm:grid-cols-2' : 'sm:grid-cols-1'}`}>
                 {/* Gallery / File upload */}
                 <label
                     htmlFor={galleryId}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600/10 hover:bg-violet-600/20 border border-violet-500/30 text-violet-400 text-xs font-bold transition-all cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-violet-600/10 hover:bg-violet-600/20 border border-violet-500/20 text-violet-400 text-xs font-bold transition-all cursor-pointer active:scale-95"
                 >
                     <Upload size={14} /> Upload Image
                 </label>
@@ -85,12 +86,12 @@ const QrCard = ({ label, currentUrl, type, token, onUploaded, isSecondary }) => 
                     onChange={e => handleFile(e.target.files?.[0])}
                 />
 
-                {/* Camera (secondary only) — capture="environment" opens rear camera directly */}
+                {/* Camera (secondary only) */}
                 {isSecondary && (
                     <>
                         <label
                             htmlFor={cameraId}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold transition-all cursor-pointer"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs font-bold transition-all cursor-pointer active:scale-95"
                         >
                             <Camera size={14} /> Take Photo
                         </label>
@@ -106,24 +107,28 @@ const QrCard = ({ label, currentUrl, type, token, onUploaded, isSecondary }) => 
                 )}
             </div>
 
-            {/* Save button — shown only when a new file is selected */}
+            {/* Save button */}
             {selectedFile && (
                 <button
                     type="button"
                     onClick={handleUpload}
                     disabled={uploading}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-widest transition-all disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
                 >
-                    {uploading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                    {uploading ? 'Uploading…' : 'Save QR'}
+                    {uploading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    {uploading ? 'Processing…' : 'Save Changes'}
                 </button>
             )}
 
             {localMsg && (
-                <p className={`text-xs font-medium flex items-center gap-1.5 ${localMsg.ok ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {localMsg.ok ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
-                    {localMsg.text}
-                </p>
+                <div className={`p-3 rounded-xl border flex items-start gap-3 animate-slide-up ${
+                    localMsg.ok 
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                }`}>
+                    {localMsg.ok ? <CheckCircle2 size={16} className="shrink-0 mt-0.5" /> : <AlertCircle size={16} className="shrink-0 mt-0.5" />}
+                    <p className="text-[11px] font-bold leading-tight uppercase tracking-tight">{localMsg.text}</p>
+                </div>
             )}
         </div>
     );
@@ -244,7 +249,7 @@ const Settings = () => {
 
             {message && (
                 <div className={`
-                    fixed top-20 right-6 z-[100] min-w-[320px]
+                    fixed top-20 left-4 right-4 sm:left-auto sm:right-6 z-[100] sm:min-w-[320px]
                     p-4 rounded-2xl shadow-2xl border flex items-center gap-3
                     animate-slide-in-right transform transition-all
                     ${message.type === 'success'
@@ -252,13 +257,13 @@ const Settings = () => {
                         : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                     }
                 `}>
-                    {message.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
-                    <div>
-                        <p className="font-bold text-sm uppercase tracking-wider">{message.type === 'success' ? 'Success' : 'Attention'}</p>
-                        <p className="text-xs opacity-80">{message.text}</p>
+                    {message.type === 'success' ? <CheckCircle2 size={24} className="shrink-0" /> : <AlertCircle size={24} className="shrink-0" />}
+                    <div className="min-w-0 flex-1">
+                        <p className="font-bold text-[10px] sm:text-xs uppercase tracking-widest">{message.type === 'success' ? 'Success' : 'Attention'}</p>
+                        <p className="text-xs opacity-90 truncate sm:whitespace-normal">{message.text}</p>
                     </div>
-                    <button onClick={() => setMessage(null)} className="ml-auto opacity-40 hover:opacity-100 transition-opacity">
-                        <Save className="rotate-45" size={14} />
+                    <button onClick={() => setMessage(null)} className="ml-auto p-2 opacity-40 hover:opacity-100 transition-opacity">
+                        <X size={16} />
                     </button>
                 </div>
             )}
