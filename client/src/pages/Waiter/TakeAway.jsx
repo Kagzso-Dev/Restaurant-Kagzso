@@ -202,7 +202,7 @@ const TakeAway = () => {
                                     ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-3'
                                     : 'flex flex-col gap-2.5'}>
                                     {filteredItems.map(item => (
-                                        <FoodItem key={item._id} item={item} viewMode={viewMode} formatPrice={formatPrice} onAdd={addToCart} />
+                                        <FoodItem key={item._id} item={item} viewMode={viewMode} formatPrice={formatPrice} onAdd={addToCart} cartQty={cart.find(i => i._id === item._id)?.quantity || 0} />
                                     ))}
                                 </div>
                             )}
@@ -218,8 +218,9 @@ const TakeAway = () => {
                 `}>
                     {isCartOpen && <div onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm lg:hidden" />}
 
-                    <div className="relative h-full w-full max-w-[400px] ml-auto lg:ml-0 bg-[var(--theme-bg-card)] rounded-none lg:rounded-3xl border-l lg:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
-                        <div className="px-5 py-5 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
+                    <div className="relative h-full w-full max-w-[400px] ml-auto lg:ml-0 bg-[var(--theme-bg-card)] rounded-none lg:rounded-3xl border-l lg:border border-[var(--theme-border)] shadow-2xl flex flex-col" style={{ maxHeight: '100dvh' }}>
+                        {/* Header */}
+                        <div className="px-5 py-4 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
                             <div>
                                 <h2 className="text-lg font-black text-[var(--theme-text-main)] flex items-center gap-2">
                                     <ShoppingCart size={18} className="text-blue-400" /> Current Cart
@@ -233,7 +234,8 @@ const TakeAway = () => {
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 custom-scrollbar">
+                        {/* Scrollable items — shrinks to make room for sticky footer */}
+                        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar min-h-0">
                             {cart.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-gray-700 py-10">
                                     <ShoppingCart size={64} className="mb-4 opacity-5" strokeWidth={1} />
@@ -250,7 +252,7 @@ const TakeAway = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-start mb-1">
-                                                <h4 className="text-sm font-bold text-[var(--theme-text-main)] truncate pr-2">{item.name}</h4>
+                                                <h4 className="text-sm font-bold text-[var(--theme-text-main)] pr-2">{item.name}</h4>
                                                 <span className="text-sm font-black text-[var(--theme-text-main)]">{formatPrice(item.price * item.quantity)}</span>
                                             </div>
                                             <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-lg p-0.5 border border-[var(--theme-border)] w-fit">
@@ -264,24 +266,25 @@ const TakeAway = () => {
                             )}
                         </div>
 
-                        <div className="p-5 bg-[var(--theme-bg-dark)] border-t border-[var(--theme-border)] flex-shrink-0 space-y-4">
-                            <div className="space-y-2">
+                        {/* Sticky footer — always visible at bottom */}
+                        <div className="flex-shrink-0 p-4 bg-[var(--theme-bg-dark)] border-t border-[var(--theme-border)] space-y-3">
+                            <div className="space-y-1.5">
                                 <div className="flex justify-between text-xs text-[var(--theme-text-muted)]"><span>Subtotal</span><span>{formatPrice(totalAmount)}</span></div>
                                 <div className="flex justify-between text-xs text-[var(--theme-text-muted)]"><span>Tax ({taxRate}%)</span><span>{formatPrice(tax)}</span></div>
-                                <div className="flex justify-between items-end pt-2">
-                                    <span className="text-sm font-bold text-[var(--theme-text-main)] uppercase tracking-wider">Estimated Total</span>
-                                    <span className="text-2xl font-black text-blue-400">{formatPrice(finalAmount)}</span>
+                                <div className="flex justify-between items-center pt-1.5 border-t border-[var(--theme-border)]">
+                                    <span className="text-xs font-bold text-[var(--theme-text-main)] uppercase tracking-wider">Total</span>
+                                    <span className="text-xl font-black text-blue-400">{formatPrice(finalAmount)}</span>
                                 </div>
                             </div>
 
                             <button
                                 onClick={handleSubmitOrder}
                                 disabled={cart.length === 0}
-                                className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-black rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                                className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-black rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
                             >
-                                Confirm & Place Order <ArrowRight size={18} />
+                                Confirm & Place Order <ArrowRight size={16} />
                             </button>
-                            <button className="lg:hidden w-full py-3 text-gray-400 font-bold text-xs uppercase tracking-widest" onClick={() => setIsCartOpen(false)}>
+                            <button className="lg:hidden w-full py-2 text-[var(--theme-text-muted)] font-bold text-xs uppercase tracking-widest" onClick={() => setIsCartOpen(false)}>
                                 Continue Adding Items
                             </button>
                         </div>

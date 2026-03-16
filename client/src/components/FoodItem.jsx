@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Check, Edit, Trash2 } from 'lucide-react';
 
 const FoodItem = memo(({
     item,
@@ -10,7 +10,8 @@ const FoodItem = memo(({
     onDelete,
     onToggleAvailability,
     showActions = true,
-    isAdmin = false
+    isAdmin = false,
+    cartQty = 0,
 }) => {
     const isVeg = item.isVeg;
 
@@ -39,7 +40,7 @@ const FoodItem = memo(({
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-sm sm:text-[15px] font-bold text-[var(--theme-text-main)] truncate leading-tight">{item.name}</h3>
+                        <h3 className="text-sm sm:text-[15px] font-bold text-[var(--theme-text-main)] leading-tight">{item.name}</h3>
                         <span
                             className="text-[9px] font-bold uppercase tracking-wider mt-1.5 px-2 py-0.5 rounded-full inline-block border"
                             style={{
@@ -83,9 +84,9 @@ const FoodItem = memo(({
                                 ) : (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onAdd(item); }}
-                                        className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center text-white hover:bg-orange-600 transition-all active:scale-95 shadow-md shadow-orange-500/30"
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center text-white transition-all active:scale-95 shadow-md font-bold text-sm ${cartQty > 0 ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-orange-500 shadow-orange-500/30 hover:bg-orange-600'}`}
                                     >
-                                        <Plus size={18} />
+                                        {cartQty > 0 ? cartQty : <Plus size={18} />}
                                     </button>
                                 )}
                             </div>
@@ -164,9 +165,9 @@ const FoodItem = memo(({
                     {showActions && !isAdmin && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onAdd(item); }}
-                            className="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center text-white hover:bg-orange-600 transition-all active:scale-95 shadow-md shadow-orange-500/30"
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center text-white transition-all active:scale-95 shadow-md font-bold text-sm ${cartQty > 0 ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-orange-500 shadow-orange-500/30 hover:bg-orange-600'}`}
                         >
-                            <Plus size={16} />
+                            {cartQty > 0 ? cartQty : <Plus size={16} />}
                         </button>
                     )}
                 </div>
