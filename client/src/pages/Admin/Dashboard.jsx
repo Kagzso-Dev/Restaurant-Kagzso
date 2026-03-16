@@ -275,8 +275,8 @@ const AdminDashboard = () => {
             </div>
 
             {/* ── Stats Grid — values sourced from MySQL via API ─────── */}
-            {/* Mobile: 1-col → sm: 2-col → lg: 4-col */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Mobile: 1-col → xs: 2-col → md: 4-col */}
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4">
                 {statsLoading ? (
                     Array(4).fill(0).map((_, i) => <SkeletonCard key={i} />)
                 ) : (
@@ -414,14 +414,14 @@ const AdminDashboard = () => {
                             <button
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
-                                className="px-3 py-1.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] rounded-lg text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                className="px-3 py-2 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] rounded-lg text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[44px]"
                             >
                                 Previous
                             </button>
                             <button
                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages}
-                                className="px-3 py-1.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] rounded-xl text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                className="px-3 py-2 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] rounded-xl text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[44px]"
                             >
                                 Next
                             </button>

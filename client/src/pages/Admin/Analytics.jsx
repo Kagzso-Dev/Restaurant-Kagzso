@@ -149,14 +149,14 @@ const Analytics = () => {
                     <h1 className="text-2xl font-bold text-[var(--theme-text-main)]">Business Analytics</h1>
                     <p className="text-sm text-[var(--theme-text-muted)] mt-1">Real-time performance metrics and revenue insights</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-1 bg-[var(--theme-bg-hover)] p-1 rounded-xl border border-[var(--theme-border)]">
                         {['today', 'week', 'month', 'year'].map(r => (
                             <button
                                 key={r}
                                 onClick={() => handleRangeChange(r)}
                                 className={`
-                                    px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
+                                    px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all min-h-[36px]
                                     ${reportRange === r
                                         ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20'
                                         : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'
@@ -169,7 +169,7 @@ const Analytics = () => {
                     </div>
                     <button
                         onClick={() => fetchAllData(null, true)}
-                        className="p-2.5 bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl transition-all border border-[var(--theme-border)] hover:border-orange-500/50 active:scale-95 shadow-sm"
+                        className="p-2.5 bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl transition-all border border-[var(--theme-border)] hover:border-orange-500/50 active:scale-95 shadow-sm min-h-[44px] min-w-[44px] flex items-center justify-center"
                         disabled={refreshing}
                         title="Refresh all data"
                     >
@@ -177,7 +177,7 @@ const Analytics = () => {
                     </button>
                     <button
                         onClick={exportPDF}
-                        className="p-2.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl transition-all shadow-glow-orange active:scale-95"
+                        className="p-2.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl transition-all shadow-glow-orange active:scale-95 min-h-[44px] min-w-[44px] flex items-center justify-center"
                         title="Export PDF"
                     >
                         <Download size={18} />
@@ -186,7 +186,7 @@ const Analytics = () => {
             </div>
 
             {/* ── Summary Stats ─────────────────────────────────── */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4">
                 <SummaryCard title="Total Revenue" value={formatPrice(summary.totalRevenue)} icon={TrendingUp} color="orange" />
                 <SummaryCard title="Orders Handled" value={summary.orderCount} icon={FileText} color="blue" />
                 <SummaryCard title="Avg Order Value" value={formatPrice(summary.avgOrderValue)} icon={Award} color="emerald" />
@@ -198,7 +198,7 @@ const Analytics = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {/* ── Revenue & Order Trends ────────────────────── */}
                 <div className="bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
                     <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center justify-between">

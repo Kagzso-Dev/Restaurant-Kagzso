@@ -176,7 +176,7 @@ const AdminMenu = () => {
                     <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
                     <button
                         onClick={() => openModal()}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl transition-colors font-semibold text-sm min-h-[38px] shadow-md shadow-blue-600/20"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl transition-colors font-semibold text-sm min-h-[44px] shadow-md shadow-blue-600/20"
                     >
                         <Plus size={16} />
                         <span>Add Item</span>
@@ -230,7 +230,7 @@ const AdminMenu = () => {
                 </div>
             ) : (
                 <div className={viewMode === 'grid'
-                    ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                    ? 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
                     : 'flex flex-col gap-3'
                 }>
                     {filteredItems.map(item => (

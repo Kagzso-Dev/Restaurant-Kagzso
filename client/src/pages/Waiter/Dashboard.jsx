@@ -215,28 +215,28 @@ const WaiterDashboard = () => {
                 <div className="grid grid-cols-3 gap-2">
                     <button
                         onClick={() => setShowTables(t => !t)}
-                        className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all min-h-[38px] border ${
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all min-h-[44px] border ${
                             showTables
                                 ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-600 shadow-sm'
                                 : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:border-gray-400'
                         }`}
                     >
                         <Grid size={13} />
-                        <span>Tables</span>
+                        <span className="truncate">Tables</span>
                     </button>
                     <button
                         onClick={() => navigate('/dine-in')}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-orange-500/20 active:scale-95 min-h-[38px]"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-orange-500/20 active:scale-95 min-h-[44px]"
                     >
                         <Utensils size={13} />
-                        <span>Dine In</span>
+                        <span className="truncate">Dine In</span>
                     </button>
                     <button
                         onClick={() => navigate('/take-away')}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-blue-600/20 active:scale-95 min-h-[38px]"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-blue-600/20 active:scale-95 min-h-[44px]"
                     >
                         <Package size={13} />
-                        <span>Takeaway</span>
+                        <span className="truncate">Takeaway</span>
                     </button>
                 </div>
             </div>
@@ -334,7 +334,7 @@ const WaiterDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
                     {filteredOrders.map(order => (
                         <div key={order._id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
                             <OrderCard

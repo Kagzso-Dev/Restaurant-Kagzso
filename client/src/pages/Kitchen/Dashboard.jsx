@@ -382,7 +382,7 @@ const KitchenDashboard = () => {
 
             {/* ── KOT Grid ────────────────────────────────────────────── */}
             {loading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {Array(8).fill(0).map((_, i) => <div key={i} className="skeleton rounded-xl h-48" />)}
                 </div>
             ) : displayOrders.length === 0 ? (
@@ -408,7 +408,7 @@ const KitchenDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {displayOrders.map(order => (
                         <KotTicket
                             key={order._id}

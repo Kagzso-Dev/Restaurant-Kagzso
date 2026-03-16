@@ -199,7 +199,7 @@ const TakeAway = () => {
                                 </div>
                             ) : (
                                 <div className={viewMode === 'grid'
-                                    ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-3'
+                                    ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-3'
                                     : 'flex flex-col gap-2.5'}>
                                     {filteredItems.map(item => (
                                         <FoodItem key={item._id} item={item} viewMode={viewMode} formatPrice={formatPrice} onAdd={addToCart} cartQty={cart.find(i => i._id === item._id)?.quantity || 0} />

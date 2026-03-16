@@ -116,7 +116,7 @@ const Layout = () => {
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-y-auto overflow-x-hidden pt-safe">
-                    <div className="p-3 sm:p-4 lg:p-6 pb-28 lg:pb-6 animate-fade-in max-w-[1600px] mx-auto w-full">
+                    <div className="w-full px-3 sm:px-4 md:px-6 pb-28 lg:pb-6 animate-fade-in max-w-[1600px] mx-auto overflow-x-hidden">
                         <Outlet />
                     </div>
                 </main>
