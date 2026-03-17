@@ -229,9 +229,12 @@ const AdminMenu = () => {
                     <p className="text-sm opacity-70 mt-1">Try a different search or category</p>
                 </div>
             ) : (
-                <div className={viewMode === 'grid'
-                    ? 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
-                    : 'flex flex-col gap-3'
+                <div className={
+                    viewMode === 'grid'
+                        ? 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                        : viewMode === 'compact'
+                            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3'
+                            : 'flex flex-col gap-3'
                 }>
                     {filteredItems.map(item => (
                         <div key={item._id} className={!item.availability ? 'opacity-60' : ''}>

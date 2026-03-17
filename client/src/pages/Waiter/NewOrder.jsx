@@ -327,9 +327,12 @@ const NewOrder = () => {
                                         <p className="text-sm">Try a different category or search term</p>
                                     </div>
                                 ) : (
-                                    <div className={viewMode === 'grid'
-                                        ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3'
-                                        : 'flex flex-col gap-2.5'
+                                    <div className={
+                                        viewMode === 'grid'
+                                            ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3'
+                                            : viewMode === 'compact'
+                                                ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2'
+                                                : 'flex flex-col gap-2.5'
                                     }>
                                         {filteredItems.map(item => (
                                             <FoodItem

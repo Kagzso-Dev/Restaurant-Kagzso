@@ -97,6 +97,41 @@ const FoodItem = memo(({
         );
     }
 
+    if (viewMode === 'compact') {
+        return (
+            <div
+                onClick={() => { if (!isAdmin && showActions) onAdd(item); }}
+                className="group relative bg-[var(--theme-bg-card)] rounded-xl border border-[var(--theme-border)] hover:border-orange-400/50 hover:shadow-lg transition-all flex items-center p-2 gap-3 cursor-pointer active:scale-[0.98]"
+            >
+                <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
+                    {item.image
+                        ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-xl">🍔</div>
+                    }
+                    <div className={`absolute top-1 left-1 w-2 h-2 rounded-full border border-white ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <h3 className="text-xs font-bold text-[var(--theme-text-main)] truncate leading-tight">{item.name}</h3>
+                    <div className="flex items-center justify-between mt-1">
+                        <span className="text-orange-400 font-extrabold text-[10px]">{formatPrice(item.price)}</span>
+                        {isAdmin ? (
+                            <div className="flex items-center gap-1">
+                                <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1 text-[var(--theme-text-muted)] hover:text-blue-400">
+                                    <Edit size={12} />
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-1 text-[var(--theme-text-muted)] hover:text-red-400">
+                                    <Trash2 size={12} />
+                                </button>
+                            </div>
+                        ) : (
+                            cartQty > 0 && <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">{cartQty}</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     // Grid View
     return (
         <div

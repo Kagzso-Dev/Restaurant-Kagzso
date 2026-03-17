@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
 import { Trash2, Plus, Edit2 } from 'lucide-react';
+import ViewToggle from '../../components/ViewToggle';
 
 const AdminCategories = () => {
     const [categories, setCategories] = useState([]);
@@ -9,7 +10,12 @@ const AdminCategories = () => {
     const [editingCategory, setEditingCategory] = useState(null);
     const [formData, setFormData] = useState({ name: '', description: '', color: '#3b82f6', status: 'active' });
     const [formError, setFormError] = useState('');
+    const [viewMode, setViewMode] = useState(() => localStorage.getItem('categoryViewMode') || 'grid');
     const { user, socket } = useContext(AuthContext);
+
+    useEffect(() => {
+        localStorage.setItem('categoryViewMode', viewMode);
+    }, [viewMode]);
 
     const presetColors = [
         { name: 'Blue', hex: '#3b82f6' },
@@ -135,64 +141,149 @@ const AdminCategories = () => {
                         {active.length} active · {inactive.length} inactive
                     </p>
                 </div>
-                <button
-                    onClick={() => openModal()}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors min-h-[44px] w-full sm:w-auto"
-                >
-                    <Plus size={18} />
-                    <span>Add Category</span>
-                </button>
+                <div className="flex items-center gap-3">
+                    <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+                    <button
+                        onClick={() => openModal()}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors min-h-[44px] w-full sm:w-auto"
+                    >
+                        <Plus size={18} />
+                        <span>Add Category</span>
+                    </button>
+                </div>
             </div>
 
             {/* ── Category Cards ───────────────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {categories.map(cat => (
-                    <div
-                        key={cat._id}
-                        className={`bg-[var(--theme-bg-card)] p-6 rounded-xl border border-[var(--theme-border)] flex justify-between items-start group hover:border-blue-500/50 transition-colors ${cat.status === 'inactive' ? 'opacity-60' : ''}`}
-                    >
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || '#3b82f6' }} />
-                                <h3 className="font-bold text-[var(--theme-text-main)] text-lg truncate">{cat.name}</h3>
+            <div className={
+                viewMode === 'grid'
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                    : viewMode === 'compact'
+                        ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                        : "flex flex-col gap-3"
+            }>
+                {categories.map(cat => {
+                    const isInactive = cat.status === 'inactive';
+
+                    if (viewMode === 'list') {
+                        return (
+                            <div
+                                key={cat._id}
+                                className={`flex items-center justify-between p-4 bg-[var(--theme-bg-card)] rounded-xl border border-[var(--theme-border)] hover:border-blue-500/50 transition-all ${isInactive ? 'opacity-60' : ''}`}
+                            >
+                                <div className="flex items-center gap-4 min-w-0">
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: cat.color || '#3b82f6' }}>
+                                        {cat.name.charAt(0)}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="font-bold text-[var(--theme-text-main)] truncate text-base">{cat.name}</h3>
+                                        <p className="text-xs text-[var(--theme-text-muted)] truncate max-w-md">{cat.description || 'No description'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => handleToggleStatus(cat)}
+                                        className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border transition-all ${cat.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}
+                                    >
+                                        {cat.status}
+                                    </button>
+                                    <div className="flex gap-1">
+                                        <button onClick={() => openModal(cat)} className="p-2 text-[var(--theme-text-muted)] hover:text-blue-400"><Edit2 size={16} /></button>
+                                        <button onClick={() => handleDelete(cat._id)} className="p-2 text-[var(--theme-text-muted)] hover:text-red-400"><Trash2 size={16} /></button>
+                                    </div>
+                                </div>
                             </div>
-                            <p className="text-[var(--theme-text-muted)] text-sm mt-1 line-clamp-2">{cat.description}</p>
+                        );
+                    }
 
-                            {/* Status toggle button */}
-                            <button
-                                onClick={() => handleToggleStatus(cat)}
-                                className={`mt-3 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shadow-sm transition-all ${
-                                    cat.status === 'active'
-                                        ? 'hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
-                                        : 'hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30'
-                                }`}
-                                style={{
-                                    backgroundColor: `${cat.color || '#3b82f6'}20`,
-                                    color: cat.color || '#3b82f6',
-                                    borderColor: `${cat.color || '#3b82f6'}40`,
-                                }}
-                                title={cat.status === 'active' ? 'Click to deactivate' : 'Click to activate'}
+                    if (viewMode === 'compact') {
+                        return (
+                            <div
+                                key={cat._id}
+                                className={`group relative bg-[var(--theme-bg-card)] rounded-xl border border-[var(--theme-border)] hover:border-blue-500/50 p-4 transition-all flex flex-col gap-2 ${isInactive ? 'opacity-60' : ''}`}
                             >
-                                {cat.status === 'active' ? '● Active' : '○ Inactive'}
-                            </button>
-                        </div>
+                                <div className="flex justify-between items-start">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-sm" style={{ backgroundColor: cat.color || '#3b82f6' }}>
+                                        {cat.name.charAt(0)}
+                                    </div>
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick={() => openModal(cat)} className="p-1 text-[var(--theme-text-muted)] hover:text-blue-400"><Edit2 size={12} /></button>
+                                        <button onClick={() => handleDelete(cat._id)} className="p-1 text-[var(--theme-text-muted)] hover:text-red-400"><Trash2 size={12} /></button>
+                                    </div>
+                                </div>
+                                <h3 className="font-bold text-[var(--theme-text-main)] text-sm truncate leading-tight">{cat.name}</h3>
+                                <div className="flex justify-between items-center mt-1">
+                                    <button
+                                        onClick={() => handleToggleStatus(cat)}
+                                        className={`w-2 h-2 rounded-full ${cat.status === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`}
+                                        title={cat.status}
+                                    />
+                                    <span className="text-[10px] font-mono opacity-20">#{cat._id.slice(-4).toUpperCase()}</span>
+                                </div>
+                            </div>
+                        );
+                    }
 
-                        <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity ml-3 flex-shrink-0">
-                            <button
-                                onClick={() => openModal(cat)}
-                                className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded transition-colors"
-                            >
-                                <Edit2 size={18} />
-                            </button>
-                            <button
-                                onClick={() => handleDelete(cat._id)}
-                                className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded transition-colors"
-                            >
-                                <Trash2 size={18} />
-                            </button>
+                    // Default Grid View
+                    return (
+                        <div
+                            key={cat._id}
+                            className={`group relative bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)] hover:border-blue-500/50 hover:shadow-2xl transition-all duration-300 flex flex-col h-full overflow-hidden ${isInactive ? 'opacity-60' : ''}`}
+                        >
+                            {/* Color Accent Bar */}
+                            <div className="h-2 w-full" style={{ backgroundColor: cat.color || '#3b82f6' }} />
+
+                            <div className="p-6 flex flex-col h-full">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-extrabold text-[var(--theme-text-main)] text-xl leading-snug break-words pr-12">
+                                        {cat.name}
+                                    </h3>
+
+                                    {/* Hover Actions */}
+                                    <div className="absolute top-6 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
+                                        <button
+                                            onClick={() => openModal(cat)}
+                                            className="p-2 bg-[var(--theme-bg-card2)]/90 backdrop-blur-sm text-[var(--theme-text-muted)] hover:text-white hover:bg-blue-600 rounded-xl transition-all shadow-lg border border-[var(--theme-border)]"
+                                            title="Edit Category"
+                                        >
+                                            <Edit2 size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(cat._id)}
+                                            className="p-2 bg-[var(--theme-bg-card2)]/90 backdrop-blur-sm text-red-400 hover:text-white hover:bg-red-600 rounded-xl transition-all shadow-lg border border-[var(--theme-border)]"
+                                            title="Delete Category"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <p className="text-[var(--theme-text-muted)] text-sm mt-1 line-clamp-3 leading-relaxed min-h-[3rem]">
+                                    {cat.description || <span className="italic opacity-30">No description provided</span>}
+                                </p>
+
+                                <div className="mt-8 pt-4 border-t border-[var(--theme-border)] flex items-center justify-between">
+                                    {/* Status Badge - Pill Style */}
+                                    <button
+                                        onClick={() => handleToggleStatus(cat)}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${
+                                            cat.status === 'active'
+                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
+                                        }`}
+                                        title={cat.status === 'active' ? 'Click to deactivate' : 'Click to activate'}
+                                    >
+                                        <div className={`w-1.5 h-1.5 rounded-full ${cat.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                                        {cat.status}
+                                    </button>
+
+                                    <span className="text-[10px] text-[var(--theme-text-subtle)] font-bold font-mono opacity-50">
+                                        #{cat._id.slice(-4).toUpperCase()}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* ── Modal ────────────────────────────────────────────────── */}
