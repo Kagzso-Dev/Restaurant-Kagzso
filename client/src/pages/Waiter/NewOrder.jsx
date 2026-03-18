@@ -333,30 +333,32 @@ const NewOrder = () => {
 
                         {/* ── Top Bar (Search + Info) ────── */}
                         <div className="px-5 py-4 border-b border-[var(--theme-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
-                            <div className="flex items-center gap-3">
-                            <button onClick={() => {
-                                if (orderId) {
-                                    navigate(-1);
-                                } else {
-                                    setStep(step === 3 && orderType === 'takeaway' ? 1 : step - 1);
-                                }
-                            }} className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] bg-[var(--theme-bg-hover)] rounded-lg">
-                                <ArrowLeft size={18} />
-                            </button>
-                                <div>
-                                    <h2 className="text-lg font-bold text-[var(--theme-text-main)] flex items-center gap-2 truncate">
-                                        {orderId
-                                            ? `Add Items to ${currentOrder?.orderNumber || 'Order'}${currentOrder?.orderType === 'takeaway' ? ` | Token #${currentOrder.tokenNumber}` : currentOrder?.tableId?.number ? ` | Table ${currentOrder.tableId.number}` : ''}`
-                                            : (selectedTable ? `Table ${selectedTable.number}` : 'Takeaway Order')}
+                            <div className="flex items-center gap-3 min-w-0 flex-shrink-0">
+                                <button onClick={() => {
+                                    if (orderId) {
+                                        navigate(-1);
+                                    } else {
+                                        setStep(step === 3 && orderType === 'takeaway' ? 1 : step - 1);
+                                    }
+                                }} className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] bg-[var(--theme-bg-hover)] rounded-lg flex-shrink-0">
+                                    <ArrowLeft size={18} />
+                                </button>
+                                <div className="min-w-0">
+                                    <h2 className="text-lg font-bold text-[var(--theme-text-main)] flex items-center gap-2">
+                                        <span className="truncate block">
+                                            {orderId
+                                                ? `Add Items to ${currentOrder?.orderNumber || 'Order'}${currentOrder?.orderType === 'takeaway' ? ` | Token #${currentOrder.tokenNumber}` : currentOrder?.tableId?.number ? ` | Table ${currentOrder.tableId.number}` : ''}`
+                                                : (selectedTable ? `Table ${selectedTable.number}` : 'Takeaway Order')}
+                                        </span>
                                         {!orderId && (
-                                            <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] font-normal uppercase tracking-tighter">
+                                            <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] font-normal uppercase tracking-tighter">
                                                 Step 3 of 3
                                             </span>
                                         )}
                                     </h2>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 w-full sm:flex-1 sm:max-w-xl">
+                            <div className="flex items-center gap-2 w-full sm:flex-1">
                                 <div className="relative flex-1">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" size={16} />
                                     <input

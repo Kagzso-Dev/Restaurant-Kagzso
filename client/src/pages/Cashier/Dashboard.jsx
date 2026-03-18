@@ -102,7 +102,7 @@ const Receipt = ({ order, formatPrice, settings }) => (
         {/* Header */}
         <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4 relative z-10">
             <h1 className="text-2xl font-extrabold tracking-tight">{settings?.restaurantName}</h1>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mt-0.5">Kitchen Order Ticket</p>
+            <p className="text-xs font-black text-black uppercase tracking-widest mt-0.5">Tax Invoice</p>
             <p className="text-[10px] text-gray-400 mt-1">{settings?.address || 'Restaurant Address'}</p>
             {settings?.gstNumber && <p className="text-[10px] text-gray-400">GSTIN: {settings.gstNumber}</p>}
         </div>
@@ -110,8 +110,8 @@ const Receipt = ({ order, formatPrice, settings }) => (
         {/* Meta */}
         <div className="flex justify-between text-[11px] mb-4 relative z-10">
             <div>
-                <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-                <p><strong>Time:</strong> {new Date().toLocaleTimeString()}</p>
+                <p><strong>Date:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+                <p><strong>Time:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString()}</p>
             </div>
             <div className="text-right">
                 <p><strong>Invoice:</strong> #INV-{order.orderNumber?.split('-')[1]}</p>
@@ -186,20 +186,28 @@ const CashierDashboard = () => {
             const res = await api.get('/api/orders', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
-            // Update: data is now paginated object
             const unpaid = (res.data.orders || []).filter(o => o.paymentStatus !== 'paid');
             setOrders(unpaid);
-            // Refresh selected
-            if (selectedOrder) {
-                const updated = unpaid.find(o => o._id === selectedOrder._id);
-                setSelectedOrder(updated || null);
-            }
         } catch (err) {
             console.error('Error fetching orders', err);
         } finally {
             setLoading(false);
         }
-    }, [user, selectedOrder]);
+    }, [user]);
+
+    // ── Sync selected order when list updates ────────────
+    useEffect(() => {
+        if (selectedOrder) {
+            const updated = orders.find(o => o._id === selectedOrder._id);
+            if (updated && JSON.stringify(updated) !== JSON.stringify(selectedOrder)) {
+                setSelectedOrder(updated);
+            } else if (!updated && orders.length > 0) {
+              // If it disappeared (became paid), we handles that usually in update handlers,
+              // but if list refetched and it's gone, just clear selection.
+              // Note: we don't clear if list is still loading.
+            }
+        }
+    }, [orders]);
 
     useEffect(() => {
         if (!user) return;
