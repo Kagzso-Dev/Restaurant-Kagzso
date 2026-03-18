@@ -229,7 +229,8 @@ const NewOrder = () => {
                     headers: { Authorization: `Bearer ${user.token}` }
                 });
             }
-            navigate(user.role === 'waiter' ? '/waiter' : '/admin');
+            const returnPath = user.role === 'waiter' ? '/waiter' : '/admin';
+            navigate(orderId ? `${returnPath}?openOrder=${orderId}` : returnPath);
         } catch (error) {
             alert("Order failed: " + (error.response?.data?.message || "Server Error"));
         }

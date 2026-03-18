@@ -462,6 +462,9 @@ const searchOrders = async (req, res) => {
 // @route   PUT /api/orders/:id/add-items
 // @access  Private (Waiter, Admin, Cashier)
 const addOrderItems = async (req, res) => {
+    console.log('[DEBUG] addOrderItems REQ BODY:', JSON.stringify(req.body, null, 2));
+    console.log('[DEBUG] addOrderItems ORDER ID:', req.params.id);
+    
     const { items, totalAmount, tax, finalAmount } = req.body;
     const { id } = req.params;
 
