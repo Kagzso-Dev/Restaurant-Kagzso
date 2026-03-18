@@ -382,15 +382,15 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                                         <label className="text-xs text-[var(--theme-text-muted)] font-bold uppercase tracking-wider mb-2 block">
                                             Quick Select
                                         </label>
-                                        <div className="grid grid-cols-4 gap-2">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                                             {quickCashAmounts.map((amt) => (
                                                 <button
                                                     key={amt}
                                                     onClick={() => setAmountReceived(String(amt))}
                                                     className={`
-                                                        px-2 py-2.5 rounded-xl text-sm font-bold transition-all border
+                                                        px-1.5 py-3 rounded-2xl text-[11px] sm:text-sm font-bold transition-all border
                                                         ${parseFloat(amountReceived) === amt
-                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-lg shadow-emerald-500/10'
                                                             : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-emerald-500/30'
                                                         }
                                                     `}
