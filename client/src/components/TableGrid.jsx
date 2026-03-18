@@ -42,14 +42,14 @@ const TableGrid = ({
                     { headers: { Authorization: `Bearer ${user.token}` } }
                 );
                 setTables((prev) => prev.map((t) => (t._id === table._id ? res.data : t)));
-                onSelectTable(res.data);
+                onSelectTable?.(res.data);
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to reserve table');
             }
             return;
         }
         if (allowedStatuses.includes(table.status)) {
-            onSelectTable(table);
+            onSelectTable?.(table);
         }
     };
 

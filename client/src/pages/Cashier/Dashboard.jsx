@@ -15,9 +15,10 @@ import {
 
 /* ── Order status badge ──────────────────────────────────────────────────── */
 const statusStyle = {
-    ready: 'text-green-400 bg-green-500/10 border-green-500/20',
-    preparing: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-    pending: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    ready: 'text-[var(--status-ready)] bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]',
+    preparing: 'text-[var(--status-preparing)] bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]',
+    accepted: 'text-[var(--status-accepted)] bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',
+    pending: 'text-[var(--status-pending)] bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',
     completed: 'text-[var(--theme-text-muted)] bg-[var(--theme-bg-hover)] border-[var(--theme-border)]',
 };
 
@@ -33,44 +34,56 @@ const paymentMethodIcon = (method) => {
 };
 
 /* ── Order List Item ──────────────────────────────────────────────────────── */
-const OrderItem = memo(({ order, selected, onClick, formatPrice }) => {
+const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'normal' }) => {
+    const isCompact = viewType === 'compact';
+    const isList = viewType === 'list';
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-main)]';
     return (
         <button
             onClick={onClick}
             className={`
-                w-full text-left p-5 rounded-2xl border-l-[10px] transition-all duration-200 group token-tap
+                w-full text-left transition-all duration-200 group token-tap rounded-2xl
                 ${tColor}
+                ${isList ? 'p-3 flex items-center justify-between border-l-4' : (isCompact ? 'p-3 border-l-[6px]' : 'p-5 border-l-[10px]')}
+                ${order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
+                  order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
+                  order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
+                  order.orderStatus === 'ready' ? 'border-l-[var(--status-ready)]' :
+                  'border-l-transparent'}
                 ${selected ? 'ring-2 ring-orange-500 shadow-2xl scale-[1.02]' : 'hover:scale-[1.01] shadow-lg'}
             `}
         >
-            <div className="flex justify-between items-start mb-2">
-                <h3 className="font-extrabold text-inherit text-base tracking-tight truncate pr-2">{order.orderNumber}</h3>
-                <StatusBadge status={order.orderStatus} />
-            </div>
-            <div className="flex justify-between items-end mt-1">
-                <p className="text-[10px] text-inherit opacity-70 uppercase font-black tracking-widest">
-                    {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId || '?'}` : `Token ${order.tokenNumber}`}
-                </p>
-                <p className="font-black text-inherit text-base">{formatPrice(order.finalAmount)}</p>
-            </div>
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
-                <div className="flex items-center gap-1.5 text-[9px] text-inherit opacity-60 font-bold uppercase">
-                    <Clock size={12} />
-                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <div className={`flex flex-col flex-1 ${isList ? 'flex-row items-center justify-between gap-4' : ''}`}>
+                <div className={`flex justify-between items-start ${isList ? 'w-32 shrink-0 mb-0' : 'mb-2'}`}>
+                    <h3 className={`font-extrabold text-inherit tracking-tight truncate pr-2 ${isCompact ? 'text-xs' : 'text-base'}`}>{order.orderNumber}</h3>
+                    {!isList && <StatusBadge status={order.orderStatus} />}
                 </div>
-                <div className="flex gap-1.5">
-                    {order.paymentStatus === 'payment_pending' && (
-                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20 font-black tracking-tighter uppercase">
-                            PAYING
-                        </span>
-                    )}
-                    {order.orderStatus === 'ready' && order.paymentStatus !== 'payment_pending' && (
-                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/20 font-black tracking-tighter uppercase animate-pulse">
-                            READY
-                        </span>
-                    )}
+                <div className={`flex justify-between items-end ${isList ? 'flex-1' : 'mt-1'}`}>
+                    <p className={`text-inherit opacity-70 uppercase font-black tracking-widest ${isCompact ? 'text-[8px]' : 'text-[10px]'}`}>
+                        {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
+                    </p>
+                    <p className={`font-black text-inherit ${isCompact ? 'text-sm' : 'text-base'}`}>{formatPrice(order.finalAmount)}</p>
                 </div>
+                {!isCompact && !isList && (
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+                        <div className="flex items-center gap-1.5 text-[9px] text-inherit opacity-60 font-bold uppercase">
+                            <Clock size={12} />
+                            {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="flex gap-1.5">
+                            {order.paymentStatus === 'payment_pending' && (
+                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20 font-black tracking-tighter uppercase">
+                                    PAYING
+                                </span>
+                            )}
+                            {order.orderStatus === 'ready' && order.paymentStatus !== 'payment_pending' && (
+                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--status-ready-bg)] text-[var(--status-ready)] border border-[var(--status-ready-border)] font-black tracking-tighter uppercase animate-pulse">
+                                    READY
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </button>
     );
@@ -116,7 +129,7 @@ const Receipt = ({ order, formatPrice, settings }) => (
                 </tr>
             </thead>
             <tbody>
-                {order.items?.map((item, i) => (
+                {order.items?.filter(item => item.status?.toUpperCase() !== 'CANCELLED').map((item, i) => (
                     <tr key={i} className="border-b border-dashed border-gray-200">
                         <td className="py-2">{item.name}</td>
                         <td className="py-2 text-center">{item.quantity}</td>
@@ -366,6 +379,7 @@ const CashierDashboard = () => {
                                         selected={selectedOrder?._id === order._id}
                                         onClick={() => handleSelect(order)}
                                         formatPrice={formatPrice}
+                                        viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'compact'}
                                     />
                                 ))
                             )}
@@ -411,13 +425,21 @@ const CashierDashboard = () => {
                                 <div className="flex-shrink-0 p-4 md:p-5 bg-[var(--theme-bg-card)] border-t border-[var(--theme-border)]">
                                     {/* Kitchen waiting banner */}
                                     {!isKitchenReady && !paymentSuccess && selectedOrder.paymentStatus !== 'paid' && (
-                                        <div className="mb-4 flex items-center gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 animate-fade-in">
-                                            <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                                                <Clock size={18} className="text-amber-400 animate-pulse" />
+                                        <div 
+                                            className="mb-4 flex items-center gap-3 p-3.5 rounded-xl border animate-fade-in transition-colors"
+                                            style={{ 
+                                                backgroundColor: `var(--status-${selectedOrder.orderStatus?.toLowerCase()}-bg)`,
+                                                borderColor: `var(--status-${selectedOrder.orderStatus?.toLowerCase()}-border)`
+                                            }}
+                                        >
+                                            <div className="w-9 h-9 rounded-lg bg-black/5 flex items-center justify-center flex-shrink-0">
+                                                <Clock size={18} className="animate-pulse" style={{ color: `var(--status-${selectedOrder.orderStatus?.toLowerCase()})` }} />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-amber-400">Waiting for kitchen to complete order.</p>
-                                                <p className="text-[10px] text-amber-400/60 mt-0.5 uppercase font-semibold tracking-wider">
+                                                <p className="text-sm font-bold" style={{ color: `var(--status-${selectedOrder.orderStatus?.toLowerCase()})` }}>
+                                                    Waiting for kitchen to complete order.
+                                                </p>
+                                                <p className="text-[10px] mt-0.5 uppercase font-semibold tracking-wider opacity-60" style={{ color: `var(--status-${selectedOrder.orderStatus?.toLowerCase()})` }}>
                                                     Status: {selectedOrder.orderStatus?.toUpperCase() || 'UNKNOWN'} • Payment locked
                                                 </p>
                                             </div>

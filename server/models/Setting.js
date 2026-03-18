@@ -14,6 +14,15 @@ const fmt = (doc) => doc ? {
     secondaryQrUrl:    doc.secondary_qr_url   || null,
     standardQrFileId:  doc.standard_qr_file_id  || null,
     secondaryQrFileId: doc.secondary_qr_file_id || null,
+    pendingColor:      doc.pending_color    || '#3b82f6', // blue-500
+    acceptedColor:     doc.accepted_color   || '#8b5cf6', // violet-500
+    preparingColor:    doc.preparing_color  || '#f59e0b', // amber-500
+    readyColor:        doc.ready_color      || '#10b981', // emerald-500
+    dashboardView:     doc.dashboard_view   || 'all', // one, two, all
+    dineInEnabled:     doc.dine_in_enabled !== false, 
+    tableMapEnabled:    doc.table_map_enabled !== false,
+    takeawayEnabled:    doc.takeaway_enabled !== false,
+    waiterServiceEnabled: doc.waiter_service_enabled !== false,
     createdAt:         doc.$createdAt,
     updatedAt:         doc.$updatedAt,
 } : null;
@@ -37,7 +46,16 @@ const Setting = {
                         currency: 'INR',
                         currency_symbol: '₹',
                         tax_rate: 5.00,
-                        gst_number: ''
+                        gst_number: '',
+                        pending_color: '#3b82f6',
+                        accepted_color: '#8b5cf6',
+                        preparing_color: '#f59e0b',
+                        ready_color: '#10b981',
+                        dashboard_view: 'all',
+                        dine_in_enabled: true,
+                        table_map_enabled: true,
+                        takeaway_enabled: true,
+                        waiter_service_enabled: true
                     }
                 );
                 return fmt(newDoc);
@@ -62,26 +80,51 @@ const Setting = {
         return fmt(updated);
     },
 
-    async update({ restaurantName, address, currency, currencySymbol, taxRate, gstNumber }) {
+    async update({ restaurantName, address, currency, currencySymbol, taxRate, gstNumber, pendingColor, acceptedColor, preparingColor, readyColor, dashboardView, dineInEnabled, tableMapEnabled, takeawayEnabled, waiterServiceEnabled }) {
+        console.log('[Setting] Update raw input:', { restaurantName, taxRate, pendingColor });
         await this.get(); // ensures row exists
-        
+
         const data = {};
         if (restaurantName  !== undefined) data.restaurant_name = restaurantName;
         if (address         !== undefined) data.address = address;
         if (currency        !== undefined) data.currency = currency;
         if (currencySymbol  !== undefined) data.currency_symbol = currencySymbol;
-        if (taxRate         !== undefined) data.tax_rate = parseFloat(taxRate);
+        
+        if (taxRate         !== undefined) {
+            const val = parseFloat(taxRate);
+            if (!isNaN(val)) data.tax_rate = val;
+        }
+
         if (gstNumber       !== undefined) data.gst_number = gstNumber;
+        if (pendingColor)   data.pending_color   = pendingColor;
+        if (acceptedColor)  data.accepted_color  = acceptedColor;
+        if (preparingColor) data.preparing_color = preparingColor;
+        if (readyColor)     data.ready_color     = readyColor;
+        if (dashboardView)  data.dashboard_view  = dashboardView;
+        if (dineInEnabled  !== undefined) data.dine_in_enabled = dineInEnabled;
+        if (tableMapEnabled !== undefined) data.table_map_enabled = tableMapEnabled;
+        if (takeawayEnabled !== undefined) data.takeaway_enabled = takeawayEnabled;
+        if (waiterServiceEnabled !== undefined) data.waiter_service_enabled = waiterServiceEnabled;
 
         if (Object.keys(data).length === 0) return this.get();
 
-        const updated = await databases.updateDocument(
-            databaseId,
-            COLLECTIONS.settings,
-            SETTINGS_DOC_ID,
-            data
-        );
-        return fmt(updated);
+        console.log('[Setting] Updating Appwrite with:', data);
+        try {
+            const updated = await databases.updateDocument(
+                databaseId,
+                COLLECTIONS.settings,
+                SETTINGS_DOC_ID,
+                data
+            );
+            return fmt(updated);
+        } catch (error) {
+            console.error('[Setting] Appwrite Update Error:', {
+                message: error.message,
+                code: error.code,
+                dataRequested: data
+            });
+            throw error;
+        }
     },
 };
 

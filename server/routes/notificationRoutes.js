@@ -6,6 +6,7 @@ const {
     markAsRead,
     markAllAsRead,
     createOfferNotification,
+    testNotification,
 } = require('../controllers/notificationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -20,7 +21,8 @@ router.get('/unread-count', authorize('admin', 'waiter', 'kitchen', 'cashier'), 
 router.put('/read', authorize('admin', 'waiter', 'kitchen', 'cashier'), markAsRead);
 router.put('/read-all', authorize('admin', 'waiter', 'kitchen', 'cashier'), markAllAsRead);
 
-// ── Admin-only: offer/announcement ─────────────────────────────────────────
+// ── Admin-only: offer/announcement/test ─────────────────────────────────────────
 router.post('/offer', authorize('admin'), createOfferNotification);
+router.post('/test', authorize('admin'), testNotification);
 
 module.exports = router;

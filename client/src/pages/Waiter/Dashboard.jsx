@@ -11,15 +11,18 @@ import { tokenColors } from '../../utils/tokenColors';
 
 /* ── Status colors ───────────────────────────────────────────────────────── */
 const statusStyle = {
-    ready: { bar: 'bg-emerald-500', badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
-    preparing: { bar: 'bg-amber-500', badge: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
-    pending: { bar: 'bg-blue-500', badge: 'bg-blue-500/15 text-blue-400 border-blue-500/25' },
-    accepted: { bar: 'bg-indigo-500', badge: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25' },
+    ready: { bar: 'bg-[var(--status-ready)]', badge: 'bg-[var(--status-ready-bg)] text-[var(--status-ready)] border-[var(--status-ready-border)]' },
+    preparing: { bar: 'bg-[var(--status-preparing)]', badge: 'bg-[var(--status-preparing-bg)] text-[var(--status-preparing)] border-[var(--status-preparing-border)]' },
+    pending: { bar: 'bg-[var(--status-pending)]', badge: 'bg-[var(--status-pending-bg)] text-[var(--status-pending)] border-[var(--status-pending-border)]' },
+    accepted: { bar: 'bg-[var(--status-accepted)]', badge: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted)] border-[var(--status-accepted-border)]' },
     cancelled: { bar: 'bg-red-500', badge: 'bg-red-500/15 text-red-500 border-red-500/25' },
 };
 
 /* ── Order Card ──────────────────────────────────────────────────────────── */
-const OrderCard = memo(({ order, formatPrice, onCancel }) => {
+const OrderCard = memo(({ order, formatPrice, onCancel, viewType = 'normal' }) => {
+    const isCompact = viewType === 'compact' || viewType === 'mini';
+    const isMini = viewType === 'mini';
+    const isList = viewType === 'list';
     const s = statusStyle[order.orderStatus] || statusStyle.pending;
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-main)]';
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
@@ -27,46 +30,38 @@ const OrderCard = memo(({ order, formatPrice, onCancel }) => {
     return (
         <div className={`
             ${tColor} ${isReady ? 'animate-pulse' : ''}
-            p-3 sm:p-5 rounded-2xl border-l-[6px] sm:border-l-[10px] shadow-lg transition-all duration-200 flex flex-col group token-tap
-            hover:shadow-2xl active:scale-95
+            rounded-xl border-l-[4px] sm:border-l-[6px] shadow-sm transition-all duration-200 flex flex-col group token-tap
+            ${isList ? 'p-2 flex-row items-center border-l-6' : (isMini ? 'p-2 border-l-[4px]' : (isCompact ? 'p-2.5 sm:p-3 border-l-[6px]' : 'p-3 sm:p-4'))}
+            ${order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
+(order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
+ (order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
+  (order.orderStatus === 'ready' ? 'border-l-[var(--status-ready)]' :
+   'border-l-red-500')))}
+            hover:shadow-md active:scale-95
         `}>
-            <div className="flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-2.5 gap-2">
+            <div className={`flex-1 flex ${isList ? 'flex-row items-center justify-between w-full' : 'flex-col'}`}>
+                <div className={`flex justify-between items-start gap-1 ${isList ? 'w-48 shrink-0 mb-0' : (isMini ? 'mb-1' : 'mb-2')}`}>
                     <div className="min-w-0 text-left">
-                        <h3 className="font-extrabold text-inherit text-sm sm:text-base tracking-tight">{order.orderNumber}</h3>
-                        <p className="text-[9px] sm:text-[10px] text-inherit opacity-70 uppercase tracking-[0.1em] font-black mt-0.5">
-                            {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId || '?'}` : `Token ${order.tokenNumber}`}
+                        <h3 className={`font-black text-inherit tracking-tighter ${isMini ? 'text-[10px]' : (isCompact ? 'text-xs' : 'text-sm')}`}>{order.orderNumber}</h3>
+                        <p className={`text-inherit opacity-60 uppercase font-black mt-0 ${isMini ? 'text-[7px]' : 'text-[9px]'}`}>
+                            {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
                         </p>
                     </div>
-                    <StatusBadge status={order.orderStatus} />
                 </div>
 
-                <p className="text-sm text-inherit opacity-85 line-clamp-2 flex-1 text-left font-medium">
-                    {order.items?.map(i => `${i.quantity}× ${i.name}`).join(', ') || 'No items'}
-                </p>
-
-                {order.orderStatus === 'cancelled' && (
-                    <div className="mt-2 text-[10px] text-red-400 font-bold italic text-left bg-red-500/10 px-2 py-1 rounded">
-                        {order.cancelledBy}: {order.cancelReason}
-                    </div>
+                {!isMini && !isCompact && (
+                    <p className={`text-inherit opacity-85 line-clamp-1 flex-1 text-left font-medium ${isList ? 'px-4' : 'text-[11px] mb-2'}`}>
+                        {order.items?.map(i => `${i.quantity} ${i.name}`).join(', ') || 'No items'}
+                    </p>
                 )}
 
-                <div className="flex justify-between items-center border-t border-white/10 mt-4 pt-3">
-                    <div className="flex items-center gap-1.5 text-[10px] text-inherit opacity-60 font-bold uppercase">
-                        <Clock size={12} />
+                <div className={`flex justify-between items-center ${isList ? 'w-64 gap-6 shrink-0' : (isMini ? 'mt-1 pt-1 border-t border-white/5' : 'border-t border-white/10 mt-2 pt-2')}`}>
+                    <div className={`flex items-center gap-1 text-inherit opacity-50 font-bold uppercase ${isMini ? 'text-[6px]' : 'text-[8px]'}`}>
+                        <Clock size={isMini ? 8 : 10} />
                         {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    <div className="flex items-center gap-4">
-                        {order.orderStatus === 'pending' && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onCancel(order); }}
-                                className="p-2 text-red-500 hover:bg-red-500/15 rounded-xl transition-all"
-                                title="Cancel Order"
-                            >
-                                <XCircle size={18} />
-                            </button>
-                        )}
-                        <span className="font-black text-inherit text-base">{formatPrice(order.finalAmount)}</span>
+                    <div className="flex items-center gap-2">
+                        <span className={`font-black text-inherit ${isMini ? 'text-[10px]' : 'text-xs'}`}>{formatPrice(order.finalAmount)}</span>
                     </div>
                 </div>
             </div>
@@ -212,32 +207,38 @@ const WaiterDashboard = () => {
                     </div>
                 </div>
                 {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-2">
-                    <button
-                        onClick={() => setShowTables(t => !t)}
-                        className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all min-h-[44px] border ${
-                            showTables
-                                ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-600 shadow-sm'
-                                : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:border-gray-400'
-                        }`}
-                    >
-                        <Grid size={13} />
-                        <span className="truncate">Tables</span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/dine-in')}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-orange-500/20 active:scale-95 min-h-[44px]"
-                    >
-                        <Utensils size={13} />
-                        <span className="truncate">Dine In</span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/take-away')}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-blue-600/20 active:scale-95 min-h-[44px]"
-                    >
-                        <Package size={13} />
-                        <span className="truncate">Takeaway</span>
-                    </button>
+                <div className="flex flex-row flex-wrap justify-end gap-2">
+                    {settings?.tableMapEnabled !== false && (
+                        <button
+                            onClick={() => setShowTables(t => !t)}
+                            className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all min-h-[44px] border ${
+                                showTables
+                                    ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-600 shadow-sm'
+                                    : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:border-gray-400'
+                            }`}
+                        >
+                            <Grid size={13} />
+                            <span className="truncate">Tables</span>
+                        </button>
+                    )}
+                    {settings?.dineInEnabled !== false && (
+                        <button
+                            onClick={() => navigate('/dine-in')}
+                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-orange-500/20 active:scale-95 min-h-[44px]"
+                        >
+                            <Utensils size={13} />
+                            <span className="truncate">Dine In</span>
+                        </button>
+                    )}
+                    {settings?.takeawayEnabled !== false && (
+                        <button
+                            onClick={() => navigate('/take-away')}
+                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-blue-600/20 active:scale-95 min-h-[44px]"
+                        >
+                            <Package size={13} />
+                            <span className="truncate">Takeaway</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -277,10 +278,10 @@ const WaiterDashboard = () => {
                 {activeTab === 'active' && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {[
-                            { key: 'pending',   count: counts.pending,   dot: 'bg-blue-500',    label: 'Pending',  activeText: 'text-blue-600',   activeBg: 'bg-blue-500/10 border-blue-500/35',   hover: 'hover:border-blue-400/50' },
-                            { key: 'accepted',  count: counts.accepted,  dot: 'bg-orange-500',  label: 'Accepted', activeText: 'text-orange-600', activeBg: 'bg-orange-500/10 border-orange-500/35', hover: 'hover:border-orange-400/50' },
-                            { key: 'preparing', count: counts.preparing, dot: 'bg-amber-500',   label: 'Cooking',  activeText: 'text-amber-600',  activeBg: 'bg-amber-500/10 border-amber-500/35',  hover: 'hover:border-amber-400/50' },
-                            { key: 'ready',     count: counts.ready,     dot: 'bg-emerald-500', label: 'Ready',    activeText: 'text-emerald-600', activeBg: 'bg-emerald-500/10 border-emerald-500/35', hover: 'hover:border-emerald-400/50' },
+                            { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Pending',  activeText: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',   hover: 'hover:border-[var(--status-pending-border)]' },
+                            { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'Accepted', activeText: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',  hover: 'hover:border-[var(--status-accepted-border)]' },
+                            { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]',  label: 'Cooking',  activeText: 'text-[var(--status-preparing)]', activeBg: 'bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]', hover: 'hover:border-[var(--status-preparing-border)]' },
+                            { key: 'ready',     count: counts.ready,     dot: 'bg-[var(--status-ready)]',      label: 'Ready',    activeText: 'text-[var(--status-ready)]',     activeBg: 'bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]',     hover: 'hover:border-[var(--status-ready-border)]' },
                         ].map(({ key, count, dot, label, activeText, activeBg, hover }) => (
                             <button
                                 key={key}
@@ -305,7 +306,6 @@ const WaiterDashboard = () => {
                     <TableGrid
                         allowedStatuses={['available']}
                         showCleanAction={true}
-                        onSelectTable={() => navigate('/waiter/new-order')}
                         onReserve={handleReserveTable}
                         onCancelReservation={handleCancelReservation}
                     />
@@ -334,13 +334,18 @@ const WaiterDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
+                <div className={`grid gap-2 sm:gap-3 ${
+                    settings.dashboardView === 'one' ? 'grid-cols-1' :
+                    settings.dashboardView === 'two' ? 'grid-cols-1 md:grid-cols-2' :
+                    'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                }`}>
                     {filteredOrders.map(order => (
                         <div key={order._id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
                             <OrderCard
                                 order={order}
                                 formatPrice={formatPrice}
                                 onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
+                                viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
                             />
                         </div>
                     ))}

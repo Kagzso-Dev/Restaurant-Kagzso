@@ -9,6 +9,8 @@ const {
     processPayment,
     cancelOrder,
     cancelOrderItem,
+    addOrderItems,
+    getOrderById,
 } = require('../controllers/orderController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -22,6 +24,9 @@ router.route('/')
     .post(authorize('waiter', 'admin', 'cashier'), createOrder)
     .get(authorize('kitchen', 'cashier', 'admin', 'waiter'), getOrders);
 
+router.route('/:id')
+    .get(authorize('admin', 'cashier', 'waiter'), getOrderById);
+
 router.route('/:id/status')
     .put(authorize('kitchen', 'admin', 'cashier'), updateOrderStatus);
 
@@ -33,6 +38,9 @@ router.route('/:id/items/:itemId/status')
 
 router.route('/:id/items/:itemId/cancel')
     .put(authorize('waiter', 'kitchen', 'admin'), cancelOrderItem);
+
+router.route('/:id/add-items')
+    .put(authorize('waiter', 'admin', 'cashier'), addOrderItems);
 
 router.route('/:id/payment')
     .put(authorize('cashier', 'admin'), processPayment);

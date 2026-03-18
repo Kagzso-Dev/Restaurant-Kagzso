@@ -53,12 +53,12 @@ const WorkingProcess = () => {
     }, [user, socket, selectedOrder]);
 
     const getStatusColor = (status) => {
-        switch (status) {
-            case 'pending': return 'text-blue-400 bg-blue-900/30';
-            case 'accepted': return 'text-purple-400 bg-purple-900/30';
-            case 'preparing': return 'text-orange-400 bg-orange-900/30';
-            case 'ready': return 'text-green-400 bg-green-900/30';
-            default: return 'text-gray-400 bg-gray-900/30';
+        switch (status?.toLowerCase()) {
+            case 'pending':   return 'text-[var(--status-pending)] bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]';
+            case 'accepted':  return 'text-[var(--status-accepted)] bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]';
+            case 'preparing': return 'text-[var(--status-preparing)] bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]';
+            case 'ready':     return 'text-[var(--status-ready)] bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]';
+            default:          return 'text-gray-400 bg-gray-900/30 border-gray-700/30';
         }
     };
 
@@ -197,10 +197,14 @@ const WorkingProcess = () => {
                                                     </td>
                                                     <td className="py-3 text-center font-bold text-lg">{item.quantity}</td>
                                                     <td className="py-3 text-right">
-                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold border ${item.status === 'ready' ? 'border-green-600 text-green-600' :
-                                                            item.status === 'cancelled' ? 'border-red-600 text-red-600 line-through' :
-                                                                'border-gray-400 text-gray-600'
-                                                            }`}>
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold border transition-colors ${
+                                                            item.status?.toLowerCase() === 'pending'   ? 'border-[var(--status-pending)] text-[var(--status-pending)]' :
+                                                            item.status?.toLowerCase() === 'accepted'  ? 'border-[var(--status-accepted)] text-[var(--status-accepted)]' :
+                                                            item.status?.toLowerCase() === 'preparing' ? 'border-[var(--status-preparing)] text-[var(--status-preparing)]' :
+                                                            item.status?.toLowerCase() === 'ready'     ? 'border-[var(--status-ready)] text-[var(--status-ready)]' :
+                                                            item.status?.toUpperCase() === 'CANCELLED' ? 'border-red-600 text-red-600 line-through' :
+                                                            'border-gray-400 text-gray-600'
+                                                        }`}>
                                                             {item.status}
                                                         </span>
                                                     </td>
@@ -212,10 +216,12 @@ const WorkingProcess = () => {
                                     {/* Order Status */}
                                     <div className="border-t-2 border-black pt-4 text-center relative z-10">
                                         <p className="text-xs font-bold uppercase mb-2">Order Status</p>
-                                        <div className={`text-xl font-black uppercase tracking-widest py-2 border-2 ${selectedOrder.orderStatus === 'ready' ? 'border-green-600 text-green-600' :
-                                            selectedOrder.orderStatus === 'preparing' ? 'border-orange-500 text-orange-500' :
-                                                'border-blue-500 text-blue-500'
-                                            }`}>
+                                        <div className={`text-xl font-black uppercase tracking-widest py-2 border-2 transition-colors ${
+                                            selectedOrder.orderStatus === 'ready'     ? 'border-[var(--status-ready)] text-[var(--status-ready)]' :
+                                            selectedOrder.orderStatus === 'preparing' ? 'border-[var(--status-preparing)] text-[var(--status-preparing)]' :
+                                            selectedOrder.orderStatus === 'accepted'  ? 'border-[var(--status-accepted)] text-[var(--status-accepted)]' :
+                                            'border-[var(--status-pending)] text-[var(--status-pending)]'
+                                        }`}>
                                             {selectedOrder.orderStatus}
                                         </div>
                                     </div>

@@ -11,12 +11,14 @@ const typeConfig = {
     ORDER_CANCELLED: { icon: X, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Cancelled' },
     OFFER_ANNOUNCEMENT: { icon: Megaphone, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', label: 'Offer' },
     SYSTEM_ALERT: { icon: AlertTriangle, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', label: 'System' },
+    WAITER_REQUEST: { icon: Bell, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', label: 'Staff Request' },
 };
 
 // ── Sound alert types per role ───────────────────────────────────────────────
 const SOUND_TRIGGERS = {
     kitchen: ['NEW_ORDER'],
     cashier: ['PAYMENT_SUCCESS'],
+    waiter: ['WAITER_REQUEST', 'ORDER_READY', 'NEW_ORDER'],
 };
 
 // ── Time-ago helper ──────────────────────────────────────────────────────────

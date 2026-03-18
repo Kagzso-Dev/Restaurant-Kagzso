@@ -1,17 +1,62 @@
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
-import { Search, Eye, ShoppingBag } from 'lucide-react';
+import { Search, Eye, ShoppingBag, Calendar, X } from 'lucide-react';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
 
+const DATE_RANGES = [
+    { label: 'Today', value: 'today' },
+    { label: 'Week', value: 'week' },
+    { label: 'Month', value: 'month' },
+    { label: 'Year', value: 'year' },
+];
+
+function getDateRange(rangeValue, customDate) {
+    const now = new Date();
+    if (rangeValue === 'custom' && customDate) {
+        const d = new Date(customDate);
+        return {
+            start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0),
+            end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999),
+        };
+    }
+    if (rangeValue === 'today') {
+        return {
+            start: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0),
+            end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+        };
+    }
+    if (rangeValue === 'week') {
+        const day = now.getDay();
+        const start = new Date(now); start.setDate(now.getDate() - day); start.setHours(0, 0, 0, 0);
+        const end = new Date(now); end.setDate(now.getDate() + (6 - day)); end.setHours(23, 59, 59, 999);
+        return { start, end };
+    }
+    if (rangeValue === 'month') {
+        return {
+            start: new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0),
+            end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
+        };
+    }
+    if (rangeValue === 'year') {
+        return {
+            start: new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0),
+            end: new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999),
+        };
+    }
+    return null;
+}
+
 const AdminOrders = () => {
     const [orders, setOrders] = useState([]);
     const [filteredOrders, setFilteredOrders] = useState([]);
-    const [filterStatus, setFilterStatus] = useState('all');
+    const [dateRange, setDateRange] = useState('today');
+    const [customDate, setCustomDate] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const dateInputRef = useRef(null);
     const { user, formatPrice, socket } = useContext(AuthContext);
 
     const fetchOrders = useCallback(async () => {
@@ -53,12 +98,15 @@ const AdminOrders = () => {
         }
     }, [user, socket, fetchOrders]);
 
-
     useEffect(() => {
         let temp = [...orders];
 
-        if (filterStatus !== 'all') {
-            temp = temp.filter(o => o.orderStatus === filterStatus);
+        const range = getDateRange(dateRange, customDate);
+        if (range) {
+            temp = temp.filter(o => {
+                const d = new Date(o.createdAt);
+                return d >= range.start && d <= range.end;
+            });
         }
 
         if (searchQuery) {
@@ -69,7 +117,17 @@ const AdminOrders = () => {
         }
 
         setFilteredOrders(temp);
-    }, [orders, filterStatus, searchQuery]);
+    }, [orders, dateRange, customDate, searchQuery]);
+
+    const handleCalendarChange = (e) => {
+        setCustomDate(e.target.value);
+        setDateRange('custom');
+    };
+
+    const clearCustomDate = () => {
+        setCustomDate('');
+        setDateRange('today');
+    };
 
     const handleProcessPayment = async (order) => {
         if (!window.confirm(`Process payment of ${formatPrice(order.finalAmount)} for ${order.orderNumber}?`)) return;
@@ -91,16 +149,23 @@ const AdminOrders = () => {
         }
     };
 
+    const activeLabel = dateRange === 'custom' && customDate
+        ? new Date(customDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        : DATE_RANGES.find(r => r.value === dateRange)?.label || 'Today';
 
     return (
         <div className="space-y-6 animate-fade-in text-[var(--theme-text-main)]">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-[var(--theme-bg-card)] p-6 rounded-3xl shadow-xl border border-[var(--theme-border)]">
                 <div>
                     <h2 className="text-2xl font-black text-[var(--theme-text-main)]">Order History</h2>
-                    <p className="text-sm text-[var(--theme-text-muted)] mt-1">Real-time performance overview</p>
+                    <p className="text-sm text-[var(--theme-text-muted)] mt-1">
+                        Showing orders for: <span className="font-bold text-orange-500">{activeLabel}</span>
+                        {' '}— <span className="font-semibold">{filteredOrders.length}</span> order{filteredOrders.length !== 1 ? 's' : ''}
+                    </p>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col md:flex-row gap-3">
+                    {/* Search */}
                     <div className="relative group">
                         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--theme-text-muted)] group-focus-within:text-orange-500 transition-colors" size={18} />
                         <input
@@ -108,23 +173,57 @@ const AdminOrders = () => {
                             placeholder="Search Order #..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-12 pr-4 py-3 bg-[var(--theme-bg-deep)] border border-[var(--theme-border)] rounded-2xl text-[var(--theme-text-main)] focus:outline-none focus:ring-2 focus:ring-orange-500/50 w-full md:w-64 transition-all"
+                            className="pl-12 pr-4 py-3 bg-[var(--theme-bg-deep)] border border-[var(--theme-border)] rounded-2xl text-[var(--theme-text-main)] focus:outline-none focus:ring-2 focus:ring-orange-500/50 w-full md:w-52 transition-all"
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 bg-[var(--theme-bg-deep)] p-1.5 rounded-2xl border border-[var(--theme-border)]">
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="bg-transparent px-4 py-1.5 text-sm text-[var(--theme-text-main)] font-bold focus:outline-none cursor-pointer"
+                    {/* Quick date range buttons */}
+                    <div className="flex items-center gap-1 bg-[var(--theme-bg-deep)] p-1.5 rounded-2xl border border-[var(--theme-border)]">
+                        {DATE_RANGES.map(r => (
+                            <button
+                                key={r.value}
+                                onClick={() => { setDateRange(r.value); setCustomDate(''); }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 ${dateRange === r.value
+                                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30'
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-card)]'
+                                    }`}
+                            >
+                                {r.label}
+                            </button>
+                        ))}
+                    </div>
+                    {/* Calendar picker */}
+                    <div className="relative flex items-center">
+                        <button
+                            onClick={() => dateInputRef.current?.showPicker()}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all duration-200 ${dateRange === 'custom'
+                                    ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/30'
+                                    : 'bg-[var(--theme-bg-deep)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                                }`}
                         >
-                            <option value="all">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="preparing">Preparing</option>
-                            <option value="ready">Ready</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
+                            <Calendar size={16} />
+                            <span className="text-xs font-bold whitespace-nowrap">
+                                {dateRange === 'custom' && customDate
+                                    ? new Date(customDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                                    : 'Pick Date'}
+                            </span>
+                        </button>
+                        <input
+                            ref={dateInputRef}
+                            type="date"
+                            value={customDate}
+                            onChange={handleCalendarChange}
+                            max={new Date().toISOString().split('T')[0]}
+                            className="absolute left-0 opacity-0 pointer-events-none w-0 h-0"
+                        />
+                        {dateRange === 'custom' && customDate && (
+                            <button
+                                onClick={clearCustomDate}
+                                className="ml-1 p-1.5 rounded-xl bg-[var(--theme-bg-deep)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-red-500 transition-colors"
+                            >
+                                <X size={13} />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -147,16 +246,13 @@ const AdminOrders = () => {
                                 filteredOrders.map(order => (
                                     <tr
                                         key={order._id}
-                                        className={`
-                                            group transition-all duration-300 border-b border-[var(--theme-border)]
-                                            ${tokenColors[order.orderStatus] || 'hover:bg-[var(--theme-bg-hover)]'}
-                                        `}
+                                        className={`group transition-all duration-300 border-b border-[var(--theme-border)] ${tokenColors[order.orderStatus] || 'hover:bg-[var(--theme-bg-hover)]'}`}
                                     >
                                         <td className="px-3 sm:px-6 py-3 sm:py-4">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-inherit mb-0.5 text-xs sm:text-sm">{order.orderNumber}</span>
                                                 <span className="text-[10px] text-inherit opacity-60 font-mono italic">
-                                                    {new Date(order.createdAt).toLocaleTimeString()}
+                                                    {new Date(order.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
                                         </td>
@@ -197,7 +293,7 @@ const AdminOrders = () => {
                                         <div className="flex flex-col items-center justify-center text-gray-500 opacity-50">
                                             <ShoppingBag size={48} className="mb-4" />
                                             <p className="text-lg font-bold">No orders found</p>
-                                            <p className="text-sm">Try adjusting your filters or search terms</p>
+                                            <p className="text-sm">Try a different date range or search term</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -213,6 +309,7 @@ const AdminOrders = () => {
                 onClose={() => setSelectedOrder(null)}
                 formatPrice={formatPrice}
                 onProcessPayment={handleProcessPayment}
+                userRole={user?.role}
             />
         </div>
     );

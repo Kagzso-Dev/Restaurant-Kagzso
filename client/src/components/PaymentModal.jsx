@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     X, Banknote, QrCode,
-    CheckCircle, AlertCircle, Loader2, ArrowRight, ArrowLeft
+    CheckCircle, AlertCircle, Loader2, ArrowRight, ArrowLeft,
+    Upload, Camera, Save, UploadCloud
 } from 'lucide-react';
 
 /* ── Payment method config ────────────────────────────────────────────── */
@@ -70,6 +71,9 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
     // QR state
     const [qrUrls, setQrUrls] = useState({ standard: null, secondary: null });
     const [selectedQrType, setSelectedQrType] = useState('standard');
+    const [uploading, setUploading] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [localMsg, setLocalMsg] = useState(null);
 
     const modalRef = useRef(null);
     const inputRef = useRef(null);
@@ -141,7 +145,39 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                 secondary: res.data.secondaryQrUrl || null,
             }))
             .catch(() => {});
-    }, [method, api]);
+    }, [method, api, selectedFile]);
+
+    /* ── Handle QR File Upload ───────────────────────────────────── */
+    const handleFile = (file) => {
+        if (!file) return;
+        setSelectedFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setQrUrls(prev => ({ ...prev, [selectedQrType]: reader.result }));
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleUpload = async () => {
+        if (!selectedFile) return;
+        setUploading(true);
+        setLocalMsg(null);
+        try {
+            const formData = new FormData();
+            formData.append('type', selectedQrType);
+            formData.append('qr', selectedFile);
+
+            await api.post('/api/settings/qr', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setLocalMsg({ ok: true, text: 'System QR Updated!' });
+            setSelectedFile(null);
+            setTimeout(() => setLocalMsg(null), 3000);
+        } catch (err) {
+            setLocalMsg({ ok: false, text: 'Upload failed' });
+        }
+        setUploading(false);
+    };
 
     /* ── Select method ────────────────────────────────────────────── */
     const selectMethod = (m) => {
@@ -264,7 +300,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                         <p className="text-[10px] text-[var(--theme-text-muted)] font-bold uppercase tracking-widest mb-1">Amount Due</p>
                         <p className="text-3xl font-black text-orange-400">{formatPrice(total)}</p>
                         <p className="text-xs text-[var(--theme-text-subtle)] mt-1">
-                            {order.items?.filter(i => i.status !== 'CANCELLED').length || 0} items •{' '}
+                            {order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').length || 0} items •{' '}
                             {new Date(order.createdAt).toLocaleTimeString()}
                         </p>
                     </div>
@@ -414,52 +450,97 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                             {/* ── QR Form ─────────────────────────── */}
                             {method.id === 'qr' && (
                                 <div className="space-y-4">
-                                    {/* Standard / Secondary toggle */}
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {QR_TYPES.map(qt => (
-                                            <button
-                                                key={qt.id}
-                                                type="button"
-                                                onClick={() => setSelectedQrType(qt.id)}
-                                                className={`
-                                                    py-2 rounded-xl text-xs font-bold border transition-all
-                                                    ${selectedQrType === qt.id
-                                                        ? 'bg-violet-600 text-white border-violet-600 shadow-lg shadow-violet-500/20'
-                                                        : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-violet-500/40'
-                                                    }
-                                                `}
-                                            >
-                                                {qt.label}
-                                            </button>
-                                        ))}
-                                    </div>
+                                    {/* Standard / Secondary toggle + Upload tools */}
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1 grid grid-cols-2 gap-2">
+                                            {QR_TYPES.map(qt => (
+                                                <button
+                                                    key={qt.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedQrType(qt.id);
+                                                        setSelectedFile(null);
+                                                        setLocalMsg(null);
+                                                    }}
+                                                    className={`
+                                                        py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all
+                                                        ${selectedQrType === qt.id
+                                                            ? 'bg-violet-600 text-white border-violet-600 shadow-lg shadow-violet-500/20'
+                                                            : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-violet-500/40'
+                                                        }
+                                                    `}
+                                                >
+                                                    {qt.label}
+                                                </button>
+                                            ))}
+                                        </div>
 
-                                    {/* QR image */}
-                                    <div className="bg-white rounded-2xl p-5 flex flex-col items-center">
-                                        {qrUrls[selectedQrType] ? (
-                                            <>
-                                                <img
-                                                    src={qrUrls[selectedQrType]}
-                                                    alt="Payment QR"
-                                                    className="w-56 h-56 object-contain"
-                                                />
-                                                <p className="mt-3 text-lg font-black text-gray-900">
-                                                    Pay {formatPrice(total)}
-                                                </p>
-                                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                                    {selectedQrType === 'standard' ? 'Standard QR' : 'Secondary QR'} • Scan with any UPI app
-                                                </p>
-                                            </>
-                                        ) : (
-                                            <div className="w-56 h-56 flex flex-col items-center justify-center text-center gap-3">
-                                                <AlertCircle size={40} className="text-amber-500" />
-                                                <div>
-                                                    <p className="text-sm font-black text-gray-900 leading-tight">No payment QR uploaded yet</p>
-                                                    <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">Please contact admin</p>
-                                                </div>
+                                        {/* Action Icons (Visible ONLY for Secondary QR) */}
+                                        {selectedQrType === 'secondary' && (
+                                            <div className="flex items-center gap-1.5 px-1.5 py-1.5 bg-[var(--theme-bg-hover)] border border-[var(--theme-border)] rounded-xl animate-fade-in">
+                                                <label htmlFor="modal-qr-upload" title="Upload QR" className="p-2 bg-violet-600/10 hover:bg-violet-600/20 text-violet-400 rounded-lg cursor-pointer transition-colors active:scale-95">
+                                                    <Upload size={16} />
+                                                </label>
+                                                <input id="modal-qr-upload" type="file" accept="image/*" className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
+                                                
+                                                <label htmlFor="modal-qr-snap" title="Take Snap" className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg cursor-pointer transition-colors active:scale-95 border border-amber-500/20">
+                                                    <Camera size={16} />
+                                                </label>
+                                                <input id="modal-qr-snap" type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* QR image area with floating save */}
+                                    <div className="relative group">
+                                        <div className="bg-white rounded-2xl p-5 flex flex-col items-center border border-gray-200 shadow-inner overflow-hidden">
+                                            {qrUrls[selectedQrType] ? (
+                                                <div className="animate-fade-in flex flex-col items-center">
+                                                    <img
+                                                        src={qrUrls[selectedQrType]}
+                                                        alt="Payment QR"
+                                                        className="w-52 h-52 object-contain"
+                                                    />
+                                                    <p className="mt-2 text-lg font-black text-gray-900 leading-none">
+                                                        Total: {formatPrice(total)}
+                                                    </p>
+                                                    <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-widest font-bold">
+                                                        {selectedQrType === 'standard' ? 'Standard Account' : 'Temporary / Secondary Account'}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="w-52 h-52 flex flex-col items-center justify-center text-center gap-3">
+                                                    <UploadCloud size={44} className="text-gray-200 animate-pulse" />
+                                                    <div>
+                                                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest leading-tight">No QR Available</p>
+                                                        <p className="text-[9px] text-gray-400/60 mt-0.5">Click camera icon to upload</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Floating Save Button */}
+                                        {selectedFile && (
+                                            <button
+                                                onClick={handleUpload}
+                                                disabled={uploading}
+                                                className="absolute bottom-4 inset-x-4 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl animate-bounce-in flex items-center justify-center gap-2"
+                                            >
+                                                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                                {uploading ? 'Updating Server...' : 'Save QR to System'}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Feedback Message */}
+                                    {localMsg && (
+                                        <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide animate-fade-in ${
+                                            localMsg.ok ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+                                        }`}>
+                                            {localMsg.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                                            {localMsg.text}
+                                        </div>
+                                    )}
 
                                     {/* Confirmation Message */}
                                     <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">

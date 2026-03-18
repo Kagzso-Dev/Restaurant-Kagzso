@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
         currencySymbol: '₹',
         taxRate: 5,
         gstNumber: '',
+        dashboardView: 'all',
     });
 
     // ── Socket init (joins restaurant-specific + role-specific rooms) ──────────
@@ -178,6 +179,7 @@ export const AuthProvider = ({ children }) => {
             currencySymbol: '₹',
             taxRate: 5,
             gstNumber: '',
+            dashboardView: 'all',
         });
     };
 

@@ -516,27 +516,27 @@ svg {
 }
 
 .badge-pending {
-  background: rgba(59, 130, 246, 0.12);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: var(--status-pending-bg);
+  color: var(--status-pending);
+  border: 1px solid var(--status-pending-border);
 }
 
 .badge-accepted {
-  background: rgba(99, 102, 241, 0.12);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: var(--status-accepted-bg);
+  color: var(--status-accepted);
+  border: 1px solid var(--status-accepted-border);
 }
 
 .badge-preparing {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--status-preparing-bg);
+  color: var(--status-preparing);
+  border: 1px solid var(--status-preparing-border);
 }
 
 .badge-ready {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--status-ready-bg);
+  color: var(--status-ready);
+  border: 1px solid var(--status-ready-border);
 }
 
 .badge-completed {

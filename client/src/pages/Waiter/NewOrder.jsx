@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import {
     Search, ShoppingCart, ArrowLeft, ArrowRight,
@@ -18,6 +18,10 @@ import FoodItem from '../../components/FoodItem';
  */
 const NewOrder = () => {
     // ── State ────────────────────────────────────────────────────────
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const orderId = queryParams.get('orderId');
+
     const [step, setStep] = useState(1); // 1: Type, 2: Table, 3: Menu
     const [orderType, setOrderType] = useState(null); // 'dine-in', 'takeaway'
     const [selectedTable, setSelectedTable] = useState(null);
@@ -28,15 +32,53 @@ const NewOrder = () => {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isCartOpen, setIsCartOpen] = useState(false); // Mobile cart overlay toggle
+    const [currentOrder, setCurrentOrder] = useState(null);
     const [viewMode, setViewMode] = useState(() => localStorage.getItem('foodViewMode') || 'grid');
-
-    useEffect(() => {
-        localStorage.setItem('foodViewMode', viewMode);
-    }, [viewMode]);
-
 
     const { user, formatPrice, settings, socket } = useContext(AuthContext);
     const navigate = useNavigate();
+
+    // ── Load Existing Order context if orderId exists ───────────────
+    useEffect(() => {
+        if (orderId) {
+            const fetchOrder = async () => {
+                try {
+                    const res = await api.get(`/api/orders/${orderId}`, {
+                        headers: { Authorization: `Bearer ${user.token}` }
+                    });
+                    const order = res.data;
+                    setCurrentOrder(order);
+                    setOrderType(order.orderType);
+                    if (order.tableId) {
+                        setSelectedTable(order.tableId);
+                    }
+                    setStep(3); // Skip straight to menu
+                } catch (err) {
+                    console.error("NewOrder: Error fetching existing order", err);
+                    alert("Could not load existing order details");
+                }
+            };
+            fetchOrder();
+        }
+    }, [orderId, user.token]);
+
+    // Auto-skip logic based on available order types
+    useEffect(() => {
+        if (!settings || step !== 1) return;
+        
+        const dineOn = settings.dineInEnabled !== false;
+        const takeOn = settings.takeawayEnabled !== false;
+
+        if (dineOn && !takeOn) {
+            // Only Dine-In available
+            setOrderType('dine-in');
+            setStep(2);
+        } else if (!dineOn && takeOn) {
+            // Only Takeaway available
+            setOrderType('takeaway');
+            setStep(3);
+        }
+    }, [settings, step]);
 
     // ── Data Fetch ───────────────────────────────────────────────────
     useEffect(() => {
@@ -155,7 +197,7 @@ const NewOrder = () => {
 
         const orderData = {
             orderType,
-            tableId: selectedTable ? selectedTable._id : null,
+            tableId: selectedTable ? (selectedTable._id || selectedTable) : null,
             items: cart.map(i => ({
                 menuItemId: i._id,
                 name: i.name,
@@ -169,9 +211,15 @@ const NewOrder = () => {
         };
 
         try {
-            await api.post('/api/orders', orderData, {
-                headers: { Authorization: `Bearer ${user.token}` }
-            });
+            if (orderId) {
+                await api.put(`/api/orders/${orderId}/add-items`, orderData, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+            } else {
+                await api.post('/api/orders', orderData, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+            }
             navigate(user.role === 'waiter' ? '/waiter' : '/admin');
         } catch (error) {
             alert("Order failed: " + (error.response?.data?.message || "Server Error"));
@@ -193,33 +241,37 @@ const NewOrder = () => {
                 <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8 animate-fade-in">
                     <h2 className="text-2xl md:text-4xl font-black text-[var(--theme-text-main)] text-center">Start New Order</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-                        <button
-                            onClick={() => { setOrderType('dine-in'); setStep(2); }}
-                            className="group relative bg-[var(--theme-bg-card)] p-8 md:p-12 sm:rounded-3xl rounded-2xl border border-[var(--theme-border)] hover:border-orange-500/50 transition-all shadow-xl flex flex-col items-center text-center space-y-4 tap-scale"
-                        >
-                            <div className="w-20 h-20 bg-orange-500/10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
-                                <Utensils size={40} className="text-orange-500" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl sm:text-2xl font-bold text-[var(--theme-text-main)] uppercase tracking-wide">Dine-In</h3>
-                                <p className="text-[var(--theme-text-muted)] text-sm mt-1">Select a table and serve guests</p>
-                            </div>
-                            <span className="absolute top-4 right-4"><ArrowRight size={20} className="text-gray-600 group-hover:text-orange-500" /></span>
-                        </button>
+                        {settings?.dineInEnabled !== false && (
+                            <button
+                                onClick={() => { setOrderType('dine-in'); setStep(2); }}
+                                className="group relative bg-[var(--theme-bg-card)] p-8 md:p-12 sm:rounded-3xl rounded-2xl border border-[var(--theme-border)] hover:border-orange-500/50 transition-all shadow-xl flex flex-col items-center text-center space-y-4 tap-scale"
+                            >
+                                <div className="w-20 h-20 bg-orange-500/10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
+                                    <Utensils size={40} className="text-orange-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-[var(--theme-text-main)] uppercase tracking-wide">Dine-In</h3>
+                                    <p className="text-[var(--theme-text-muted)] text-sm mt-1">Select a table and serve guests</p>
+                                </div>
+                                <span className="absolute top-4 right-4"><ArrowRight size={20} className="text-gray-600 group-hover:text-orange-500" /></span>
+                            </button>
+                        )}
 
-                        <button
-                            onClick={() => { setOrderType('takeaway'); setStep(3); }}
-                            className="group relative bg-[var(--theme-bg-card)] p-8 md:p-12 sm:rounded-3xl rounded-2xl border border-[var(--theme-border)] hover:border-blue-500/50 transition-all shadow-xl flex flex-col items-center text-center space-y-4 tap-scale"
-                        >
-                            <div className="w-20 h-20 bg-blue-500/10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
-                                <Package size={40} className="text-blue-500" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl sm:text-2xl font-bold text-[var(--theme-text-main)] uppercase tracking-wide">Takeaway</h3>
-                                <p className="text-[var(--theme-text-muted)] text-sm mt-1">Direct tokens for self-pickup</p>
-                            </div>
-                            <span className="absolute top-4 right-4"><ArrowRight size={20} className="text-gray-600 group-hover:text-blue-500" /></span>
-                        </button>
+                        {settings?.takeawayEnabled !== false && (
+                            <button
+                                onClick={() => { setOrderType('takeaway'); setStep(3); }}
+                                className="group relative bg-[var(--theme-bg-card)] p-8 md:p-12 sm:rounded-3xl rounded-2xl border border-[var(--theme-border)] hover:border-blue-500/50 transition-all shadow-xl flex flex-col items-center text-center space-y-4 tap-scale"
+                            >
+                                <div className="w-20 h-20 bg-blue-500/10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
+                                    <Package size={40} className="text-blue-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-[var(--theme-text-main)] uppercase tracking-wide">Takeaway</h3>
+                                    <p className="text-[var(--theme-text-muted)] text-sm mt-1">Direct tokens for self-pickup</p>
+                                </div>
+                                <span className="absolute top-4 right-4"><ArrowRight size={20} className="text-gray-600 group-hover:text-blue-500" /></span>
+                            </button>
+                        )}
                     </div>
                     <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-white font-medium flex items-center gap-2 transition-colors">
                         <ChevronLeft size={18} /> Cancel and go back
@@ -258,13 +310,21 @@ const NewOrder = () => {
                         {/* ── Top Bar (Search + Info) ────── */}
                         <div className="px-5 py-4 border-b border-[var(--theme-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
                             <div className="flex items-center gap-3">
-                                <button onClick={() => setStep(selectedTable ? 2 : 1)} className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] bg-[var(--theme-bg-hover)] rounded-lg">
-                                    <ArrowLeft size={18} />
-                                </button>
+                            <button onClick={() => {
+                                if (orderId) {
+                                    navigate(-1);
+                                } else {
+                                    setStep(step === 3 && orderType === 'takeaway' ? 1 : step - 1);
+                                }
+                            }} className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] bg-[var(--theme-bg-hover)] rounded-lg">
+                                <ArrowLeft size={18} />
+                            </button>
                                 <div>
                                     <h2 className="text-lg font-bold text-[var(--theme-text-main)] flex items-center gap-2 truncate">
-                                        {selectedTable ? `Table ${selectedTable.number}` : 'Takeaway Order'}
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] font-normal">Step 3 of 3</span>
+                                        {orderId ? `Add Items to ${currentOrder?.orderNumber || 'Order'}` : (selectedTable ? `Table ${selectedTable.number}` : 'Takeaway Order')}
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] font-normal uppercase tracking-tighter">
+                                            {orderId ? 'Appending' : 'Step 3 of 3'}
+                                        </span>
                                     </h2>
                                 </div>
                             </div>
@@ -350,7 +410,6 @@ const NewOrder = () => {
                     </div>
 
                     {/* ── Panel 3: Cart / Sidebar Summary ────────────────── */}
-                    {/* On Desktop: visible as 3rd panel. On Mobile: visible via isCartOpen toggle */}
                     <aside className={`
                         fixed inset-0 z-40 lg:relative lg:inset-auto lg:z-0 lg:w-[300px] xl:w-[360px] flex-shrink-0
                         transition-transform duration-300 ease-in-out
@@ -374,29 +433,56 @@ const NewOrder = () => {
                             </div>
 
                             {/* Cart Items Area */}
-                            <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 custom-scrollbar">
+                            <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 custom-scrollbar">
+                                {orderId && currentOrder?.items?.length > 0 && (
+                                    <div className="mb-6">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="h-px flex-1 bg-[var(--theme-border)]" />
+                                            <span className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em] whitespace-nowrap">Already on Table</span>
+                                            <div className="h-px flex-1 bg-[var(--theme-border)]" />
+                                        </div>
+                                        <div className="space-y-3 opacity-60">
+                                            {currentOrder.items.filter(i => i.status?.toUpperCase() !== 'CANCELLED').map((item, idx) => (
+                                                <div key={`prev-${idx}`} className="flex justify-between items-center text-[11px] font-bold text-[var(--theme-text-muted)]">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-5 h-5 flex items-center justify-center bg-[var(--theme-bg-hover)] rounded border border-[var(--theme-border)] text-[9px]">{item.quantity}×</span>
+                                                        <span className="truncate max-w-[120px]">{item.name}</span>
+                                                    </div>
+                                                    <span>{formatPrice(item.price * item.quantity)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="h-px flex-1 bg-orange-500/30" />
+                                    <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em] whitespace-nowrap">New Items to Add</span>
+                                    <div className="h-px flex-1 bg-orange-500/30" />
+                                </div>
+
                                 {cart.length === 0 ? (
-                                    <div className="h-full flex flex-col items-center justify-center text-gray-700 py-10">
-                                        <ShoppingCart size={64} className="mb-4 opacity-5" strokeWidth={1} />
-                                        <p className="font-bold">Your cart is empty</p>
-                                        <p className="text-xs">Add items from the menu to build your order</p>
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-700 py-6">
+                                        <ShoppingCart size={48} className="mb-3 opacity-5" strokeWidth={1} />
+                                        <p className="font-bold text-sm">Cart is empty</p>
+                                        <p className="text-[10px] text-center">Tap items on the left to add <br />{orderId ? 'them to this table' : 'them to your order'}</p>
                                     </div>
                                 ) : (
                                     cart.map(item => (
                                         <div key={item._id} className="flex gap-3 animate-slide-up group">
-                                            <div className="w-12 h-12 rounded-xl bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden">
-                                                {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xl">🥘</div>}
+                                            <div className="w-12 h-12 rounded-xl bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden border border-[var(--theme-border)]">
+                                                {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xl bg-[var(--theme-bg-hover)]">🥘</div>}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <h4 className="text-sm font-bold text-[var(--theme-text-main)] truncate pr-2">{item.name}</h4>
-                                                    <span className="text-sm font-black text-[var(--theme-text-main)]">{formatPrice(item.price * item.quantity)}</span>
+                                                    <h4 className="text-sm font-black text-[var(--theme-text-main)] truncate pr-2">{item.name}</h4>
+                                                    <span className="text-sm font-black text-orange-500">{formatPrice(item.price * item.quantity)}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-lg p-0.5 border border-[var(--theme-border)]">
-                                                        <button onClick={() => updateQuantity(item._id, -1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]"><Minus size={12} /></button>
-                                                        <span className="w-8 text-center text-xs font-black text-[var(--theme-text-main)]">{item.quantity}</span>
-                                                        <button onClick={() => updateQuantity(item._id, 1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]"><Plus size={12} /></button>
+                                                    <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-lg p-0.5 border border-[var(--theme-border)] shadow-inner">
+                                                        <button onClick={() => updateQuantity(item._id, -1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-white transition-colors"><Minus size={12} strokeWidth={3} /></button>
+                                                        <span className="w-9 text-center text-xs font-black text-[var(--theme-text-main)]">{item.quantity}</span>
+                                                        <button onClick={() => updateQuantity(item._id, 1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-white transition-colors"><Plus size={12} strokeWidth={3} /></button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -408,25 +494,44 @@ const NewOrder = () => {
                             {/* Summary & Place Order */}
                             <div className="p-5 bg-[var(--theme-bg-dark)] border-t border-[var(--theme-border)] flex-shrink-0 space-y-4">
                                 <div className="space-y-2">
+                                    {orderId && currentOrder && (
+                                        <>
+                                            <div className="flex justify-between text-xs text-[var(--theme-text-muted)] italic">
+                                                <span>Previous Balance</span>
+                                                <span>{formatPrice(currentOrder.finalAmount)}</span>
+                                            </div>
+                                            <div className="border-t border-[var(--theme-border)] border-dashed my-2" />
+                                        </>
+                                    )}
                                     <div className="flex justify-between text-xs text-[var(--theme-text-muted)]">
-                                        <span>Subtotal</span>
+                                        <span>{orderId ? 'New Items Subtotal' : 'Subtotal'}</span>
                                         <span>{formatPrice(totalAmount)}</span>
                                     </div>
                                     <div className="flex justify-between text-xs text-[var(--theme-text-muted)]">
                                         <span>Tax ({taxRate}%)</span>
                                         <span>{formatPrice(tax)}</span>
                                     </div>
-                                    <div className="flex justify-between items-end pt-2">
-                                        <span className="text-sm font-bold text-[var(--theme-text-main)] uppercase tracking-wider">Estimated Total</span>
-                                        <span className="text-2xl font-black text-orange-500">{formatPrice(finalAmount)}</span>
-                                    </div>
+                                    {orderId && currentOrder ? (
+                                        <div className="flex justify-between items-end pt-3 border-t border-[var(--theme-border)]">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">New Combined Total</span>
+                                                <span className="text-sm font-bold text-[var(--theme-text-muted)] leading-none italic opacity-60">Adding {formatPrice(finalAmount)}</span>
+                                            </div>
+                                            <span className="text-2xl font-black text-orange-500">{formatPrice(currentOrder.finalAmount + finalAmount)}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex justify-between items-end pt-3 border-t border-[var(--theme-border)]">
+                                            <span className="text-sm font-bold text-[var(--theme-text-main)] uppercase tracking-wider">Estimated Total</span>
+                                            <span className="text-2xl font-black text-orange-500">{formatPrice(finalAmount)}</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <button
                                     onClick={handleSubmitOrder}
                                     disabled={cart.length === 0}
                                     className="w-full py-4 bg-orange-600 hover:bg-orange-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-black rounded-2xl shadow-glow-orange transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
-                                    Confirm & Place Order <ArrowRight size={18} />
+                                    {orderId ? `Add to Order ${currentOrder?.orderNumber || ''}` : 'Confirm & Place Order'} <ArrowRight size={18} />
                                 </button>
                                 <button className="lg:hidden w-full py-3 text-gray-400 font-bold text-xs uppercase tracking-widest" onClick={() => setIsCartOpen(false)}>
                                     Continue Adding Items
@@ -465,4 +570,3 @@ const NewOrder = () => {
 };
 
 export default NewOrder;
-

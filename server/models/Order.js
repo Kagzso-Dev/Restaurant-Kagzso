@@ -342,6 +342,37 @@ const Order = {
 
         return response.documents.map(doc => fmtOrder(doc, itemsByOrderId[doc.$id] || [], tableMap[doc.table_id]));
     },
+
+    async addItems(orderId, items, { totalAmount, tax, finalAmount }) {
+        for (const item of items) {
+            await databases.createDocument(
+                databaseId,
+                COLLECTIONS.order_items,
+                ID.unique(),
+                {
+                    order_id: orderId,
+                    menu_item_id: item.menuItemId,
+                    name: item.name,
+                    price: parseFloat(item.price),
+                    quantity: parseInt(item.quantity),
+                    notes: item.notes || null,
+                    status: 'PENDING'
+                }
+            );
+        }
+        const order = await databases.getDocument(databaseId, COLLECTIONS.orders, orderId);
+        const updates = {
+            total_amount: parseFloat(order.total_amount) + parseFloat(totalAmount),
+            tax: parseFloat(order.tax || 0) + parseFloat(tax),
+            final_amount: parseFloat(order.final_amount) + parseFloat(finalAmount),
+        };
+        // Reset order status to preparing if it was ready - to ensure kitchen/waiter notice new items
+        if (order.order_status === 'ready' || order.order_status === 'accepted') {
+            updates.order_status = 'preparing';
+        }
+        await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, updates);
+        return this.findById(orderId);
+    },
 };
 
 // ─── Query builder ─────────────────────────────────────────────────────

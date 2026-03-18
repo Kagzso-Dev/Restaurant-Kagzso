@@ -97,6 +97,10 @@ async function fixSchemas() {
         await ensureAttribute(COLLECTIONS.settings, 'secondary_qr_url', 'string', { size: 500, required: false });
         await ensureAttribute(COLLECTIONS.settings, 'standard_qr_file_id', 'string', { required: false });
         await ensureAttribute(COLLECTIONS.settings, 'secondary_qr_file_id', 'string', { required: false });
+        await ensureAttribute(COLLECTIONS.settings, 'dine_in_enabled', 'boolean', { required: false, def: true });
+        await ensureAttribute(COLLECTIONS.settings, 'table_map_enabled', 'boolean', { required: false, def: true });
+        await ensureAttribute(COLLECTIONS.settings, 'takeaway_enabled', 'boolean', { required: false, def: true });
+        await ensureAttribute(COLLECTIONS.settings, 'waiter_service_enabled', 'boolean', { required: false, def: true });
 
         console.log('--- ALL MISSING SCHEMAS FIXED ---');
     } catch (err) {

@@ -14,11 +14,28 @@ const getSettings = async (req, res) => {
 // PUT /api/settings
 const updateSettings = async (req, res) => {
     try {
+        console.log('[Controller] updateSettings Body:', req.body);
         const settings = await Setting.update(req.body);
-        req.app.get('socketio').to('restaurant_main').emit('settings-updated', settings);
+        
+        // Safe socket emit
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to('restaurant_main').emit('settings-updated', settings);
+        } else {
+            console.warn('[Controller] socketio not found in app');
+        }
+
         res.json(settings);
     } catch (error) {
-        res.status(500).json({ message: 'Error updating settings' });
+        const fs = require('fs');
+        const errLog = `[${new Date().toISOString()}] UPDATE FAILED\nBody: ${JSON.stringify(req.body, null, 2)}\nError: ${error.message}\nStack: ${error.stack}\nCode: ${error.code}\n\n`;
+        fs.appendFileSync('server_debug.log', errLog);
+        
+        console.error('updateSettings FULL ERROR:', error);
+        res.status(error.code && typeof error.code === 'number' ? error.code : 500).json({ 
+            message: error.message || 'Error updating settings',
+            details: error.code || 'NO_CODE'
+        });
     }
 };
 

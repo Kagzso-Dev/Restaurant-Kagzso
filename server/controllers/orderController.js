@@ -433,6 +433,16 @@ const cancelOrderItem = async (req, res) => {
     }
 };
 
+const getOrderById = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+        res.json(order);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Search orders by orderNumber, customerName, or tableNumber
 // @route   GET /api/orders/search?q=<query>
 // @access  Private (admin, cashier, waiter)
@@ -448,6 +458,46 @@ const searchOrders = async (req, res) => {
     }
 };
 
+// @desc    Add items to an existing order
+// @route   PUT /api/orders/:id/add-items
+// @access  Private (Waiter, Admin, Cashier)
+const addOrderItems = async (req, res) => {
+    const { items, totalAmount, tax, finalAmount } = req.body;
+    const { id } = req.params;
+
+    if (!items || items.length === 0) return res.status(400).json({ message: 'No items' });
+
+    try {
+        const order = await Order.findById(id);
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+        
+        if (['completed', 'cancelled'].includes(order.orderStatus)) {
+            return res.status(400).json({ message: `Cannot add items to ${order.orderStatus} order` });
+        }
+
+        const updatedOrder = await Order.addItems(id, items, { totalAmount, tax, finalAmount });
+
+        req.app.get('socketio').to('restaurant_main').emit('order-updated', updatedOrder);
+
+        createAndEmitNotification(req.app.get('socketio'), {
+            title: `New items on Order #${updatedOrder.orderNumber}`,
+            message: `${items.length} new item(s) added`,
+            type: 'ORDER_UPDATED',
+            roleTarget: 'kitchen',
+            referenceId: updatedOrder._id,
+            referenceType: 'order',
+            createdBy: req.userId,
+        });
+
+        invalidateCache('dashboard');
+        invalidateCache('analytics');
+        updateDailyAnalytics();
+        res.json(updatedOrder);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createOrder,
     getOrders,
@@ -457,4 +507,6 @@ module.exports = {
     processPayment,
     cancelOrder,
     cancelOrderItem,
+    addOrderItems,
+    getOrderById,
 };

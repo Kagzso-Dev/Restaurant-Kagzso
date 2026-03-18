@@ -168,7 +168,9 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                         <NavItem to="/admin/notifications" icon={Bell} label="Notifications" color="text-orange-400" />
                         <NavItem to="/admin/menu" icon={Coffee} label="Menu Items" />
                         <NavItem to="/admin/categories" icon={Layers} label="Categories" />
-                        <NavItem to="/admin/tables" icon={Grid} label="Table Map" />
+                        {settings?.tableMapEnabled !== false && (
+                            <NavItem to="/admin/tables" icon={Grid} label="Table Map" />
+                        )}
                         <SectionLabel>System</SectionLabel>
                         <NavItem to="/admin/settings" icon={Settings} label="Settings" />
                     </>

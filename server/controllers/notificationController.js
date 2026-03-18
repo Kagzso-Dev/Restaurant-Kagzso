@@ -122,6 +122,25 @@ const createOfferNotification = async (req, res) => {
     }
 };
 
+// @desc    Test notification (used from settings)
+const testNotification = async (req, res) => {
+    try {
+        const { type, title, message, roleTarget } = req.body;
+        const notification = await Notification.create({
+            title:      title || 'Test Notification',
+            message:    message || 'This is a test notification',
+            type:       type || 'SYSTEM_ALERT',
+            roleTarget: roleTarget || 'all',
+            createdBy:  req.userId,
+        });
+        emitNotification(req.app.get('socketio'), roleTarget || 'all', notification);
+        res.status(201).json({ success: true, notification });
+    } catch (err) {
+        console.error('[Notification] Test error:', err);
+        res.status(500).json({ message: 'Failed to create test notification' });
+    }
+};
+
 module.exports = {
     getNotifications,
     getUnreadCount,
@@ -130,4 +149,5 @@ module.exports = {
     createOfferNotification,
     createAndEmitNotification,
     emitNotification,
+    testNotification,
 };

@@ -1,16 +1,16 @@
-// Opacity-based token/order card colors — work in both light and dark themes
+// Dynamic token/order card colors driven by Admin settings (CSS variables)
 export const tokenColors = {
-    pending:   "bg-amber-500/10 border-amber-500/35 text-amber-700",
-    accepted:  "bg-orange-500/10 border-orange-500/35 text-orange-700",
-    preparing: "bg-blue-500/10 border-blue-500/35 text-blue-700",
-    ready:     "bg-emerald-500/10 border-emerald-500/35 text-emerald-700",
+    pending:   "bg-[var(--status-pending-bg)] border-[var(--status-pending-border)] text-[var(--status-pending)]",
+    accepted:  "bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)] text-[var(--status-accepted)]",
+    preparing: "bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)] text-[var(--status-preparing)]",
+    ready:     "bg-[var(--status-ready-bg)] border-[var(--status-ready-border)] text-[var(--status-ready)]",
     completed: "bg-gray-500/8 border-gray-400/30 text-gray-500",
     cancelled: "bg-rose-500/10 border-rose-500/35 text-rose-700",
     // Capitalized variants
-    Pending:   "bg-amber-500/10 border-amber-500/35 text-amber-700",
-    Accepted:  "bg-orange-500/10 border-orange-500/35 text-orange-700",
-    Preparing: "bg-blue-500/10 border-blue-500/35 text-blue-700",
-    Ready:     "bg-emerald-500/10 border-emerald-500/35 text-emerald-700",
+    Pending:   "bg-[var(--status-pending-bg)] border-[var(--status-pending-border)] text-[var(--status-pending)]",
+    Accepted:  "bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)] text-[var(--status-accepted)]",
+    Preparing: "bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)] text-[var(--status-preparing)]",
+    Ready:     "bg-[var(--status-ready-bg)] border-[var(--status-ready-border)] text-[var(--status-ready)]",
     Completed: "bg-gray-500/8 border-gray-400/30 text-gray-500",
     Cancelled: "bg-rose-500/10 border-rose-500/35 text-rose-700",
 };

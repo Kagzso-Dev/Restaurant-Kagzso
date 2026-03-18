@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AdminRoute, KitchenRoute, CashierRoute, WaiterRoute } from './PrivateRoutes';
 import Layout from './components/Layout';
+import DynamicTheme from './components/DynamicTheme';
 
 // ── Components ───────────────────────────────────────────────────
 import Login from './pages/Login';
@@ -46,6 +47,7 @@ function App() {
     <ThemeProvider>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
+        <DynamicTheme />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/login" element={<Login />} />
