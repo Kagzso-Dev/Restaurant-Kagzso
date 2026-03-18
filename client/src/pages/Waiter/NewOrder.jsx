@@ -17,6 +17,9 @@ import FoodItem from '../../components/FoodItem';
  * Optimized for Desktop (3-panel) and Mobile (stacked tabs)
  */
 const NewOrder = () => {
+    const { user, formatPrice, settings, socket } = useContext(AuthContext);
+    const navigate = useNavigate();
+
     // ── State ────────────────────────────────────────────────────────
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
@@ -41,10 +44,6 @@ const NewOrder = () => {
             setViewMode(settings.menuView);
         }
     }, [settings]);
-
-    const { user, formatPrice, settings, socket } = useContext(AuthContext);
-    const navigate = useNavigate();
-
     // ── Load Existing Order context if orderId exists ───────────────
     useEffect(() => {
         if (orderId) {
