@@ -363,22 +363,25 @@ const Order = {
                     price: parseFloat(item.price),
                     quantity: parseInt(item.quantity),
                     notes: item.notes || null,
-                    status: 'PENDING',
-                    addedAt: new Date().toISOString()
+                    status: 'PENDING'
                 }
             );
         }
 
         // 3. Recalculate totals from ALL items (old and new)
-        // Fetch all items for this order after addition
         const allItems = await loadItems(orderId);
         const activeItems = allItems.filter(i => i.status !== 'CANCELLED');
         
-        const newTotalAmount = activeItems.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
-        // Fallback to tax percentage if not provided, or recalculate based on system settings
-        const currentTaxRate = (order.tax / order.total_amount) || 0.05; // default 5% fallback if division by zero
-        const newTax = newTotalAmount * currentTaxRate;
-        const newFinalAmount = newTotalAmount + newTax;
+        const rawTotal = activeItems.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
+        const newTotalAmount = parseFloat(rawTotal.toFixed(2));
+
+        // Recalculate tax based on previous order's tax rate or system default
+        const oldTotal = parseFloat(order.total_amount) || 0;
+        const oldTax = parseFloat(order.tax) || 0;
+        const currentTaxRate = oldTotal > 0 ? (oldTax / oldTotal) : 0.05;
+        
+        const newTax = parseFloat((newTotalAmount * currentTaxRate).toFixed(2));
+        const newFinalAmount = parseFloat((newTotalAmount + newTax).toFixed(2));
 
         const updates = {
             total_amount: newTotalAmount,
