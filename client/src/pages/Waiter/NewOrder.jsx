@@ -44,36 +44,57 @@ const NewOrder = () => {
             setViewMode(settings.menuView);
         }
     }, [settings]);
-    // ── Load Existing Order context if orderId exists ───────────────
+
+    // ── Unified Data Fetching (Menu + Order Context) ────────────────
     useEffect(() => {
-        if (orderId) {
-            console.log("NewOrder: Appending to existing Order ID:", orderId);
-            const fetchOrder = async () => {
-                try {
-                    const res = await api.get(`/api/orders/${orderId}`, {
-                        headers: { Authorization: `Bearer ${user.token}` }
-                    });
-                    const order = res.data;
-                    setCurrentOrder(order);
-                    setOrderType(order.orderType);
-                    if (order.tableId) {
-                        setSelectedTable(order.tableId);
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+
+                // 1. Fetch Menu & Categories
+                const [menuRes, catRes] = await Promise.all([
+                    api.get('/api/menu'),
+                    api.get('/api/categories')
+                ]);
+                setMenuItems(menuRes.data);
+                setCategories(catRes.data);
+
+                // 2. If existing order context, fetch it
+                if (orderId) {
+                    console.log("NewOrder: Loading existing order context:", orderId);
+                    try {
+                        const res = await api.get(`/api/orders/${orderId}`, {
+                            headers: { Authorization: `Bearer ${user.token}` }
+                        });
+                        const order = res.data;
+                        setCurrentOrder(order);
+                        setOrderType(order.orderType);
+                        if (order.tableId) {
+                            setSelectedTable(order.tableId);
+                        }
+                        setStep(3); // Jump straight to menu selection
+                    } catch (err) {
+                        console.error("NewOrder: Error fetching existing order", err);
+                        alert("Could not load existing order details");
+                        navigate('/waiter');
+                        return;
                     }
-                    setStep(3); // Skip straight to menu
-                } catch (err) {
-                    console.error("NewOrder: Error fetching existing order", err);
-                    alert("Could not load existing order details");
-                    navigate('/waiter');
                 }
-            };
-            fetchOrder();
-        }
-    }, [orderId, user.token]);
+            } catch (error) {
+                console.error("Error fetching POS data", error);
+                alert("Could not load menu. Returning to Hub.");
+                navigate('/waiter');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [orderId, user.token, navigate]);
 
     // Auto-skip logic based on available order types
     useEffect(() => {
         if (!settings || step !== 1) return;
-        
+
         const dineOn = settings.dineInEnabled !== false;
         const takeOn = settings.takeawayEnabled !== false;
 
@@ -87,28 +108,6 @@ const NewOrder = () => {
             setStep(3);
         }
     }, [settings, step]);
-
-    // ── Data Fetch ───────────────────────────────────────────────────
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const [menuRes, catRes] = await Promise.all([
-                    api.get('/api/menu'),
-                    api.get('/api/categories')
-                ]);
-                setMenuItems(menuRes.data);
-                setCategories(catRes.data);
-            } catch (error) {
-                console.error("Error fetching POS data", error);
-                alert("Could not load menu. Returning to Hub.");
-                navigate('/waiter');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
 
     // ── Real-time menu/category sync ─────────────────────────────────
     useEffect(() => {
@@ -249,7 +248,9 @@ const NewOrder = () => {
             {/* ── STEP 1: SELECT ORDER TYPE ────────────────────────────── */}
             {step === 1 && (
                 <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8 animate-fade-in">
-                    <h2 className="text-2xl md:text-4xl font-black text-[var(--theme-text-main)] text-center">Start New Order</h2>
+                    <h2 className="text-2xl md:text-4xl font-black text-[var(--theme-text-main)] text-center">
+                        {orderId ? `Add Items to ${currentOrder?.orderNumber || 'Order'}` : 'Start New Order'}
+                    </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
                         {settings?.dineInEnabled !== false && (
                             <button
