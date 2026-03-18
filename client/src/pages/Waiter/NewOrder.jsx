@@ -340,7 +340,9 @@ const NewOrder = () => {
                             </button>
                                 <div>
                                     <h2 className="text-lg font-bold text-[var(--theme-text-main)] flex items-center gap-2 truncate">
-                                        {orderId ? `Add Items to ${currentOrder?.orderNumber || 'Order'}` : (selectedTable ? `Table ${selectedTable.number}` : 'Takeaway Order')}
+                                        {orderId
+                                            ? `Add Items to ${currentOrder?.orderNumber || 'Order'}${currentOrder?.orderType === 'takeaway' ? ` | Token #${currentOrder.tokenNumber}` : currentOrder?.tableId?.number ? ` | Table ${currentOrder.tableId.number}` : ''}`
+                                            : (selectedTable ? `Table ${selectedTable.number}` : 'Takeaway Order')}
                                         <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] font-normal uppercase tracking-tighter">
                                             {orderId ? 'Appending' : 'Step 3 of 3'}
                                         </span>

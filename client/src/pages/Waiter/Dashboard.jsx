@@ -194,7 +194,6 @@ const WaiterDashboard = () => {
             socket.on('order-completed', onUpdate);
             socket.on('orderCancelled', onUpdate);
             socket.on('itemUpdated', onUpdate);
-
             return () => {
                 socket.off('new-order', onNew);
                 socket.off('order-updated', onUpdate);
@@ -204,6 +203,20 @@ const WaiterDashboard = () => {
             };
         }
     }, [user, socket, fetchOrders, selectedOrder]);
+
+    // Handle auto-opening an order from query params (e.g., after adding items)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const openId = params.get('openOrder');
+        if (openId && orders.length > 0) {
+            const target = orders.find(o => o._id === openId);
+            if (target) {
+                setSelectedOrder(target);
+                // Clear the URL to avoid opening it every time they refresh
+                navigate('/waiter', { replace: true });
+            }
+        }
+    }, [orders, navigate]);
 
 
     const handleCancelAction = async (orderId, arg2, arg3) => {
