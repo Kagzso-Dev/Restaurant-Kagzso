@@ -141,7 +141,7 @@ io.use(socketAuthMiddleware);
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 app.use('/api/auth',           require('./routes/authRoutes'));
-app.use('/api/orders',         require('./routes/orderRoutes'));
+app.use('/api',                require('./routes/orderRoutes'));
 app.use('/api/tables',         require('./routes/tableRoutes'));
 app.use('/api/menu',           require('./routes/menuRoutes'));
 app.use('/api/categories',     require('./routes/categoryRoutes'));
