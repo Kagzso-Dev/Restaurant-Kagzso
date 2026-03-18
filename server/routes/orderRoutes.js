@@ -24,25 +24,16 @@ router.route('/')
     .post(authorize('waiter', 'admin', 'cashier'), createOrder)
     .get(authorize('kitchen', 'cashier', 'admin', 'waiter'), getOrders);
 
-router.route('/:id')
-    .get(authorize('admin', 'cashier', 'waiter'), getOrderById);
+// ── Specific /:id/... routes (must be BEFORE generic /:id) ─────────
+router.post('/:id/add-items', authorize('waiter', 'admin', 'cashier'), addOrderItems);
+router.put('/:id/status', authorize('kitchen', 'admin', 'cashier'), updateOrderStatus);
+router.put('/:id/cancel', authorize('waiter', 'kitchen', 'admin'), cancelOrder);
+router.put('/:id/payment', authorize('cashier', 'admin'), processPayment);
 
-router.route('/:id/status')
-    .put(authorize('kitchen', 'admin', 'cashier'), updateOrderStatus);
+router.put('/:id/items/:itemId/status', authorize('kitchen', 'admin'), updateItemStatus);
+router.put('/:id/items/:itemId/cancel', authorize('waiter', 'kitchen', 'admin'), cancelOrderItem);
 
-router.route('/:id/cancel')
-    .put(authorize('waiter', 'kitchen', 'admin'), cancelOrder);
-
-router.route('/:id/items/:itemId/status')
-    .put(authorize('kitchen', 'admin'), updateItemStatus);
-
-router.route('/:id/items/:itemId/cancel')
-    .put(authorize('waiter', 'kitchen', 'admin'), cancelOrderItem);
-
-router.route('/:id/add-items')
-    .post(authorize('waiter', 'admin', 'cashier'), addOrderItems);
-
-router.route('/:id/payment')
-    .put(authorize('cashier', 'admin'), processPayment);
+// ── Generic /:id route ──────────────────────────────────────────────
+router.get('/:id', authorize('admin', 'cashier', 'waiter'), getOrderById);
 
 module.exports = router;
