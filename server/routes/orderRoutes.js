@@ -40,7 +40,7 @@ router.route('/:id/items/:itemId/cancel')
     .put(authorize('waiter', 'kitchen', 'admin'), cancelOrderItem);
 
 router.route('/:id/add-items')
-    .put(authorize('waiter', 'admin', 'cashier'), addOrderItems);
+    .post(authorize('waiter', 'admin', 'cashier'), addOrderItems);
 
 router.route('/:id/payment')
     .put(authorize('cashier', 'admin'), processPayment);

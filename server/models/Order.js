@@ -344,6 +344,13 @@ const Order = {
     },
 
     async addItems(orderId, items, { totalAmount, tax, finalAmount }) {
+        // 1. Fetch latest order to ensure we have current totals
+        const order = await databases.getDocument(databaseId, COLLECTIONS.orders, orderId);
+        if (['completed', 'cancelled'].includes(order.order_status)) {
+            throw new Error(`Cannot add items to ${order.order_status} order`);
+        }
+
+        // 2. Insert new items into database
         for (const item of items) {
             await databases.createDocument(
                 databaseId,
@@ -356,20 +363,34 @@ const Order = {
                     price: parseFloat(item.price),
                     quantity: parseInt(item.quantity),
                     notes: item.notes || null,
-                    status: 'PENDING'
+                    status: 'PENDING',
+                    addedAt: new Date().toISOString()
                 }
             );
         }
-        const order = await databases.getDocument(databaseId, COLLECTIONS.orders, orderId);
+
+        // 3. Recalculate totals from ALL items (old and new)
+        // Fetch all items for this order after addition
+        const allItems = await loadItems(orderId);
+        const activeItems = allItems.filter(i => i.status !== 'CANCELLED');
+        
+        const newTotalAmount = activeItems.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
+        // Fallback to tax percentage if not provided, or recalculate based on system settings
+        const currentTaxRate = (order.tax / order.total_amount) || 0.05; // default 5% fallback if division by zero
+        const newTax = newTotalAmount * currentTaxRate;
+        const newFinalAmount = newTotalAmount + newTax;
+
         const updates = {
-            total_amount: parseFloat(order.total_amount) + parseFloat(totalAmount),
-            tax: parseFloat(order.tax || 0) + parseFloat(tax),
-            final_amount: parseFloat(order.final_amount) + parseFloat(finalAmount),
+            total_amount: newTotalAmount,
+            tax: newTax,
+            final_amount: newFinalAmount,
         };
-        // Reset order status to preparing if it was ready - to ensure kitchen/waiter notice new items
+
+        // 4. Update status if necessary
         if (order.order_status === 'ready' || order.order_status === 'accepted') {
             updates.order_status = 'preparing';
         }
+
         await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, updates);
         return this.findById(orderId);
     },

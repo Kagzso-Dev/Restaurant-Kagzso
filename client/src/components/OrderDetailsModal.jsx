@@ -211,7 +211,7 @@ const OrderDetailsModal = ({
                             <h3 className="text-xs font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em] flex items-center gap-2">
                                 <Utensils size={14} className="text-orange-500" /> Bill Items ({order.items?.length})
                             </h3>
-                            {!isPaid && !isCancelled && userRole === 'waiter' && (
+                            {!isPaid && !isCancelled && !isCompleted && userRole === 'waiter' && (
                                 <button
                                     onClick={() => {
                                         onClose();

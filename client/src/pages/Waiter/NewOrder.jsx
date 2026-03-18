@@ -219,7 +219,7 @@ const NewOrder = () => {
 
         try {
             if (orderId) {
-                await api.put(`/api/orders/${orderId}/add-items`, orderData, {
+                await api.post(`/api/orders/${orderId}/add-items`, orderData, {
                     headers: { Authorization: `Bearer ${user.token}` }
                 });
             } else {
@@ -290,10 +290,22 @@ const NewOrder = () => {
             {step === 2 && (
                 <div className="flex-1 flex flex-col animate-fade-in">
                     <div className="flex items-center justify-between mb-6 px-2">
-                        <div>
-                            <h2 className="text-2xl font-black text-[var(--theme-text-main)]">Select a Table</h2>
-                            <p className="text-[var(--theme-text-muted)] text-sm">Tap an available table to start ordering</p>
-                        </div>
+                        <div className="mb-4">
+                        <h2 className="text-2xl font-black text-[var(--theme-text-main)]">
+                            {orderId ? `Add Items to ${currentOrder?.orderNumber || 'Order'}` : 'Select a Table'}
+                        </h2>
+                        {orderId && currentOrder && (
+                            <div className="flex items-center gap-2 mt-2">
+                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-orange-500 text-white shadow-sm">
+                                    {currentOrder.orderType === 'dine-in' ? `Table ${currentOrder.tableId?.number || currentOrder.tableId || '?'}` : `Token #${currentOrder.tokenNumber || '?'}`}
+                                </span>
+                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border border-[var(--theme-border)] text-[var(--theme-text-muted)]`}>
+                                    Status: {currentOrder.orderStatus}
+                                </span>
+                            </div>
+                        )}
+                        {!orderId && <p className="text-[var(--theme-text-muted)] text-sm">Tap an available table to start ordering</p>}
+                    </div>
                         <button onClick={() => setStep(1)} className="p-3 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] rounded-xl transition-all">
                             <ArrowLeft size={20} />
                         </button>
