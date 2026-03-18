@@ -48,6 +48,7 @@ const NewOrder = () => {
     // ── Load Existing Order context if orderId exists ───────────────
     useEffect(() => {
         if (orderId) {
+            console.log("NewOrder: Appending to existing Order ID:", orderId);
             const fetchOrder = async () => {
                 try {
                     const res = await api.get(`/api/orders/${orderId}`, {

@@ -214,8 +214,14 @@ const OrderDetailsModal = ({
                             {!isPaid && !isCancelled && !isCompleted && userRole === 'waiter' && (
                                 <button
                                     onClick={() => {
+                                        console.log("Clicked ADD NEW");
+                                        console.log("Order ID:", order?._id);
+                                        if (!order?._id) {
+                                            alert("Order ID not found. Please refresh and try again.");
+                                            return;
+                                        }
                                         onClose();
-                                        navigate(`/new-order?orderId=${order._id}`);
+                                        navigate(`/waiter/new-order?orderId=${order._id}`);
                                     }}
                                     className="h-8 px-3 bg-orange-600 hover:bg-orange-500 text-white rounded-lg shadow-lg shadow-orange-600/20 transition-all flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider active:scale-95"
                                 >
