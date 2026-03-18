@@ -4,7 +4,6 @@ import { AuthContext } from '../../context/AuthContext';
 import {
     Save, Lock, CheckCircle2, AlertCircle,
     QrCode, Upload, Camera, Loader2, Eye, EyeOff,
-    QrCode, Upload, Camera, Loader2, Eye, EyeOff,
     LayoutGrid, Grid, List, Palette, Building2, Shield, Grid2X2
 } from 'lucide-react';
 
