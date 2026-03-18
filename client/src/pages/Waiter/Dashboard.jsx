@@ -346,7 +346,7 @@ const WaiterDashboard = () => {
                             }`}
                         >
                             <Grid size={14} />
-                            <span>Production Mode</span>
+                            <span>Token Mode</span>
                         </button>
                     </div>
                 </div>

@@ -360,7 +360,7 @@ const Settings = () => {
                             { id: 'one', icon: List, label: 'Single' },
                             { id: 'two', icon: Grid, label: 'Dual' },
                             { id: 'all', icon: LayoutGrid, label: 'Standard' },
-                            { id: 'prod', icon: Grid2X2, label: 'Production' },
+                            { id: 'prod', icon: Grid2X2, label: 'Token Mode' },
                         ].map(opt => (
                             <button key={opt.id} type="button"
                                 onClick={() => setGeneralConfig({ ...generalConfig, dashboardView: opt.id })}
