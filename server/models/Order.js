@@ -76,8 +76,17 @@ const Order = {
         } catch (error) {
             // 404 from Appwrite means the document genuinely doesn't exist → return null
             // Any other error (permissions, network, schema) should surface, not hide
-            if (error?.code === 404) return null;
-            console.error(`[Order.findById] Appwrite error for id=${id}:`, error?.message || error);
+            if (error?.code === 404) {
+                console.warn(`[Order.findById] No document found in Appwrite for id="${id}" — collection="${COLLECTIONS.orders}" db="${databaseId}"`);
+                return null;
+            }
+            console.error(`[Order.findById] Appwrite exception for id="${id}":`, {
+                code: error?.code,
+                message: error?.message,
+                type: error?.type,
+                db: databaseId,
+                collection: COLLECTIONS.orders,
+            });
             throw error;
         }
     },
@@ -360,6 +369,12 @@ const Order = {
 
         // 2. Insert new items into database
         for (const item of items) {
+            // Senior Validation Guard
+            if (!item.name || item.price === undefined || item.quantity === undefined) {
+                console.warn("[DEBUG] Invalid item data received:", item);
+                throw new Error(`Incomplete item details for "${item.name || 'Unknown'}"`);
+            }
+
             try {
                 await databases.createDocument(
                     databaseId,

@@ -497,7 +497,13 @@ const addOrderItems = async (req, res) => {
         updateDailyAnalytics();
         res.json(updatedOrder);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('[addOrderItems] Failed:', {
+            orderId: id,
+            errorCode: error?.code,
+            errorType: error?.type,
+            message: error?.message,
+        });
+        res.status(500).json({ message: error.message || 'Failed to add items to order' });
     }
 };
 
