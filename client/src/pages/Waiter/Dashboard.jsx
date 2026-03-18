@@ -69,6 +69,38 @@ const OrderCard = memo(({ order, formatPrice, onCancel, viewType = 'normal' }) =
     );
 });
 
+/* ── Production Token Card ───────────────────────────────────────────────── */
+const TokenSquare = memo(({ order, onClick }) => {
+    const isReady = order.orderStatus?.toLowerCase() === 'ready';
+    const sColor = 
+        order.orderStatus === 'pending' ? 'bg-orange-500/10 border-orange-500 text-orange-600' :
+        order.orderStatus === 'accepted' ? 'bg-blue-600/10 border-blue-600 text-blue-600' :
+        order.orderStatus === 'preparing' ? 'bg-indigo-600/10 border-indigo-600 text-indigo-600' :
+        order.orderStatus === 'ready' ? 'bg-emerald-600/10 border-emerald-500 text-emerald-600' :
+        'bg-gray-500/10 border-gray-500 text-gray-500';
+
+    return (
+        <button
+            onClick={onClick}
+            className={`
+                aspect-square rounded-3xl border-2 flex flex-col items-center justify-center p-3 transition-all active:scale-90 shadow-sm hover:shadow-md group relative overflow-hidden
+                ${sColor} ${isReady ? 'animate-pulse ring-2 ring-emerald-500 ring-offset-2 bg-emerald-500/20' : ''}
+            `}
+        >
+            <div className="absolute top-0 right-0 w-12 h-12 bg-current opacity-[0.03] -mr-4 -mt-4 rounded-full" />
+            <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-1 tracking-widest">
+                {order.orderType === 'dine-in' ? 'Table' : 'Token'}
+            </span>
+            <span className="text-2xl sm:text-3xl font-black leading-none group-hover:scale-110 transition-transform">
+                {order.orderType === 'dine-in' ? (order.tableId?.number || order.tableId || '?') : (order.tokenNumber || '?')}
+            </span>
+            <div className={`mt-3 text-[8px] font-black uppercase tracking-tighter px-2.5 py-1 rounded-lg border border-current/30 bg-white/5`}>
+                {order.orderStatus}
+            </div>
+        </button>
+    );
+});
+
 /* ── Main Component ───────────────────────────────────────────────────────── */
 const WaiterDashboard = () => {
     const [orders, setOrders] = useState([]);
@@ -79,7 +111,24 @@ const WaiterDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, item: null });
+    const [isProductionMode, setIsProductionMode] = useState(() => {
+        const local = localStorage.getItem('isProductionMode');
+        if (local !== null) return local === 'true';
+        return false; // Will sync in useEffect if settings load later
+    });
     const { user, socket, formatPrice, settings } = useContext(AuthContext);
+
+    // Sync with global settings if no local preference has been set yet
+    useEffect(() => {
+        const local = localStorage.getItem('isProductionMode');
+        if (local === null && settings?.dashboardView === 'prod') {
+            setIsProductionMode(true);
+        }
+    }, [settings]);
+
+    useEffect(() => {
+        localStorage.setItem('isProductionMode', isProductionMode);
+    }, [isProductionMode]);
     const navigate = useNavigate();
 
     // ── Reserve a table manually from the Table Map ───────────────────────────
@@ -262,17 +311,31 @@ const WaiterDashboard = () => {
                         </button>
                     </div>
 
-                    <button
-                        onClick={() => { setActiveTab('active'); setStatusFilter(null); }}
-                        className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-95 border ${
-                            activeTab === 'active' && statusFilter === null
-                                ? 'bg-orange-500/10 border-orange-500/35 text-orange-600'
-                                : 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/30'
-                        }`}
-                    >
-                        <ClipboardList size={14} />
-                        <span>View All Tokens</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => { setActiveTab('active'); setStatusFilter(null); }}
+                            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-95 border ${
+                                activeTab === 'active' && statusFilter === null
+                                    ? 'bg-orange-500/10 border-orange-500/35 text-orange-600'
+                                    : 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/30'
+                            }`}
+                        >
+                            <ClipboardList size={14} />
+                            <span>List View</span>
+                        </button>
+
+                        <button
+                            onClick={() => setIsProductionMode(!isProductionMode)}
+                            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-95 border ${
+                                isProductionMode
+                                    ? 'bg-blue-500/15 border-blue-500/35 text-blue-600 shadow-glow-blue'
+                                    : 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-blue-500 hover:border-blue-500/30'
+                            }`}
+                        >
+                            <Grid size={14} />
+                            <span>Production Mode</span>
+                        </button>
+                    </div>
                 </div>
 
                 {activeTab === 'active' && (
@@ -335,19 +398,28 @@ const WaiterDashboard = () => {
                 </div>
             ) : (
                 <div className={`grid gap-2 sm:gap-3 ${
-                    settings.dashboardView === 'one' ? 'grid-cols-1' :
+                    isProductionMode ? 'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10' :
+                    (settings.dashboardView === 'one' ? 'grid-cols-1' :
                     settings.dashboardView === 'two' ? 'grid-cols-1 md:grid-cols-2' :
-                    'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                    'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6')
                 }`}>
                     {filteredOrders.map(order => (
-                        <div key={order._id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
-                            <OrderCard
+                        isProductionMode ? (
+                            <TokenSquare
+                                key={order._id}
                                 order={order}
-                                formatPrice={formatPrice}
-                                onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
-                                viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
+                                onClick={() => setSelectedOrder(order)}
                             />
-                        </div>
+                        ) : (
+                            <div key={order._id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
+                                <OrderCard
+                                    order={order}
+                                    formatPrice={formatPrice}
+                                    onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
+                                    viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
+                                />
+                            </div>
+                        )
                     ))}
                 </div>
             )}

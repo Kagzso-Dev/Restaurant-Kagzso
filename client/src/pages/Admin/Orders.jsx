@@ -262,7 +262,7 @@ const AdminOrders = () => {
                                                     {order.orderType}
                                                 </span>
                                                 <span className="text-[10px] text-inherit opacity-60 font-bold uppercase tracking-wider">
-                                                    {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId}` : 'Takeaway'}
+                                                    {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId}` : `Token ${order.tokenNumber || '?'}`}
                                                 </span>
                                             </div>
                                         </td>

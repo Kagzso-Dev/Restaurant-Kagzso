@@ -4,7 +4,8 @@ import { AuthContext } from '../../context/AuthContext';
 import {
     Save, Lock, CheckCircle2, AlertCircle,
     QrCode, Upload, Camera, Loader2, Eye, EyeOff,
-    LayoutGrid, Grid, List, Palette, Building2, Shield
+    QrCode, Upload, Camera, Loader2, Eye, EyeOff,
+    LayoutGrid, Grid, List, Palette, Building2, Shield, Grid2X2
 } from 'lucide-react';
 
 /* ── QR Upload Card ────────────────────────────────────────────────────────── */
@@ -169,6 +170,7 @@ const Settings = () => {
         pendingColor: '#3b82f6', acceptedColor: '#8b5cf6',
         preparingColor: '#f59e0b', readyColor: '#10b981',
         dashboardView: 'all',
+        menuView: 'grid',
         dineInEnabled: true, tableMapEnabled: true, takeawayEnabled: true, waiterServiceEnabled: true
     });
     const [passwordData, setPasswordData] = useState({ role: 'admin', newPassword: '', confirmPassword: '' });
@@ -197,6 +199,7 @@ const Settings = () => {
                 preparingColor: settings.preparingColor || '#f59e0b',
                 readyColor: settings.readyColor || '#10b981',
                 dashboardView: settings.dashboardView || 'all',
+                menuView: settings.menuView || 'grid',
                 dineInEnabled: settings.dineInEnabled !== false,
                 tableMapEnabled: settings.tableMapEnabled !== false,
                 takeawayEnabled: settings.takeawayEnabled !== false,
@@ -296,7 +299,7 @@ const Settings = () => {
                             </Field>
                         </div>
                     </div>
-                    <Footer section="general" color="blue" label="Save" msgs={msgs} loading={loading} />
+                    <Footer section="general" color="blue" label="Save Business Details" msgs={msgs} loading={loading} />
                 </form>
             </Card>
 
@@ -342,21 +345,23 @@ const Settings = () => {
                         <button type="button" onClick={e => saveConfig(e, 'colors')} disabled={loading}
                             className="h-10 px-6 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center gap-2">
                             {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                            Save Colors
+                            Save Status Colors
                         </button>
                     </div>
                 </div>
             </Card>
 
-            {/* Dashboard Layout */}
+            {/* Live Dashboard Layout */}
             <Card>
-                <SectionHeader icon={LayoutGrid} title="Dashboard Layout" color="orange" />
+                <SectionHeader icon={Grid} title="Live Dashboard Preferences" color="orange" />
                 <div className="p-5">
-                    <div className="grid grid-cols-3 gap-2 p-1.5 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-xl">
+                    <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-black tracking-widest mb-4">Orders Display mode</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-xl">
                         {[
                             { id: 'one', icon: List, label: 'Single' },
                             { id: 'two', icon: Grid, label: 'Dual' },
-                            { id: 'all', icon: LayoutGrid, label: 'All' },
+                            { id: 'all', icon: LayoutGrid, label: 'Standard' },
+                            { id: 'prod', icon: Grid2X2, label: 'Production' },
                         ].map(opt => (
                             <button key={opt.id} type="button"
                                 onClick={() => setGeneralConfig({ ...generalConfig, dashboardView: opt.id })}
@@ -373,15 +378,47 @@ const Settings = () => {
                     <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-5 mt-4 border-t border-[var(--theme-border)]">
                         <Notice msg={msgs['layout']} />
                         <button type="button" onClick={e => saveConfig(e, 'layout')} disabled={loading}
-                            className="h-10 px-6 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-lg shadow-orange-500/20 disabled:opacity-50 flex items-center gap-2">
+                            className="h-10 px-6 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-lg shadow-orange-600/20 disabled:opacity-50 flex items-center gap-2">
                             {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                            Save Layout
+                            Save Dashboard Layout
                         </button>
                     </div>
                 </div>
             </Card>
 
-
+            {/* POS Menu Layout */}
+            <Card>
+                <SectionHeader icon={LayoutGrid} title="POS Menu Appearance" color="violet" />
+                <div className="p-5">
+                    <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-black tracking-widest mb-4">Food Item Grid Mode</p>
+                    <div className="grid grid-cols-3 gap-2 p-1.5 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-xl">
+                        {[
+                            { id: 'grid', icon: LayoutGrid, label: 'Standard' },
+                            { id: 'compact', icon: Grid2X2, label: 'Compact' },
+                            { id: 'list', icon: List, label: 'List View' },
+                        ].map(opt => (
+                            <button key={opt.id} type="button"
+                                onClick={() => setGeneralConfig({ ...generalConfig, menuView: opt.id })}
+                                className={`flex items-center justify-center gap-2 h-11 rounded-lg text-xs font-semibold transition-all ${
+                                    generalConfig.menuView === opt.id
+                                        ? 'bg-violet-600 text-white shadow-md'
+                                        : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
+                                }`}>
+                                <opt.icon size={16} />
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-5 mt-4 border-t border-[var(--theme-border)]">
+                        <Notice msg={msgs['menu_layout']} />
+                        <button type="button" onClick={e => saveConfig(e, 'menu_layout')} disabled={loading}
+                            className="h-10 px-6 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-lg shadow-violet-500/20 disabled:opacity-50 flex items-center gap-2">
+                            {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                            Save Menu Layout
+                        </button>
+                    </div>
+                </div>
+            </Card>
 
             {/* Password */}
             <Card>
@@ -427,7 +464,7 @@ const Settings = () => {
                         <button type="submit" disabled={loading}
                             className="h-10 px-6 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-50 flex items-center gap-2">
                             {loading ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
-                            Update Password
+                            Apply New Password
                         </button>
                     </div>
                 </form>

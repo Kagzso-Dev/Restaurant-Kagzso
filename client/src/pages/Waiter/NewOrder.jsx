@@ -33,7 +33,14 @@ const NewOrder = () => {
     const [loading, setLoading] = useState(true);
     const [isCartOpen, setIsCartOpen] = useState(false); // Mobile cart overlay toggle
     const [currentOrder, setCurrentOrder] = useState(null);
-    const [viewMode, setViewMode] = useState(() => localStorage.getItem('foodViewMode') || 'grid');
+    const [viewMode, setViewMode] = useState(() => localStorage.getItem('foodViewMode') || (settings?.menuView) || 'grid');
+
+    // Sync with global settings if no local preference
+    useEffect(() => {
+        if (!localStorage.getItem('foodViewMode') && settings?.menuView) {
+            setViewMode(settings.menuView);
+        }
+    }, [settings]);
 
     const { user, formatPrice, settings, socket } = useContext(AuthContext);
     const navigate = useNavigate();

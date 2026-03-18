@@ -112,11 +112,6 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                             'text-inherit'
                                         }`}>
                                         {item.name}
-                                        {item.status?.toUpperCase() === 'PENDING' && (
-                                            <span className="ml-1.5 px-2 py-0.5 bg-blue-600 text-white rounded-full text-[7px] font-black animate-pulse shadow-md flex items-center gap-1 shrink-0">
-                                                NEW {item.addedAt ? `· ${Math.floor((Date.now() - new Date(item.addedAt)) / 60000)}m` : ''}
-                                            </span>
-                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -281,30 +276,35 @@ const KitchenDashboard = () => {
         <div className="space-y-5 animate-fade-in pb-10 text-left">
 
             {/* ── Header ─────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] rounded-2xl p-4 sm:p-5 border border-[var(--theme-border)]">
-                <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-[var(--theme-bg-deep)] rounded-xl flex items-center justify-center shadow-glow-orange flex-shrink-0 border border-[var(--theme-border)] p-1.5">
-                        <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] rounded-2xl p-4 sm:p-5 border border-[var(--theme-border)]">
+                <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 bg-[var(--theme-bg-deep)] rounded-xl flex items-center justify-center shadow-glow-orange flex-shrink-0 border border-[var(--theme-border)] p-1.5">
+                            <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg md:text-xl font-bold text-[var(--theme-text-main)]">
+                                Kitchen TV
+                                <span className="text-[var(--theme-text-muted)] font-normal ml-2 text-sm md:text-base">Control Center</span>
+                            </h1>
+                            <p className="text-xs text-[var(--theme-text-muted)]">
+                                Watching {orders.filter(o => o.kotStatus === 'Open').length} live tickets
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-lg md:text-xl font-bold text-[var(--theme-text-main)]">
-                            Kitchen TV
-                            <span className="text-[var(--theme-text-muted)] font-normal ml-2 text-sm md:text-base">Control Center</span>
-                        </h1>
-                        <p className="text-xs text-[var(--theme-text-muted)]">
-                            Watching {orders.filter(o => o.kotStatus === 'Open').length} live tickets
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3">
+                    
+                    {/* Refresh Button on Mobile (Top Right of Card) */}
                     <button
                         onClick={fetchOrders}
-                        className="p-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        className="sm:hidden p-2 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] rounded-xl transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
                         title="Refresh"
                     >
                         <RefreshCw size={17} />
                     </button>
-                    <div className={`px-3 py-2 rounded-xl text-xs font-bold hidden sm:block border transition-colors ${socketConnected
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                    <div className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${socketConnected
                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                         : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
                         }`}>
@@ -312,6 +312,15 @@ const KitchenDashboard = () => {
                             }`} />
                         {socketConnected ? 'Live' : 'Reconnecting...'}
                     </div>
+
+                    {/* Refresh Button on Desktop (Keep in action row) */}
+                    <button
+                        onClick={fetchOrders}
+                        className="hidden sm:flex p-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] rounded-xl transition-colors min-h-[44px] min-w-[44px] items-center justify-center"
+                        title="Refresh"
+                    >
+                        <RefreshCw size={17} />
+                    </button>
                 </div>
             </div>
 

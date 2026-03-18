@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-    X, Clock, Utensils, CreditCard,
+    X, Clock, Utensils, Package, CreditCard,
     Printer, Wallet, CheckCircle2, ChefHat, Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -74,134 +74,206 @@ const OrderDetailsModal = ({
 
             {/* ── Modal Card ───────────────────────────────────────────────── */}
             <div
-                className={`relative z-10 w-full ${userRole === 'waiter' ? 'sm:max-w-lg md:max-w-xl' : 'sm:max-w-md'} bg-[var(--theme-bg-card)] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] border border-[var(--theme-border)] transition-all duration-300 ${isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'}`}
+                className={`relative z-10 w-full ${userRole === 'waiter' ? 'sm:max-w-lg md:max-w-xl lg:max-w-2xl' : 'sm:max-w-md'} bg-[var(--theme-bg-card)] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] border border-[var(--theme-border)] transition-all duration-300 ${isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'}`}
             >
                 {/* HEADER */}
-                <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--theme-border)] shrink-0">
-                    <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-base font-bold text-[var(--theme-text-main)] tracking-tight">{order.orderNumber}</h2>
-                            <StatusBadge status={order.orderStatus} />
+                <div className="px-5 py-4 sm:py-5 flex items-start justify-between border-b border-[var(--theme-border)] shrink-0 gap-4">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-xl font-black text-[var(--theme-text-main)] tracking-tighter uppercase">{order.orderNumber}</h2>
+                            <StatusBadge status={order.orderStatus} size="sm" />
+                            {order.orderType === 'takeaway' && order.tokenNumber && (
+                                <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm shadow-orange-500/20">
+                                    TOKEN #{order.tokenNumber}
+                                </span>
+                            )}
                         </div>
-                        <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest flex items-center gap-1">
-                            <Clock size={10} /> {new Date(order.createdAt).toLocaleTimeString()} · {order.orderType}
+                        <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest flex items-center gap-2">
+                            <Clock size={12} className="text-blue-400" /> {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <span className="opacity-30">•</span>
+                            <span className="flex items-center gap-1">
+                                {order.orderType === 'dine-in' ? <Utensils size={12} /> : <Package size={12} />}
+                                {order.orderType}
+                            </span>
                         </p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] rounded-full text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all"
+                        className="w-9 h-9 flex items-center justify-center bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] rounded-xl text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all active:scale-90"
                     >
-                        <X size={16} />
+                        <X size={18} />
                     </button>
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 space-y-4 sm:space-y-6">
 
-                    {/* INFO & FINANCIALS */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Order Details */}
-                        <div className="bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-4 space-y-3 shadow-inner">
-                            <p className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em]">Live Status</p>
-                            <InfoRow label={<><Utensils size={14} className="text-blue-400" /> Dining</>}>
-                                <span className="text-[11px] font-black text-[var(--theme-text-main)] uppercase tracking-tight">{order.orderType}</span>
-                            </InfoRow>
-                            {order.orderType === 'dine-in' && (
-                                <InfoRow label="Table">
-                                    <span className="text-[11px] font-black text-orange-500">T-{order.tableId?.number || order.tableId}</span>
-                                </InfoRow>
-                            )}
-                            <InfoRow label={<><CreditCard size={14} className={isPaid ? 'text-emerald-400' : 'text-rose-400'} /> Bill</>}>
-                                <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border ${isPaid
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                    : 'bg-rose-500/10 text-rose-500 border-rose-500/30'
-                                }`}>
-                                    {isPaid ? 'Settled' : 'Unpaid'}
-                                </span>
-                            </InfoRow>
+                    {/* TOP SECTION: INFO cards (Responsive Grid) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                        {/* Info Block - 7 cols on tablet+ */}
+                        <div className="sm:col-span-8 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-5 sm:p-6 shadow-inner relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500/40" />
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <p className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em]">Live Tracking</p>
+                                    <h4 className="text-[11px] font-bold text-[var(--theme-text-subtle)] mt-0.5">Real-time status monitor</h4>
+                                </div>
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-wider border border-blue-500/20">
+                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                                    Active
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+                                {/* Service Block */}
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">Service</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`p-1.5 rounded-lg border ${order.orderType === 'dine-in' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-orange-500/10 border-orange-500/20 text-orange-400'}`}>
+                                            {order.orderType === 'dine-in' ? <Utensils size={14} /> : <Package size={14} />}
+                                        </div>
+                                        <span className={`text-[11px] font-black uppercase tracking-tight ${order.orderType === 'dine-in' ? 'text-blue-400' : 'text-orange-400'}`}>
+                                            {order.orderType}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Identity Block */}
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">
+                                        {order.orderType === 'dine-in' ? 'Table ID' : 'Token ID'}
+                                    </span>
+                                    <div>
+                                        <span className="inline-flex items-center justify-center min-w-[36px] h-8 font-black text-[var(--theme-text-main)] px-3 bg-[var(--theme-bg-hover)] rounded-xl border-2 border-[var(--theme-border)] shadow-sm text-sm">
+                                            {order.orderType === 'dine-in' ? (order.tableId?.number || order.tableId || '?') : (order.tokenNumber || '?')}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Payment Block */}
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">Payment</span>
+                                    <div>
+                                        <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase px-3 py-1 rounded-full border ${isPaid
+                                            ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20'
+                                            : 'bg-rose-600/10 text-rose-500 border-rose-500/20'
+                                        }`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${isPaid ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                            {isPaid ? 'Settled' : 'Unpaid'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Status Block */}
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">Kitchen</span>
+                                    <div className="flex items-center">
+                                        <StatusBadge status={order.orderStatus} size="sm" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Bill Summary */}
+                        {/* Financial Block - 5 cols on tablet+ */}
                         {userRole === 'waiter' ? (
-                            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 border border-blue-500/20 rounded-2xl p-4 flex flex-col justify-between shadow-lg shadow-blue-500/20">
-                                <div className="absolute top-0 right-0 p-1 opacity-20"><CreditCard size={64} strokeWidth={1} /></div>
-                                <p className="text-[10px] font-black text-white/70 uppercase tracking-[0.2em] mb-2 relative z-10">Grand Total</p>
-                                <div className="relative z-10">
-                                    <p className="text-2xl font-black text-white leading-none tracking-tighter">{formatPrice(order.finalAmount)}</p>
-                                    <p className="text-[10px] text-white/60 mt-1 font-bold">Sub: {formatPrice(order.totalAmount)}</p>
-                                </div>
-                                <div className={`mt-3 w-8 h-8 rounded-xl flex items-center justify-center border relative z-10 ${isPaid
-                                    ? 'bg-white/20 border-white/30 text-white'
-                                    : 'bg-black/20 border-white/10 text-white/40'
-                                }`}>
-                                    <CheckCircle2 size={18} strokeWidth={3} />
+                            <div className="sm:col-span-4 relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 border border-blue-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xl shadow-blue-500/20 group">
+                                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150" />
+                                <div className="absolute top-4 right-4 opacity-10"><CreditCard size={48} strokeWidth={1} /></div>
+                                
+                                <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-auto relative z-10">Total Bill</p>
+                                
+                                <div className="relative z-10 mt-4">
+                                    <p className="text-3xl font-black text-white leading-none tracking-tighter drop-shadow-md">{formatPrice(order.finalAmount)}</p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">{order.items?.length} Items</span>
+                                        <span className="w-1 h-1 rounded-full bg-white/30" />
+                                        <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Sub: {formatPrice(order.totalAmount)}</span>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-4 flex flex-col justify-between shadow-inner">
-                                <p className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em] mb-2">Order Summary</p>
-                                <div>
-                                    <p className="text-2xl font-black text-[var(--theme-text-main)] leading-none">{formatPrice(order.finalAmount)}</p>
-                                    <p className="text-[10px] text-[var(--theme-text-muted)] mt-1 font-bold">Total Bill Amount</p>
-                                </div>
-                                <div className={`mt-3 w-8 h-8 rounded-xl flex items-center justify-center border ${isPaid
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                    : 'bg-[var(--theme-bg-hover)] border-[var(--theme-border)] text-[var(--theme-text-muted)] opacity-30'
-                                }`}>
-                                    <CheckCircle2 size={18} />
+                            <div className="sm:col-span-4 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-inner relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--theme-border)] opacity-5 -mr-8 -mt-8 rounded-full" />
+                                <p className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em] mb-auto">Order Total</p>
+                                <div className="mt-4">
+                                    <p className="text-3xl font-black text-[var(--theme-text-main)] leading-none tracking-tighter">{formatPrice(order.finalAmount)}</p>
+                                    <p className="text-[10px] text-[var(--theme-text-muted)] mt-1.5 font-bold uppercase tracking-widest flex items-center gap-1">
+                                        Full settled amount
+                                    </p>
                                 </div>
                             </div>
                         )}
                     </div>
 
                     {/* ITEM LIST */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between pb-1 border-b border-[var(--theme-border)]">
-                            <h3 className="text-xs font-black text-[var(--theme-text-muted)] uppercase tracking-widest">
-                                Ordered Items ({order.items?.length})
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between pb-2 border-b-2 border-[var(--theme-border)]">
+                            <h3 className="text-xs font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em] flex items-center gap-2">
+                                <Utensils size={14} className="text-orange-500" /> Bill Items ({order.items?.length})
                             </h3>
-                            <div className="flex items-center gap-2">
-                                {!isPaid && !isCancelled && userRole === 'waiter' && (
-                                    <button
-                                        onClick={() => {
-                                            onClose();
-                                            navigate(`/new-order?orderId=${order._id}`);
-                                        }}
-                                        className="h-9 px-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl shadow-lg shadow-orange-600/20 transition-all flex items-center gap-2 text-xs font-black uppercase tracking-wider active:scale-95 border-none"
-                                    >
-                                        <Plus size={16} strokeWidth={4} /> Add Item
-                                    </button>
-                                )}
-                                {isCancelled && <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase tracking-wider border border-rose-500/20">Cancelled</span>}
-                            </div>
+                            {!isPaid && !isCancelled && userRole === 'waiter' && (
+                                <button
+                                    onClick={() => {
+                                        onClose();
+                                        navigate(`/new-order?orderId=${order._id}`);
+                                    }}
+                                    className="h-8 px-3 bg-orange-600 hover:bg-orange-500 text-white rounded-lg shadow-lg shadow-orange-600/20 transition-all flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider active:scale-95"
+                                >
+                                    <Plus size={14} strokeWidth={4} /> Add New
+                                </button>
+                            )}
                         </div>
+                        
                         <div className="space-y-3">
                             {order.items?.map((item, i) => {
                                 const cancelled = item.status?.toUpperCase() === 'CANCELLED';
+                                const isNewItem = item.status?.toUpperCase() === 'PENDING' && (new Date(item.addedAt || item.updatedAt || Date.now()) - new Date(order.createdAt)) > 30000;
+                                const addedAgo = item.addedAt ? Math.floor((Date.now() - new Date(item.addedAt)) / 60000) : null;
+                                
                                 return (
                                     <div
                                         key={i}
-                                        className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all group ${cancelled
-                                            ? 'opacity-30 bg-rose-500/5 border-rose-500/10'
-                                            : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] hover:border-blue-400/50 hover:bg-[var(--theme-bg-hover)] hover:shadow-xl hover:shadow-blue-500/5'
+                                        className={`flex items-center justify-between p-3 sm:p-4 rounded-2xl border transition-all relative overflow-hidden group/item ${cancelled
+                                            ? 'opacity-40 bg-[var(--theme-bg-dark)] grayscale border-dashed border-[var(--theme-border)]'
+                                            : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] hover:border-orange-500/30 hover:bg-[var(--theme-bg-hover)]'
                                         }`}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--theme-bg-hover)] to-[var(--theme-border)] flex flex-col items-center justify-center border border-[var(--theme-border)] shadow-inner">
-                                                <span className="text-[14px] font-black text-[var(--theme-text-main)]">{item.quantity}</span>
-                                                <span className="text-[7px] font-bold text-[var(--theme-text-muted)] -mt-1 uppercase">QTY</span>
+                                        {isNewItem && !cancelled && (
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]" />
+                                        )}
+                                        
+                                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                            <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex flex-col items-center justify-center border shadow-inner shrink-0 ${
+                                                isNewItem ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'bg-[var(--theme-bg-deep)] border-[var(--theme-border)] text-[var(--theme-text-main)]'
+                                            }`}>
+                                                <span className="text-sm sm:text-base font-black leading-none">{item.quantity}</span>
+                                                <span className="text-[7px] font-black opacity-40 uppercase tracking-tighter">Qty</span>
                                             </div>
-                                            <div>
-                                                <p className={`text-sm font-black tracking-tight ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}`}>{item.name}</p>
+                                            
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className={`text-sm font-black tracking-tight truncate ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}`}>
+                                                        {item.name}
+                                                    </p>
+                                                    {isNewItem && !cancelled && (
+                                                        <span className="bg-orange-500/10 text-orange-500 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest animate-pulse">New</span>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <StatusBadge status={item.status || 'Pending'} size="xs" />
-                                                    <span className="text-[10px] text-[var(--theme-text-muted)] font-bold opacity-60">@ {formatPrice(item.price)}</span>
+                                                    <span className="text-[10px] text-[var(--theme-text-muted)] font-bold opacity-40">@ {formatPrice(item.price)}</span>
+                                                    {addedAgo !== null && addedAgo >= 1 && !cancelled && (
+                                                        <span className="text-[9px] text-blue-400 font-bold italic flex items-center gap-1">
+                                                            <Clock size={10} /> {addedAgo}m ago
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
+
+                                        <div className="flex items-center gap-3 pl-4">
                                             <div className="text-right">
-                                                <p className={`text-sm font-black tabular-nums ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-blue-400 group-hover:scale-105 transition-transform'}`}>
+                                                <p className={`text-sm sm:text-base font-black tabular-nums ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-blue-400'}`}>
                                                     {formatPrice(item.price * item.quantity)}
                                                 </p>
                                             </div>
