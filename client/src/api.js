@@ -1,10 +1,28 @@
 import axios from "axios";
 
-// Get API URL — prioritize local for dev unless explicitly overridden
-const isDev = import.meta.env.MODE === 'development';
-const baseURL = (
-    import.meta.env.VITE_API_URL || (isDev ? "http://localhost:5005" : "https://restaurant-kagzso-backend.onrender.com")
-).replace(/\/+$/, "");
+// ─── Dynamic API Configuration for Multi-Device Dev ────────────────
+const getBaseURL = () => {
+    // 1. Prioritize explicit environment override (e.g., from Vercel/Render)
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+
+    // 2. Production fallback if not in development
+    if (import.meta.env.MODE !== 'development') {
+        return "https://restaurant-kagzso-backend.onrender.com";
+    }
+
+    // 3. Smart Dev Discovery: If we are on mobile/tab via IP (e.g. 192.168.x.x), 
+    // use that same hostname for the API instead of 'localhost'.
+    const hostname = window.location.hostname;
+    const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
+    if (isIP || (hostname !== 'localhost' && hostname !== '127.0.0.1')) {
+        return `http://${hostname}:5005`;
+    }
+
+    // 4. Default local development
+    return "http://localhost:5005";
+};
+
+const baseURL = getBaseURL().replace(/\/+$/, "");
 
 // Create axios instance
 const api = axios.create({

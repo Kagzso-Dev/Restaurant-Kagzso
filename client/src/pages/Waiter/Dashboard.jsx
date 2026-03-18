@@ -2,7 +2,7 @@ import { useState, useEffect, useContext, useCallback, memo, useMemo } from 'rea
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { Utensils, Package, Grid, ShoppingBag, Clock, XCircle, History, ClipboardList } from 'lucide-react';
+import { Utensils, Package, Grid, ShoppingBag, Clock, XCircle, History, ClipboardList, WifiOff } from 'lucide-react';
 import TableGrid from '../../components/TableGrid';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
@@ -109,6 +109,7 @@ const WaiterDashboard = () => {
     const [statusFilter, setStatusFilter] = useState(null); // null | 'pending' | 'preparing' | 'ready'
     const [showTables, setShowTables] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, item: null });
     const [isProductionMode, setIsProductionMode] = useState(() => {
@@ -162,12 +163,14 @@ const WaiterDashboard = () => {
     const fetchOrders = useCallback(async () => {
         try {
             setLoading(true);
+            setFetchError(false);
             const res = await api.get('/api/orders', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             setOrders(res.data.orders || []);
         } catch (err) {
-            console.error(err);
+            console.error("Error fetching orders", err);
+            setFetchError(true);
         } finally {
             setLoading(false);
         }
@@ -256,6 +259,26 @@ const WaiterDashboard = () => {
 
     return (
         <div className="space-y-5 animate-fade-in pb-10 text-left">
+            {/* ── NETWORK ERROR ALERT ────────────────────────────────────── */}
+            {fetchError && (
+                <div id="net-error-alert" className="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-bounce-subtle">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <WifiOff size={20} className="text-red-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-red-600">Network Connection Error</h3>
+                            <p className="text-[10px] text-red-500 font-medium">Cannot reach the POS server. Please check your WiFi or IP settings.</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => fetchOrders()}
+                        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 shadow-lg shadow-red-500/20"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            )}
 
             {/* ── Header ─────────────────────────────────────────────── */}
             <div className="flex flex-col lg:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl border border-[var(--theme-border)] shadow-sm">

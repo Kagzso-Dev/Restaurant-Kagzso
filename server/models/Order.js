@@ -74,7 +74,11 @@ const Order = {
             const items = await loadItems(id);
             return fmtOrder(doc, items, tableNum);
         } catch (error) {
-            return null;
+            // 404 from Appwrite means the document genuinely doesn't exist → return null
+            // Any other error (permissions, network, schema) should surface, not hide
+            if (error?.code === 404) return null;
+            console.error(`[Order.findById] Appwrite error for id=${id}:`, error?.message || error);
+            throw error;
         }
     },
 
@@ -162,20 +166,22 @@ const Order = {
         }
 
         // 3. Validate relationships: existing menu_item_ids
+        // Appwrite $id is a system field — use getDocument per item, not Query.equal('$id')
         if (data.items && data.items.length > 0) {
-            const menuItemIds = data.items.map(item => item.menuItemId);
+            const menuItemIds = data.items.map(item => item.menuItemId).filter(Boolean);
             console.log(`[DEBUG] Validating menu items: ${menuItemIds.join(', ')}`);
-            
-            const existingItemsResp = await databases.listDocuments(
-                databaseId,
-                COLLECTIONS.menu_items,
-                [Query.equal('$id', menuItemIds), Query.limit(menuItemIds.length)]
-            );
-            
-            if (existingItemsResp.total !== menuItemIds.length) {
-                const existingIds = existingItemsResp.documents.map(item => item.$id);
-                const invalidIds = menuItemIds.filter(id => !existingIds.includes(id));
-                const errorMsg = `Invalid menu_item_id(s) provided: ${invalidIds.join(', ')}. Ensure all items exist in the database.`;
+
+            const invalidIds = [];
+            await Promise.all(menuItemIds.map(async (mid) => {
+                try {
+                    await databases.getDocument(databaseId, COLLECTIONS.menu_items, mid);
+                } catch {
+                    invalidIds.push(mid);
+                }
+            }));
+
+            if (invalidIds.length > 0) {
+                const errorMsg = `Invalid menu_item_id(s): ${invalidIds.join(', ')}. Ensure all items exist in the database.`;
                 console.error(`[ERROR] ${errorMsg}`);
                 throw new Error(errorMsg);
             }
@@ -354,20 +360,25 @@ const Order = {
 
         // 2. Insert new items into database
         for (const item of items) {
-            await databases.createDocument(
-                databaseId,
-                COLLECTIONS.order_items,
-                ID.unique(),
-                {
-                    order_id: orderId,
-                    menu_item_id: item.menuItemId,
-                    name: item.name,
-                    price: parseFloat(item.price),
-                    quantity: parseInt(item.quantity),
-                    notes: item.notes || null,
-                    status: 'PENDING'
-                }
-            );
+            try {
+                await databases.createDocument(
+                    databaseId,
+                    COLLECTIONS.order_items,
+                    ID.unique(),
+                    {
+                        order_id: orderId,
+                        menu_item_id: item.menuItemId || null,
+                        name: item.name,
+                        price: parseFloat(item.price),
+                        quantity: parseInt(item.quantity),
+                        notes: item.notes || null,
+                        status: 'PENDING'
+                    }
+                );
+            } catch (err) {
+                console.error(`[Order.addItems] Failed to insert item "${item.name}":`, err?.message || err);
+                throw err;
+            }
         }
 
         // 3. Recalculate totals from ALL items (old and new)
