@@ -63,6 +63,7 @@ const NewOrder = () => {
                 } catch (err) {
                     console.error("NewOrder: Error fetching existing order", err);
                     alert("Could not load existing order details");
+                    navigate('/waiter');
                 }
             };
             fetchOrder();
@@ -100,6 +101,8 @@ const NewOrder = () => {
                 setCategories(catRes.data);
             } catch (error) {
                 console.error("Error fetching POS data", error);
+                alert("Could not load menu. Returning to Hub.");
+                navigate('/waiter');
             } finally {
                 setLoading(false);
             }
