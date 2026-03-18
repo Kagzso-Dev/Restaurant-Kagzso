@@ -354,7 +354,7 @@ const NewOrder = () => {
                                     </h2>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 flex-1 max-w-xl">
+                            <div className="flex items-center gap-2 w-full sm:flex-1 sm:max-w-xl">
                                 <div className="relative flex-1">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" size={16} />
                                     <input

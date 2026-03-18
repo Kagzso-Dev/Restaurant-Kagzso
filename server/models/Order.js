@@ -14,6 +14,7 @@ const fmtItem = (doc) => ({
     cancelledBy:  doc.cancelled_by,
     cancelReason: doc.cancel_reason,
     cancelledAt:  doc.cancelled_at,
+    createdAt:    doc.$createdAt,
 });
 
 const fmtOrder = (doc, items = [], tableNum = null) => ({

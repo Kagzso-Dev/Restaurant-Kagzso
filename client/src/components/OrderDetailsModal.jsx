@@ -233,8 +233,8 @@ const OrderDetailsModal = ({
                         <div className="space-y-3">
                             {order.items?.map((item, i) => {
                                 const cancelled = item.status?.toUpperCase() === 'CANCELLED';
-                                const isNewItem = item.status?.toUpperCase() === 'PENDING' && (new Date(item.addedAt || item.updatedAt || Date.now()) - new Date(order.createdAt)) > 30000;
-                                const addedAgo = item.addedAt ? Math.floor((Date.now() - new Date(item.addedAt)) / 60000) : null;
+                                const isNewItem = item.status?.toUpperCase() === 'PENDING' && (new Date(item.createdAt || Date.now()) - new Date(order.createdAt)) > 30000;
+                                const addedAgo = item.createdAt ? Math.floor((Date.now() - new Date(item.createdAt)) / 60000) : null;
                                 
                                 return (
                                     <div
