@@ -2,9 +2,11 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AIProvider } from './context/AIContext';
 import { AdminRoute, KitchenRoute, CashierRoute, WaiterRoute } from './PrivateRoutes';
 import Layout from './components/Layout';
 import DynamicTheme from './components/DynamicTheme';
+const KagzsoAI = lazy(() => import('./components/AI/KagzsoAI'));
 
 // ── Components ───────────────────────────────────────────────────
 import Login from './pages/Login';
@@ -47,9 +49,10 @@ function App() {
     <ThemeProvider>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <DynamicTheme />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
+        <AIProvider>
+          <DynamicTheme />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
 
@@ -98,6 +101,10 @@ function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Suspense>
+        <Suspense fallback={null}>
+          <KagzsoAI />
+        </Suspense>
+        </AIProvider>
       </AuthProvider>
     </BrowserRouter>
     </ThemeProvider>

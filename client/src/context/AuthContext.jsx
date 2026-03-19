@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
         taxRate: 5,
         gstNumber: '',
         dashboardView: 'all',
+        menuView: 'grid',
     });
 
     // ── Socket init (joins restaurant-specific + role-specific rooms) ──────────
@@ -180,6 +181,7 @@ export const AuthProvider = ({ children }) => {
             taxRate: 5,
             gstNumber: '',
             dashboardView: 'all',
+            menuView: 'grid',
         });
     };
 

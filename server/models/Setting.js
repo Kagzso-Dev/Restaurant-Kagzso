@@ -82,7 +82,7 @@ const Setting = {
         return fmt(updated);
     },
 
-    async update({ restaurantName, address, currency, currencySymbol, taxRate, gstNumber, pendingColor, acceptedColor, preparingColor, readyColor, dashboardView, dineInEnabled, tableMapEnabled, takeawayEnabled, waiterServiceEnabled }) {
+    async update({ restaurantName, address, currency, currencySymbol, taxRate, gstNumber, pendingColor, acceptedColor, preparingColor, readyColor, dashboardView, menuView, dineInEnabled, tableMapEnabled, takeawayEnabled, waiterServiceEnabled }) {
         console.log('[Setting] Update raw input:', { restaurantName, taxRate, pendingColor });
         await this.get(); // ensures row exists
 

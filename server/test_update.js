@@ -25,7 +25,8 @@ async function testUpdate() {
             accepted_color: "#8b5cf6",
             preparing_color: "#f59e0b",
             ready_color: "#10b981",
-            dashboard_view: "all"
+            dashboard_view: "all",
+            menu_view: "grid"
         };
         console.log('Sending full payload to updateDocument...');
         const updated = await databases.updateDocument(databaseId, collectionId, docId, data);

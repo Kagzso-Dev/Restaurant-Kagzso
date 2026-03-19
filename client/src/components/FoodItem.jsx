@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Plus, Check, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 
 const FoodItem = memo(({
     item,
@@ -200,9 +200,9 @@ const FoodItem = memo(({
                     {showActions && !isAdmin && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onAdd(item); }}
-                            className={`w-8 h-8 rounded-xl flex items-center justify-center text-white transition-all active:scale-95 shadow-md font-bold text-sm ${cartQty > 0 ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-orange-500 shadow-orange-500/30 hover:bg-orange-600'}`}
+                            className={`w-6 h-6 sm:w-6 sm:h-6 flex-shrink-0 aspect-square rounded-lg flex items-center justify-center text-white transition-all active:scale-95 shadow-md font-bold text-xs ${cartQty > 0 ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-orange-500 shadow-orange-500/30 hover:bg-orange-600'}`}
                         >
-                            {cartQty > 0 ? cartQty : <Plus size={16} />}
+                            {cartQty > 0 ? cartQty : <Plus size={13} />}
                         </button>
                     )}
                 </div>

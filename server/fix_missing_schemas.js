@@ -97,6 +97,15 @@ async function fixSchemas() {
         await ensureAttribute(COLLECTIONS.settings, 'secondary_qr_url', 'string', { size: 500, required: false });
         await ensureAttribute(COLLECTIONS.settings, 'standard_qr_file_id', 'string', { required: false });
         await ensureAttribute(COLLECTIONS.settings, 'secondary_qr_file_id', 'string', { required: false });
+        
+        await ensureAttribute(COLLECTIONS.settings, 'pending_color', 'string', { required: false, def: '#3b82f6' });
+        await ensureAttribute(COLLECTIONS.settings, 'accepted_color', 'string', { required: false, def: '#8b5cf6' });
+        await ensureAttribute(COLLECTIONS.settings, 'preparing_color', 'string', { required: false, def: '#f59e0b' });
+        await ensureAttribute(COLLECTIONS.settings, 'ready_color', 'string', { required: false, def: '#10b981' });
+        
+        await ensureAttribute(COLLECTIONS.settings, 'dashboard_view', 'string', { required: false, def: 'all' });
+        await ensureAttribute(COLLECTIONS.settings, 'menu_view', 'string', { required: false, def: 'grid' });
+
         await ensureAttribute(COLLECTIONS.settings, 'dine_in_enabled', 'boolean', { required: false, def: true });
         await ensureAttribute(COLLECTIONS.settings, 'table_map_enabled', 'boolean', { required: false, def: true });
         await ensureAttribute(COLLECTIONS.settings, 'takeaway_enabled', 'boolean', { required: false, def: true });
