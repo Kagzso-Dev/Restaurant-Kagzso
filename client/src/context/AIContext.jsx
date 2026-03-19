@@ -62,7 +62,6 @@ export const AIProvider = ({ children }) => {
     const [securityAlerts, setSecurityAlerts] = useState([]);
     const prevPathRef = useRef(location.pathname);
 
-    // ── Page Context ──────────────────────────────────────────────────────────
     const getPageContext = useCallback(() => {
         const path = location.pathname;
         const role = user?.role || 'guest';
@@ -75,17 +74,13 @@ export const AIProvider = ({ children }) => {
         return { role, page: ctx.page, help: ctx.help, path };
     }, [location.pathname, user?.role]);
 
-    // ── Security Check ────────────────────────────────────────────────────────
     const checkSecurity = useCallback((text) => {
         for (const { pattern, type } of SECURITY_PATTERNS) {
-            if (pattern.test(text)) {
-                return { type, response: SECURITY_RESPONSES[type] };
-            }
+            if (pattern.test(text)) return { type, response: SECURITY_RESPONSES[type] };
         }
         return null;
     }, []);
 
-    // ── Log Security Event (flag for admin) ───────────────────────────────────
     const flagSecurityEvent = useCallback((text, type) => {
         const event = {
             id: Date.now(),
@@ -97,15 +92,11 @@ export const AIProvider = ({ children }) => {
             timestamp: new Date(),
         };
         setSecurityAlerts(prev => [...prev, event]);
-        // Console warn for backend logging (can be wired to an API endpoint)
         console.warn('[Kagzso Security Alert]', event);
     }, [location.pathname, user]);
 
-    // ── Response Engine ───────────────────────────────────────────────────────
     const generateResponse = useCallback(async (userText) => {
         setIsTyping(true);
-
-        // ── 1. Security gate ──────────────────────────────────────────────────
         const secIssue = checkSecurity(userText);
         if (secIssue) {
             await new Promise(r => setTimeout(r, 400));
@@ -121,154 +112,26 @@ export const AIProvider = ({ children }) => {
             return;
         }
 
-        // ── 2. Simulate network delay ─────────────────────────────────────────
         await new Promise(r => setTimeout(r, 550 + Math.random() * 650));
-
         const ctx  = getPageContext();
         const role = ctx.role;
         const lower = userText.toLowerCase();
         let response = '';
 
-        // ── 3. Intent matching ────────────────────────────────────────────────
-
-        // Greeting
-        if (/\b(hi|hey|hello|howdy|sup|yo|hiya)\b/.test(lower)) {
-            const opts = [
-                "Hey there! Ready to help you move fast today 🚀 What do you need?",
-                "Hi! What can I help you with? Ask away! 👋",
-                "Hey! What's up? I'm right here to help ✨",
-            ];
-            response = opts[Math.floor(Math.random() * opts.length)];
-        }
-
-        // Help / features
-        else if (/\b(help|what.*(can|do)|feature|support|guide)\b/.test(lower)) {
-            response = `I'm set up for ${ctx.page} right now. I can help with ${ctx.help}. Just ask anything specific! 💡`;
-        }
-
-        // ── ORDER INTENTS ─────────────────────────────────────────────────────
-        else if (/(add|new|place|create|start).*(order)|(order).*(add|new|place|create|start)/.test(lower)) {
-            if (role === 'waiter')
-                response = "Easy! Go to Waiter Mode → tap a table → select items from the menu → hit **Confirm & Place Order**. That's it! ✅";
-            else
-                response = "Order creation is done by waiters. Head to your dashboard to see the current order list. 📋";
-        }
-
-        else if (/\border\b/.test(lower)) {
-            if (role === 'waiter')        response = "Tap any table to view or manage its order, or hit 'New Order' to start fresh. 🍽️";
-            else if (role === 'kitchen')  response = "All live orders show up on your Kitchen Display, sorted by time. Colors = priority! 🎨";
-            else if (role === 'cashier')  response = "Go to Cashier dashboard to see orders ready for billing. Pick one and collect payment. 💸";
-            else if (role === 'admin')    response = "Check Admin → Orders for full history and live status. Use filters to sort by status, date, or type. 📊";
-            else                          response = "Orders are managed by waiters and tracked live across all stations. 📋";
-        }
-
-        // ── TABLE INTENTS ─────────────────────────────────────────────────────
-        else if (/\btable\b/.test(lower)) {
-            if (role === 'waiter')  response = "Tables are on your dashboard. Green = free, orange/red = occupied. Tap a table to manage its order! 🪑";
-            else if (role === 'admin') response = "Manage tables under Admin → Tables. Add new tables, set capacity, and view occupancy stats. ⚙️";
-            else                    response = "Table management is handled by waiters and admins. 🪑";
-        }
-
-        // ── PAYMENT INTENTS ───────────────────────────────────────────────────
-        else if (/\b(payment|pay|bill|checkout|settle|receipt|billing)\b/.test(lower)) {
-            if (role === 'cashier')
-                response = "Go to Cashier Dashboard → pick the order → choose Cash or QR → confirm. Receipt auto-generates! 🧾";
-            else
-                response = "Payments happen at the Cashier terminal. Direct the customer there or call the cashier. 💳";
-        }
-
-        // ── QR INTENTS ────────────────────────────────────────────────────────
-        else if (/\b(qr|scan|upi)\b/.test(lower)) {
-            if (role === 'cashier')
-                response = "Select the order → tap **QR Payment** → show the QR to the customer to scan. It auto-confirms once paid! 📱";
-            else
-                response = "QR payments are handled at the Cashier terminal using the restaurant's UPI ID. 📱";
-        }
-
-        // ── STATUS INTENTS ────────────────────────────────────────────────────
-        else if (/\b(status|update|ready|preparing|pending|accepted)\b/.test(lower)) {
-            if (role === 'kitchen')
-                response = "Tap any order card to update: Pending → Accepted → Preparing → Ready. Waiter gets notified instantly! ✅";
-            else if (role === 'waiter')
-                response = "Watch the color codes on your dashboard — orange = preparing, green = ready, blue = accepted. Real-time! 🎨";
-            else
-                response = "Order statuses flow: Pending → Accepted → Preparing → Ready → Completed. All real-time! ⚡";
-        }
-
-        // ── KITCHEN INTENTS ───────────────────────────────────────────────────
-        else if (/\b(kitchen|cook|chef|queue)\b/.test(lower)) {
-            response = "The Kitchen Display shows all active orders sorted by time received. Status updates are instant and push notifications to waiters. 🍳";
-        }
-
-        // ── CANCEL INTENTS ────────────────────────────────────────────────────
-        else if (/\bcancel\b/.test(lower)) {
-            if (role === 'waiter')
-                response = "Open the order → tap **Cancel Order** → confirm the reason. Only pending or accepted orders can be cancelled. ❌";
-            else if (role === 'admin')
-                response = "Go to Admin → Orders → open the order → cancel. You can cancel any non-completed order. ❌";
-            else
-                response = "Order cancellations are handled by the waiter or admin. Open the order and use the Cancel option. ❌";
-        }
-
-        // ── MENU INTENTS ──────────────────────────────────────────────────────
-        else if (/\b(menu|item|food|dish|category|categories)\b/.test(lower)) {
-            if (role === 'admin')
-                response = "Head to Admin → Menu to add items, set prices, upload images, and toggle availability. Admin → Categories to manage categories. 🍕";
-            else if (role === 'waiter')
-                response = "The menu loads automatically when you open an order. Use the search bar or category filters to find items fast! 🔍";
-            else
-                response = "Menu items are configured by the admin under Admin → Menu. 🍽️";
-        }
-
-        // ── SETTINGS INTENTS ──────────────────────────────────────────────────
-        else if (/\b(setting|config|setup|tax|discount|restaurant)\b/.test(lower)) {
-            if (role === 'admin')
-                response = "Go to Admin → Settings. Configure restaurant name, tax rate, UPI ID, receipt footer, and more. ⚙️";
-            else
-                response = "System settings are managed by admin only. Ask your admin to make configuration changes. ⚙️";
-        }
-
-        // ── ANALYTICS INTENTS ─────────────────────────────────────────────────
-        else if (/\b(report|analytic|stat|summary|graph|chart|dashboard)\b/.test(lower)) {
-            if (role === 'admin')
-                response = "Head to Admin → Analytics for daily, weekly, and monthly reports — top items, revenue trends, and order counts. 📊";
-            else
-                response = "Reports and analytics are for admins only. Your manager can pull those up for you. 📊";
-        }
-
-        // ── TAKEAWAY INTENTS ──────────────────────────────────────────────────
-        else if (/\b(takeaway|take.?away|take.?out|token|parcel)\b/.test(lower)) {
-            response = "Takeaway orders get a token number. Go to Waiter Mode → Take Away → add items. Cashier collects by matching the token at billing. 🥡";
-        }
-
-        // ── DINE-IN INTENTS ───────────────────────────────────────────────────
-        else if (/\b(dine.?in|sit.?in|dine|table\s*order)\b/.test(lower)) {
-            response = "Dine-in orders link to a table. Open Waiter Mode → tap the table → add items → confirm. The kitchen gets it instantly! 🪑";
-        }
-
-        // ── PRINT INTENTS ─────────────────────────────────────────────────────
-        else if (/\b(print|receipt|invoice)\b/.test(lower)) {
-            response = "After billing, a receipt auto-generates. Hit the **Print** button on the bill preview. Works with any connected printer. 🖨️";
-        }
-
-        // ── NOTIFICATION INTENTS ──────────────────────────────────────────────
-        else if (/\bnotif/.test(lower)) {
-            response = "Notifications are in the 🔔 bell (top right). Admins see all alerts; staff see role-relevant updates. Red badge = unread! 🔔";
-        }
-
-        // ── THANKS ────────────────────────────────────────────────────────────
-        else if (/\b(thank|thanks|great|awesome|nice|good job|perfect|cool)\b/.test(lower)) {
-            response = "Anytime! You're doing great 💪 Anything else I can help with?";
-        }
-
-        // ── FALLBACK ──────────────────────────────────────────────────────────
-        else {
-            const fallbacks = [
-                `Hmm, I'm not sure about that one. Try asking something specific about ${ctx.help}! ⚡`,
-                "Could you rephrase that? I work best with specific questions about the POS. 🤔",
-                `Try one of the quick buttons below, or ask something specific about ${ctx.page}. 💡`,
-            ];
-            response = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+        if (/\b(hi|hey|hello|yo)\b/.test(lower)) {
+            response = "Hey there! Ready to help you move fast today 🚀 What do you need?";
+        } else if (/\b(help|support|guide)\b/.test(lower)) {
+            response = `I'm set up for ${ctx.page} right now. I can help with ${ctx.help}. Just ask! 💡`;
+        } else if (/\border\b/.test(lower)) {
+            if (role === 'waiter') response = "Tap any table to start an order, or use the 'New Order' button. Easy! 🍽️";
+            else if (role === 'kitchen') response = "Live orders are on your screen. Tap to accept or mark as ready. 👨‍🍳";
+            else response = "Orders are managed by waiters and tracked live across all stations. 📋";
+        } else if (/\b(payment|bill)\b/.test(lower)) {
+            response = "Payments are handled at the Cashier terminal. Direct the customer there or check the 'Billing' status. 💸";
+        } else if (/\b(thank|thanks|nice)\b/.test(lower)) {
+            response = "Anytime! You're doing great 💪 Anything else?";
+        } else {
+            response = `Got it! Check out the quick actions below, or ask something specific about ${ctx.page}. 💡`;
         }
 
         setMessages(prev => [...prev, {
@@ -280,35 +143,21 @@ export const AIProvider = ({ children }) => {
         setIsTyping(false);
     }, [checkSecurity, flagSecurityEvent, getPageContext]);
 
-    // ── Send Message ──────────────────────────────────────────────────────────
     const sendMessage = useCallback((text) => {
         const trimmed = text.trim();
         if (!trimmed) return;
-        setMessages(prev => [...prev, {
-            id: Date.now(),
-            text: trimmed,
-            sender: 'user',
-            timestamp: new Date(),
-        }]);
+        setMessages(prev => [...prev, { id: Date.now(), text: trimmed, sender: 'user', timestamp: new Date() }]);
         generateResponse(trimmed);
     }, [generateResponse]);
 
-    // ── Clear Chat ────────────────────────────────────────────────────────────
     const clearChat = useCallback(() => {
-        setMessages([{
-            id: Date.now(),
-            text: "Fresh start! What do you need help with? 🚀",
-            sender: 'ai',
-            timestamp: new Date(),
-        }]);
+        setMessages([{ id: Date.now(), text: "Fresh start! What do you need help with? 🚀", sender: 'ai', timestamp: new Date() }]);
     }, []);
 
-    // ── Dismiss Security Alert ────────────────────────────────────────────────
     const dismissSecurityAlert = useCallback((id) => {
         setSecurityAlerts(prev => prev.filter(a => a.id !== id));
     }, []);
 
-    // ── Page context switch notification ─────────────────────────────────────
     useEffect(() => {
         if (prevPathRef.current !== location.pathname && isOpen) {
             const ctx = getPageContext();
@@ -325,10 +174,8 @@ export const AIProvider = ({ children }) => {
 
     return (
         <AIContext.Provider value={{
-            isOpen, setIsOpen,
-            messages, sendMessage,
-            isTyping, clearChat,
-            context: getPageContext(),
+            isOpen, setIsOpen, messages, sendMessage,
+            isTyping, clearChat, context: getPageContext(),
             securityAlerts, dismissSecurityAlert,
         }}>
             {children}
