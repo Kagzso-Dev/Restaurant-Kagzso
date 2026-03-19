@@ -207,7 +207,7 @@ const Order = {
                 {
                     order_number: orderNumber,
                     token_number: seq,
-                    order_type: data.orderType,
+                    order_type: orderType,
                     table_id: data.tableId || null,
                     customer_name: data.customerInfo?.name || null,
                     customer_phone: data.customerInfo?.phone || null,
@@ -409,7 +409,7 @@ const Order = {
         const currentTaxRate = oldTotal > 0 ? (oldTax / oldTotal) : 0.05;
         
         const newTax = parseFloat((newTotalAmount * currentTaxRate).toFixed(2));
-        const newFinalAmount = parseFloat((newTotalAmount + newTax).toFixed(2));
+        const newFinalAmount = parseFloat((newTotalAmount + newTax - (parseFloat(order.discount) || 0)).toFixed(2));
 
         const updates = {
             total_amount: newTotalAmount,

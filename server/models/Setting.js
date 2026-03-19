@@ -171,6 +171,10 @@ const Setting = {
                         { key: 'takeaway_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'takeaway_enabled', false, true) },
                         { key: 'waiter_service_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'waiter_service_enabled', false, true) },
                         { key: 'enforce_menu_view', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'enforce_menu_view', false, false) },
+                        { key: 'standard_qr_url', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'standard_qr_url', 4096, false, null) },
+                        { key: 'secondary_qr_url', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'secondary_qr_url', 4096, false, null) },
+                        { key: 'standard_qr_file_id', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'standard_qr_file_id', 100, false, null) },
+                        { key: 'secondary_qr_file_id', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'secondary_qr_file_id', 100, false, null) },
                     ];
 
                     const toCreate = repairSpec.filter(s => !attrNames.includes(s.key));
