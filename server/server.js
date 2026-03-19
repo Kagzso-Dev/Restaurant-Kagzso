@@ -137,20 +137,21 @@ io.use(socketAuthMiddleware);
 // Must be registered BEFORE static file serving so /api/* never falls through
 // to index.html.
 
-// Prevent favicon 404 spam in API logs
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-
+// ─── API Routes ───────────────────────────────────────────────
+// Register specific routes BEFORE generic /api to avoid middleware conflicts
 app.use('/api/auth',           require('./routes/authRoutes'));
-app.use('/api',                require('./routes/orderRoutes'));
+app.use('/api/settings',       require('./routes/settingRoutes'));
 app.use('/api/tables',         require('./routes/tableRoutes'));
 app.use('/api/menu',           require('./routes/menuRoutes'));
 app.use('/api/categories',     require('./routes/categoryRoutes'));
-app.use('/api/settings',       require('./routes/settingRoutes'));
 app.use('/api/dashboard',      require('./routes/dashboardRoutes'));
 app.use('/api/analytics',      require('./routes/analyticsRoutes'));
 app.use('/api/payments',       require('./routes/paymentRoutes'));
 app.use('/api/notifications',  require('./routes/notificationRoutes'));
 app.use('/api/webhooks',       require('./routes/webhookRoutes'));
+
+// Generic /api route (contains /orders and global protect)
+app.use('/api',                require('./routes/orderRoutes'));
 
 // ─── Manual Backfill Endpoint (admin only) ───────────────────────────────────
 // POST /api/analytics/backfill?force=true  → re-aggregate all historical dates

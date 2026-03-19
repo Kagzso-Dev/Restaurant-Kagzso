@@ -24,6 +24,7 @@ const fmt = (doc) => doc ? {
     tableMapEnabled:    doc.table_map_enabled !== false,
     takeawayEnabled:    doc.takeaway_enabled !== false,
     waiterServiceEnabled: doc.waiter_service_enabled !== false,
+    enforceMenuView:    doc.enforce_menu_view === true,
     createdAt:         doc.$createdAt,
     updatedAt:         doc.$updatedAt,
 } : null;
@@ -57,10 +58,28 @@ const Setting = {
                         dine_in_enabled: true,
                         table_map_enabled: true,
                         takeaway_enabled: true,
-                        waiter_service_enabled: true
+                        waiter_service_enabled: true,
+                        enforce_menu_view: false
                     }
                 );
                 return fmt(newDoc);
+            }
+            // Self-repair: If attribute is missing in Appwrite schema, try to create it
+            if (error.code === 400 && (error.message?.includes('Unknown attribute') || error.message?.includes('invalid document structure'))) {
+                console.warn('[Setting] Schema mismatch detected. Attempting to fix attributes...');
+                try {
+                    await databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'menu_view', 50, false, 'grid');
+                    await databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'dashboard_view', 50, false, 'all');
+                    await databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'pending_color', 10, false, '#3b82f6');
+                    await databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'accepted_color', 10, false, '#8b5cf6');
+                    await databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'preparing_color', 10, false, '#f59e0b');
+                    await databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'ready_color', 10, false, '#10b981');
+                    // Wait for attributes to be ready (Appwrite indexer)
+                    await new Promise(r => setTimeout(r, 2000));
+                    return this.get(); // Retry
+                } catch (schemaErr) {
+                    console.error('[Setting] Schema auto-repair failed:', schemaErr.message);
+                }
             }
             throw error;
         }
@@ -82,8 +101,10 @@ const Setting = {
         return fmt(updated);
     },
 
-    async update({ restaurantName, address, currency, currencySymbol, taxRate, gstNumber, pendingColor, acceptedColor, preparingColor, readyColor, dashboardView, menuView, dineInEnabled, tableMapEnabled, takeawayEnabled, waiterServiceEnabled }) {
-        console.log('[Setting] Update raw input:', { restaurantName, taxRate, pendingColor });
+    async update(params) {
+        console.log('[Setting] Update raw input keys:', Object.keys(params).join(', '));
+        console.log('[Setting] Update raw input types:', Object.entries(params).map(([k,v]) => `${k}: ${typeof v}`).join(', '));
+        const { restaurantName, address, currency, currencySymbol, taxRate, gstNumber, pendingColor, acceptedColor, preparingColor, readyColor, dashboardView, menuView, dineInEnabled, tableMapEnabled, takeawayEnabled, waiterServiceEnabled, enforceMenuView } = params;
         await this.get(); // ensures row exists
 
         const data = {};
@@ -102,16 +123,17 @@ const Setting = {
         if (acceptedColor)  data.accepted_color  = acceptedColor;
         if (preparingColor) data.preparing_color = preparingColor;
         if (readyColor)     data.ready_color     = readyColor;
-        if (dashboardView)  data.dashboard_view  = dashboardView;
-        if (menuView)       data.menu_view       = menuView;
-        if (dineInEnabled  !== undefined) data.dine_in_enabled = dineInEnabled;
-        if (tableMapEnabled !== undefined) data.table_map_enabled = tableMapEnabled;
-        if (takeawayEnabled !== undefined) data.takeaway_enabled = takeawayEnabled;
-        if (waiterServiceEnabled !== undefined) data.waiter_service_enabled = waiterServiceEnabled;
+        if (dashboardView)  data.dashboard_view  = String(dashboardView);
+        if (menuView)       data.menu_view       = String(menuView);
+        if (dineInEnabled  !== undefined) data.dine_in_enabled = (dineInEnabled === true || dineInEnabled === 'true');
+        if (tableMapEnabled !== undefined) data.table_map_enabled = (tableMapEnabled === true || tableMapEnabled === 'true');
+        if (takeawayEnabled !== undefined) data.takeaway_enabled = (takeawayEnabled === true || takeawayEnabled === 'true');
+        if (waiterServiceEnabled !== undefined) data.waiter_service_enabled = (waiterServiceEnabled === true || waiterServiceEnabled === 'true');
+        if (enforceMenuView !== undefined) data.enforce_menu_view = (enforceMenuView === true || enforceMenuView === 'true');
 
         if (Object.keys(data).length === 0) return this.get();
 
-        console.log('[Setting] Updating Appwrite with:', data);
+        console.log('[Setting] Updating Appwrite with:', JSON.stringify(data, null, 2));
         try {
             const updated = await databases.updateDocument(
                 databaseId,
@@ -119,12 +141,63 @@ const Setting = {
                 SETTINGS_DOC_ID,
                 data
             );
+            console.log('[Setting] Success! Appwrite Return Doc:', JSON.stringify(updated, null, 2));
+            const fs = require('fs');
+            fs.appendFileSync('server_debug.log', `[UPDATE SUCCESS] ${new Date().toISOString()}: ${JSON.stringify(updated, null, 2)}\n`);
             return fmt(updated);
         } catch (error) {
+            // Self-repair: If attribute is missing or structure is invalid, try to create all possible missing fields
+            if (error.code === 400) {
+                console.warn('[Setting] Schema mismatch detected during update. Attempting full repair...');
+                try {
+                    const existingAttrs = await databases.listAttributes(databaseId, COLLECTIONS.settings);
+                    const attrNames = existingAttrs.attributes.map(a => a.key);
+
+                    const repairSpec = [
+                        { key: 'restaurant_name', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'restaurant_name', 100, false, 'KAGSZO') },
+                        { key: 'address', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'address', 255, false, '') },
+                        { key: 'currency', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'currency', 10, false, 'INR') },
+                        { key: 'currency_symbol', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'currency_symbol', 10, false, '₹') },
+                        { key: 'tax_rate', fn: () => databases.createFloatAttribute(databaseId, COLLECTIONS.settings, 'tax_rate', false, 5) },
+                        { key: 'gst_number', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'gst_number', 50, false, '') },
+                        { key: 'menu_view', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'menu_view', 50, false, 'grid') },
+                        { key: 'dashboard_view', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'dashboard_view', 50, false, 'all') },
+                        { key: 'pending_color', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'pending_color', 10, false, '#3b82f6') },
+                        { key: 'accepted_color', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'accepted_color', 10, false, '#8b5cf6') },
+                        { key: 'preparing_color', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'preparing_color', 10, false, '#f59e0b') },
+                        { key: 'ready_color', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'ready_color', 10, false, '#10b981') },
+                        { key: 'dine_in_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'dine_in_enabled', false, true) },
+                        { key: 'table_map_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'table_map_enabled', false, true) },
+                        { key: 'takeaway_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'takeaway_enabled', false, true) },
+                        { key: 'waiter_service_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'waiter_service_enabled', false, true) },
+                        { key: 'enforce_menu_view', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'enforce_menu_view', false, false) },
+                    ];
+
+                    const toCreate = repairSpec.filter(s => !attrNames.includes(s.key));
+                    
+                    if (toCreate.length > 0) {
+                        console.warn(`[Setting] Creating ${toCreate.length} missing attributes: ${toCreate.map(s => s.key).join(', ')}`);
+                        const results = await Promise.allSettled(toCreate.map(s => s.fn()));
+                        const fs = require('fs');
+                        results.forEach((r, idx) => {
+                            if (r.status === 'rejected') {
+                                const logMsg = `[REPAIR FAILED] ATTR [${toCreate[idx].key}] @ ${new Date().toISOString()}: ${r.reason.message}\n`;
+                                fs.appendFileSync('server_debug.log', logMsg);
+                            }
+                        });
+                        console.log('[Setting] Schema repair tasks dispatched. Waiting for indexer...');
+                        await new Promise(r => setTimeout(r, 3500));
+                        return this.update(params); // Retry with original params
+                    }
+                } catch (e) {
+                    console.error('[Setting] Full schema repair failed:', e.message);
+                }
+            }
             console.error('[Setting] Appwrite Update Error:', {
                 message: error.message,
                 code: error.code,
-                dataRequested: data
+                type: error.type,
+                dataRequested: JSON.stringify(data, null, 2)
             });
             throw error;
         }

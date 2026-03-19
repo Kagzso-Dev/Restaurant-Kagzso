@@ -6,9 +6,10 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Public route to get restaurant info (name, currency) before login
+// ── Public Routes ──────────────────────────────────────────────
 router.get('/', getSettings);
 
+// ── Protected Routes (Admin Only for most) ──────────────────────
 router.use(protect);
 
 router.put('/', authorize('admin'), updateSettings);

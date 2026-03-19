@@ -15,6 +15,9 @@ import FoodItem from '../../components/FoodItem';
  * Starts directly at table selection. orderType is fixed to 'dine-in'.
  */
 const DineIn = () => {
+    const { user, formatPrice, settings } = useContext(AuthContext);
+    const navigate = useNavigate();
+
     const [step, setStep] = useState(2); // 2 = table selection, 3 = menu
     const orderType = 'dine-in';
     const [selectedTable, setSelectedTable] = useState(null);
@@ -25,14 +28,24 @@ const DineIn = () => {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const [viewMode, setViewMode] = useState(
-        () => localStorage.getItem('foodViewMode') || 'grid'
-    );
+    const [userInteracted, setUserInteracted] = useState(false);
+    const [viewMode, setViewMode] = useState(() => settings?.menuView || 'grid');
 
-    useEffect(() => { localStorage.setItem('foodViewMode', viewMode); }, [viewMode]);
+    // Sync with global settings
+    useEffect(() => {
+        if (settings?.enforceMenuView) {
+            setViewMode(settings.menuView || 'grid');
+        } else if (!userInteracted && settings?.menuView) {
+            setViewMode(settings.menuView);
+        }
+    }, [settings?.menuView, settings?.enforceMenuView, userInteracted]);
 
-    const { user, formatPrice, settings } = useContext(AuthContext);
-    const navigate = useNavigate();
+    // Manual override helper
+    const handleViewToggle = (newMode) => {
+        setViewMode(newMode);
+        setUserInteracted(true);
+        localStorage.setItem('foodViewMode', newMode);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -176,7 +189,7 @@ const DineIn = () => {
                                         </button>
                                     )}
                                 </div>
-                                <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+                                {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
                             </div>
                         </div>
 

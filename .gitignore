@@ -23,3 +23,6 @@ server/seeder_error.log
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Temp/Test output
+server/test_out_full.txt

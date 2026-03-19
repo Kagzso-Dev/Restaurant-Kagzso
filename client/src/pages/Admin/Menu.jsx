@@ -7,6 +7,7 @@ import FoodItem from '../../components/FoodItem';
 
 
 const AdminMenu = () => {
+    const { user, formatPrice, socket, settings } = useContext(AuthContext);
     const [items, setItems] = useState([]);
     const [categories, setCategories] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,16 +15,28 @@ const AdminMenu = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState(null);
     const [formError, setFormError] = useState('');
-    const { user, formatPrice, socket } = useContext(AuthContext);
 
     const [formData, setFormData] = useState({
         name: '', description: '', price: '', category: '', image: '', isVeg: true, availability: true,
     });
-    const [viewMode, setViewMode] = useState(() => localStorage.getItem('adminMenuViewMode') || 'grid');
+    const [userInteracted, setUserInteracted] = useState(false);
+    const [viewMode, setViewMode] = useState(() => settings?.menuView || 'grid');
 
+    // Sync with global settings
     useEffect(() => {
-        localStorage.setItem('adminMenuViewMode', viewMode);
-    }, [viewMode]);
+        if (settings?.enforceMenuView) {
+            setViewMode(settings.menuView || 'grid');
+        } else if (!userInteracted && settings?.menuView) {
+            setViewMode(settings.menuView);
+        }
+    }, [settings?.menuView, settings?.enforceMenuView, userInteracted]);
+
+    // Manual override helper
+    const handleViewToggle = (newMode) => {
+        setViewMode(newMode);
+        setUserInteracted(true);
+        localStorage.setItem('adminMenuViewMode', newMode);
+    };
 
     useEffect(() => {
         fetchData();
@@ -173,7 +186,7 @@ const AdminMenu = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+                    {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
                     <button
                         onClick={() => openModal()}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl transition-colors font-semibold text-sm min-h-[44px] shadow-md shadow-blue-600/20"

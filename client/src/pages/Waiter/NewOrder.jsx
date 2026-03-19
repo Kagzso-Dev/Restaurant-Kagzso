@@ -36,14 +36,24 @@ const NewOrder = () => {
     const [loading, setLoading] = useState(true);
     const [isCartOpen, setIsCartOpen] = useState(false); // Mobile cart overlay toggle
     const [currentOrder, setCurrentOrder] = useState(null);
-    const [viewMode, setViewMode] = useState(() => localStorage.getItem('foodViewMode') || (settings?.menuView) || 'grid');
+    const [userInteracted, setUserInteracted] = useState(false);
+    const [viewMode, setViewMode] = useState(() => settings?.menuView || 'grid');
 
-    // Sync with global settings if no local preference
+    // Sync with global settings
     useEffect(() => {
-        if (!localStorage.getItem('foodViewMode') && settings?.menuView) {
+        if (settings?.enforceMenuView) {
+            setViewMode(settings.menuView || 'grid');
+        } else if (!userInteracted && settings?.menuView) {
             setViewMode(settings.menuView);
         }
-    }, [settings]);
+    }, [settings?.menuView, settings?.enforceMenuView, userInteracted]);
+
+    // Manual override helper
+    const handleViewToggle = (newMode) => {
+        setViewMode(newMode);
+        setUserInteracted(true);
+        localStorage.setItem('foodViewMode', newMode); // Persist local preference
+    };
 
     // ── Unified Data Fetching (Menu + Order Context) ────────────────
     useEffect(() => {
@@ -374,7 +384,7 @@ const NewOrder = () => {
                                         </button>
                                     )}
                                 </div>
-                                <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+                                {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
                             </div>
                         </div>
 

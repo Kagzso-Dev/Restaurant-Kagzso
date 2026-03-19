@@ -14,6 +14,8 @@ const getSettings = async (req, res) => {
 // PUT /api/settings
 const updateSettings = async (req, res) => {
     try {
+        const fs = require('fs');
+        fs.appendFileSync('server_debug.log', `HIT: ${new Date().toISOString()} | updateSettings | Body: ${JSON.stringify(req.body)}\n`);
         console.log('[Controller] updateSettings Body:', req.body);
         const settings = await Setting.update(req.body);
         
@@ -28,13 +30,18 @@ const updateSettings = async (req, res) => {
         res.json(settings);
     } catch (error) {
         const fs = require('fs');
-        const errLog = `[${new Date().toISOString()}] UPDATE FAILED\nBody: ${JSON.stringify(req.body, null, 2)}\nError: ${error.message}\nStack: ${error.stack}\nCode: ${error.code}\n\n`;
+        const errLog = `[${new Date().toISOString()}] UPDATE FAILED
+Type: ${error.type || 'NO_TYPE'}
+Code: ${error.code || 500}
+Message: ${error.message}
+Body: ${JSON.stringify(req.body, null, 2)}
+Stack: ${error.stack}\n\n`;
         fs.appendFileSync('server_debug.log', errLog);
         
         console.error('updateSettings FULL ERROR:', error);
         res.status(error.code && typeof error.code === 'number' ? error.code : 500).json({ 
             message: error.message || 'Error updating settings',
-            details: error.code || 'NO_CODE'
+            details: error.type || 'NO_TYPE'
         });
     }
 };

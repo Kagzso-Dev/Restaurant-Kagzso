@@ -170,7 +170,8 @@ const Settings = () => {
         preparingColor: '#f59e0b', readyColor: '#10b981',
         dashboardView: 'all',
         menuView: 'grid',
-        dineInEnabled: true, tableMapEnabled: true, takeawayEnabled: true, waiterServiceEnabled: true
+        dineInEnabled: true, tableMapEnabled: true, takeawayEnabled: true, waiterServiceEnabled: true,
+        enforceMenuView: false
     });
     const [passwordData, setPasswordData] = useState({ role: 'admin', newPassword: '', confirmPassword: '' });
     const [qrUrls, setQrUrls] = useState({ standardQrUrl: null, secondaryQrUrl: null });
@@ -203,6 +204,7 @@ const Settings = () => {
                 tableMapEnabled: settings.tableMapEnabled !== false,
                 takeawayEnabled: settings.takeawayEnabled !== false,
                 waiterServiceEnabled: settings.waiterServiceEnabled !== false,
+                enforceMenuView: settings.enforceMenuView === true,
             });
         }
     }, [settings]);
@@ -228,8 +230,9 @@ const Settings = () => {
         if (e) e.preventDefault();
         setLoading(true);
         try {
-            await api.put('/api/settings', generalConfig, { headers: { Authorization: `Bearer ${user.token}` } });
-            await fetchSettings();
+            const res = await api.put('/api/settings', generalConfig, { headers: { Authorization: `Bearer ${user.token}` } });
+            // Update context state immediately from response
+            if (fetchSettings) await fetchSettings(); 
             setMsg(key, 'success', 'Saved successfully');
         } catch (err) {
             setMsg(key, 'error', err.response?.data?.message || 'Save failed');
@@ -408,6 +411,25 @@ const Settings = () => {
                             </button>
                         ))}
                     </div>
+                    <div className="mt-5 flex items-center justify-between p-4 bg-violet-600/5 border border-violet-500/20 rounded-xl">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${generalConfig.enforceMenuView ? 'bg-violet-600' : 'bg-gray-700'} text-white transition-colors`}>
+                                <Lock size={18} />
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-bold text-[var(--theme-text-main)]">Enforce this view</p>
+                                <p className="text-[10px] text-[var(--theme-text-muted)] italic">Hides layout toggles on all POS terminals</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setGeneralConfig({ ...generalConfig, enforceMenuView: !generalConfig.enforceMenuView })}
+                            className={`w-12 h-6 rounded-full transition-all flex items-center px-1 shrink-0 ${generalConfig.enforceMenuView ? 'bg-violet-600' : 'bg-gray-600'}`}
+                        >
+                            <div className={`w-4 h-4 bg-white rounded-full shadow-lg transition-transform ${generalConfig.enforceMenuView ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </button>
+                    </div>
+
                     <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-5 mt-4 border-t border-[var(--theme-border)]">
                         <Notice msg={msgs['menu_layout']} />
                         <button type="button" onClick={e => saveConfig(e, 'menu_layout')} disabled={loading}

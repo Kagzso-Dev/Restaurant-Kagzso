@@ -14,9 +14,6 @@ const KagzsoAI = () => {
     
     const location = useLocation();
     const [inputValue, setInputValue] = useState('');
-
-    // Don't show AI on login page
-    if (location.pathname === '/login') return null;
     const [showSuggestions, setShowSuggestions] = useState(true);
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
@@ -57,9 +54,22 @@ const KagzsoAI = () => {
                 dragRef.current.hasMoved = true;
             }
 
-            // Boundary constraints (approximate)
-            const newX = dragRef.current.initialX + deltaX;
-            const newY = dragRef.current.initialY + deltaY;
+            // Boundary constraints (strictly clamped within viewport)
+            const padding = 20; // safe distance from edges
+            const btnSize = 64; // width/height of the button
+            
+            // Initial relative position from bottom-right (fixed bottom-5 right-5 is 20px from edge)
+            const initialBottom = 20;
+            const initialRight = 20;
+            
+            // Screen limits
+            const maxX = initialRight - padding;
+            const minX = -(window.innerWidth - btnSize - padding - initialRight);
+            const maxY = initialBottom - padding;
+            const minY = -(window.innerHeight - btnSize - padding - initialBottom);
+
+            const newX = Math.min(maxX, Math.max(minX, dragRef.current.initialX + deltaX));
+            const newY = Math.min(maxY, Math.max(minY, dragRef.current.initialY + deltaY));
             
             setPosition({ x: newX, y: newY });
         };
@@ -130,15 +140,17 @@ const KagzsoAI = () => {
         return ["How do I start?", "Features list?", "Technical help?"];
     }, [context.role]);
 
+    // Don't show AI on login page (must be after all hooks)
+    if (location.pathname === '/login') return null;
+
     return (
-        <div className="fixed inset-0 pointer-events-none z-[100] pl-safe pr-safe pb-safe pt-safe overflow-hidden">
-            
+        <>
             {/* ── Floating AI Button ─────────────────────────────────────────── */}
             <div 
-                className={`absolute pointer-events-auto transition-transform ${isDragging ? 'duration-0 scale-105 cursor-grabbing' : 'duration-300'}`}
+                className={`fixed pointer-events-auto transition-transform z-[1005] ${isDragging ? 'duration-0 scale-105 cursor-grabbing' : 'duration-300'}`}
                 style={{ 
-                    bottom: '1.25rem', 
-                    right: '1.25rem',
+                    bottom: 'calc(1.25rem + env(safe-area-inset-bottom))', 
+                    right: 'calc(1.25rem + env(safe-area-inset-right))',
                     transform: `translate(${position.x}px, ${position.y}px)`,
                     touchAction: 'none'
                 }}
@@ -154,23 +166,18 @@ const KagzsoAI = () => {
                         ${isOpen ? 'rotate-90 opacity-0 pointer-events-none' : 'hover:shadow-glow-orange'}
                     `}
                 >
-                    {isOpen ? <X size={28} /> : (
-                        <>
-                            <div className="absolute inset-0 rounded-full animate-ping bg-orange-500 opacity-20 pointer-events-none" />
-                            <MessageCircle size={28} />
-                            {!messages.some(m => !m.read && m.sender === 'ai') && (
-                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                                    <Sparkles size={10} className="text-orange-500" />
-                                </div>
-                            )}
-                        </>
+                    <MessageCircle size={28} />
+                    {!messages.some(m => !m.read && m.sender === 'ai') && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                            <Sparkles size={10} className="text-orange-500" />
+                        </div>
                     )}
                 </button>
             </div>
 
             {/* ── Chat Panel (Desktop Floating/Mobile Bottom Sheet) ─────────── */}
             <div className={`
-                absolute transition-all duration-500 ease-[cubic-bezier(0.16, 1, 0.3, 1)] pointer-events-auto
+                fixed transition-all duration-500 ease-[cubic-bezier(0.16, 1, 0.3, 1)] z-[1006]
                 ${isOpen 
                     ? 'opacity-100 translate-y-0 scale-100' 
                     : 'opacity-0 translate-y-12 scale-90 pointer-events-none'
@@ -183,7 +190,8 @@ const KagzsoAI = () => {
                 
                 /* Mobile Stylings (Bottom Sheet) */
                 bottom-0 right-0 left-0 h-[85vh] rounded-t-[40px] border-t border-[var(--theme-border)] 
-                bg-[var(--theme-bg-card)] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] z-[101]
+                bg-[var(--theme-bg-card)] shadow-[0_-20px_50px_rgba(0,0,0,0.5)]
+                pb-[env(safe-area-inset-bottom)]
             `}>
                 
                 {/* Header */}
@@ -280,12 +288,13 @@ const KagzsoAI = () => {
             </div>
 
             {/* Mobile Backdrop */}
-            <div 
-                className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] transition-opacity duration-300 pointer-events-auto md:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setIsOpen(false)}
-            />
-
-        </div>
+            {isOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1005] transition-opacity duration-300 md:hidden"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+        </>
     );
 };
 
