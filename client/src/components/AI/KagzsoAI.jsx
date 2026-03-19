@@ -3,6 +3,7 @@ import {
     MessageCircle, X, Send, Sparkles, Trash2, 
     ArrowRight, Utensils, CreditCard, LayoutGrid, RotateCcw
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useAI } from '../../context/AIContext';
 
 const KagzsoAI = () => {
@@ -11,7 +12,11 @@ const KagzsoAI = () => {
         isTyping, clearChat, context 
     } = useAI();
     
+    const location = useLocation();
     const [inputValue, setInputValue] = useState('');
+
+    // Don't show AI on login page
+    if (location.pathname === '/login') return null;
     const [showSuggestions, setShowSuggestions] = useState(true);
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
