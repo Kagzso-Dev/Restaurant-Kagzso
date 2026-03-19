@@ -40,14 +40,19 @@ const KagzsoAI = () => {
     const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
     return (
-        <div className="fixed inset-0 pointer-events-none z-[100] pl-safe pr-safe pb-safe pt-safe">
+        <div className="fixed inset-0 pointer-events-none z-[100] pl-safe pr-safe">
             
             {/* ── Floating AI Button ─────────────────────────────────────────── */}
-            <div className="absolute bottom-6 right-6 pointer-events-auto">
+            <div className={`
+              absolute pointer-events-auto transition-all duration-300
+              /* Mobile/Tablet: Above Bottom Nav */
+              bottom-24 lg:bottom-6 right-4 md:right-6
+              /* Notch support handled by parent pl-safe/pr-safe */
+            `}>
                 {!isOpen && <span className="absolute inset-0 rounded-full animate-ping bg-orange-500 opacity-20 pointer-events-none" />}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center bg-gradient-to-tr from-orange-600 to-red-500 text-white shadow-2xl transition-all duration-300 hover:scale-110 active:scale-90 relative ${isOpen ? 'rotate-180' : ''}`}
+                    className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center bg-gradient-to-tr from-orange-600 to-red-500 text-white shadow-2xl transition-all duration-300 hover:scale-110 active:scale-90 relative ${isOpen ? 'rotate-180' : ''}`}
                 >
                     {isOpen ? <X size={24} /> : (
                         <>
@@ -60,19 +65,21 @@ const KagzsoAI = () => {
             </div>
 
             {/* ── Chat Panel ─────────────────────────────────────────────────── */}
-            <div className={`
-                absolute pointer-events-auto flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16, 1, 0.3, 1)]
+            <div 
+              className={`
+                absolute pointer-events-auto flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16, 1, 0.3, 1)] overflow-hidden
                 ${isOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95 pointer-events-none'}
                 
                 /* Desktop Stylings (Floating Box) */
-                md:bottom-24 md:right-6 md:w-[370px] md:h-[560px] md:rounded-3xl md:border md:border-[var(--theme-border)] md:shadow-2xl md:overflow-hidden md:bg-[var(--theme-bg-card)] md:backdrop-blur-xl
+                md:bottom-24 md:right-6 md:w-[370px] md:h-[560px] md:rounded-3xl md:border md:border-[var(--theme-border)] md:shadow-2xl md:bg-[var(--theme-bg-card)] md:backdrop-blur-xl
                 
                 /* Mobile Stylings (Bottom Sheet) */
-                bottom-0 left-0 right-0 h-[85vh] rounded-t-[32px] border-t border-[var(--theme-border)] bg-[var(--theme-bg-card)] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] z-[101]
-            `}>
+                bottom-0 left-0 right-0 h-[85dvh] rounded-t-[32px] border-t border-[var(--theme-border)] bg-[var(--theme-bg-card)] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] z-[101]
+              `}
+            >
                 
                 {/* Header (with mobile drag handle) */}
-                <div className="px-5 py-4 border-b border-[var(--theme-border)] bg-gradient-to-r from-orange-600/10 to-transparent flex flex-col flex-shrink-0">
+                <div className="px-5 py-4 border-b border-[var(--theme-border)] bg-gradient-to-r from-orange-600/10 to-transparent flex flex-col flex-shrink-0 pt-3 md:pt-4">
                     <div className="md:hidden w-12 h-1 bg-[var(--theme-border)] rounded-full mx-auto mb-3" />
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -94,13 +101,13 @@ const KagzsoAI = () => {
 
                 {/* Security Banner Area */}
                 {showSecurityBanner && securityAlerts.length > 0 && (
-                    <div className="mx-4 mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-3 animate-slide-up">
+                    <div className="mx-4 mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-3 animate-slide-up">
                         <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
                             <p className="text-[11px] font-black text-red-500 uppercase tracking-wide">Security Alert</p>
-                            <p className="text-[10px] text-red-400 mt-0.5 leading-relaxed tracking-tight">Suspicious queries blocked from {securityAlerts[0]?.user}. Review in Admin notifications.</p>
+                            <p className="text-[10px] text-red-400 mt-0.5 leading-relaxed tracking-tight">Suspicious query blocked. Admin notified.</p>
                         </div>
-                        <button onClick={() => { securityAlerts.forEach(a => dismissSecurityAlert(a.id)); setShowSecurityBanner(false); }} className="p-1 text-red-400 hover:text-red-300"><X size={14} /></button>
+                        <button onClick={() => setShowSecurityBanner(false)} className="p-1 text-red-400 hover:text-red-300"><X size={14} /></button>
                     </div>
                 )}
 
@@ -113,7 +120,7 @@ const KagzsoAI = () => {
                 </div>
 
                 {/* Suggestions + Input */}
-                <div className="p-5 border-t border-[var(--theme-border)] bg-[var(--theme-bg-card)] flex-shrink-0">
+                <div className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] border-t border-[var(--theme-border)] bg-[var(--theme-bg-card)] flex-shrink-0 shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
                     {!inputValue && messages.length <= 4 && (
                         <div className="flex gap-2 overflow-x-auto pb-4 hide-scrollbar snap-x">
                             {suggestions.map((s, idx) => (
@@ -127,7 +134,7 @@ const KagzsoAI = () => {
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="How can I help you?..."
+                            placeholder="How can I help you fast?..."
                             rows="1"
                             className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] border border-[var(--theme-border)] rounded-2xl pl-4 pr-12 py-3.5 text-sm resize-none focus:ring-2 focus:ring-orange-500/30 transition-all outline-none"
                         />
