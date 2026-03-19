@@ -39,6 +39,9 @@ const KagzsoAI = () => {
     const handleSend = () => { if (!inputValue.trim() || isTyping) return; sendMessage(inputValue); setInputValue(''); };
     const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
+    // Do not show on login page
+    if (context.path === '/login') return null;
+
     return (
         <div className="fixed inset-0 pointer-events-none z-[100] pl-safe pr-safe">
             
