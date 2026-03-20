@@ -92,14 +92,6 @@ app.use(logger.requestLogger);
 app.set('trust proxy', true);
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' },
-});
-
 const apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
     max: parseInt(process.env.RATE_LIMIT_MAX) || 300,
@@ -111,7 +103,6 @@ const apiLimiter = rateLimit({
 
 // Apply rate limits only in production to prevent 429 errors during local dev
 if (process.env.NODE_ENV !== 'development') {
-    app.use('/api/auth', authLimiter);
     app.use('/api', apiLimiter);
 }
 
