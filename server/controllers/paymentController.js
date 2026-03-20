@@ -70,12 +70,14 @@ const cancelPayment = async (req, res) => {
     }
 };
 
+const Setting = require('../models/Setting');
+
 /**
  * @desc    Process payment (Cash / QR / UPI / Credit Card)
  */
 const processPayment = async (req, res) => {
     const { orderId }                             = req.params;
-    const { paymentMethod, amountReceived } = req.body;
+    const { paymentMethod, amountReceived, discount, discountLabel } = req.body;
 
     if (!paymentMethod || !['cash', 'qr'].includes(paymentMethod)) {
         return res.status(400).json({ message: 'Invalid payment method' });
@@ -89,7 +91,27 @@ const processPayment = async (req, res) => {
             return res.status(400).json({ message: 'Order is not eligible for payment' });
         }
 
-        const orderTotal = order.finalAmount || 0;
+        let orderTotal = order.finalAmount || 0;
+        let appliedDiscount = 0;
+        let appliedLabel = '';
+
+        // VALIDATE DISCOUNT
+        if (discount && Number(discount) > 0) {
+            const settings = await Setting.get();
+            if (settings.cashierOfferEnabled && settings.cashierOfferDiscount > 0) {
+                const baseTotal = order.finalAmount || 0;
+                const maxPct = settings.cashierOfferDiscount;
+                const calculatedDiscount = Math.round(baseTotal * (maxPct / 100) * 100) / 100;
+
+                // Simple safety: pull what frontend sent, or use backend calc if it's within tolerance
+                appliedDiscount = Math.min(Number(discount), calculatedDiscount);
+                appliedLabel = discountLabel || settings.cashierOfferLabel || 'Discount';
+                
+                // Recalculate orderTotal for validation below
+                orderTotal = Math.max(0, Math.round((baseTotal - appliedDiscount) * 100) / 100);
+            }
+        }
+
         const received   = (amountReceived != null && !isNaN(Number(amountReceived))) ? Number(amountReceived) : 0;
 
         if (paymentMethod === 'cash' && received < orderTotal) {
@@ -114,21 +136,31 @@ const processPayment = async (req, res) => {
         const payment = await Payment.create({
             orderId:        order._id,
             paymentMethod,
-
             amount:         orderTotal,
             amountReceived: received,
             changeAmount,
             cashierId:      req.userId,
+            discount:       appliedDiscount,
+            discountLabel:  appliedLabel,
         });
 
-        const updatedOrder = await Order.updateById(orderId, {
+        // Update order with final payment details and discount
+        const orderUpdates = {
             paymentStatus: 'paid',
             paymentMethod,
             orderStatus:   'completed',
             kotStatus:     'Closed',
             paymentAt:     new Date().toISOString(),
             completedAt:   order.completedAt || new Date().toISOString(),
-        });
+        };
+
+        if (appliedDiscount > 0) {
+            orderUpdates.discount      = appliedDiscount;
+            orderUpdates.discountLabel = appliedLabel;
+            orderUpdates.finalAmount   = orderTotal;
+        }
+
+        const updatedOrder = await Order.updateById(orderId, orderUpdates);
 
         if (order.orderType === 'dine-in' && order.tableId) {
             const tid = rawTableId(order.tableId);
@@ -165,12 +197,16 @@ const processPayment = async (req, res) => {
             status:         'success',
             amount:         orderTotal,
             paymentMethod,
-
             performedBy:    req.userId,
             performedByRole: req.role,
             ipAddress:      req.ip,
             userAgent:      req.get('user-agent'),
-            metadata:       { changeAmount, orderNumber: order.orderNumber },
+            metadata:       { 
+                changeAmount, 
+                orderNumber: order.orderNumber,
+                discount: appliedDiscount,
+                discountLabel: appliedLabel
+            },
         }).catch(e => logger.error('Audit log failed', { error: e.message }));
 
         logger.info('Payment processed', {

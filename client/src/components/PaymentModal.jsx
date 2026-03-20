@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     X, Banknote, QrCode,
     CheckCircle, AlertCircle, Loader2, ArrowRight, ArrowLeft,
-    Upload, Camera, Save, UploadCloud
+    Upload, Camera, Save, UploadCloud, Tag, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 /* ── Payment method config ────────────────────────────────────────────── */
@@ -55,7 +55,7 @@ const playSuccessSound = () => {
  *   onSuccess    – payment success callback (receives { order, payment })
  *   api          – axios instance
  */
-const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
+const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings }) => {
     const [method, setMethod] = useState(null);
     const [step, setStep] = useState('select'); // select | form | processing | success | error
     const [error, setError] = useState('');
@@ -65,7 +65,6 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
     const [change, setChange] = useState(0);
 
     // Digital payment state
-
     const [paidAmount, setPaidAmount] = useState('');
 
     // QR state
@@ -75,10 +74,18 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [localMsg, setLocalMsg] = useState(null);
 
+    // Offer state
+    const [offerApplied, setOfferApplied] = useState(false);
+
     const modalRef = useRef(null);
     const inputRef = useRef(null);
 
-    const total = order?.finalAmount || 0;
+    const baseTotal = order?.finalAmount || 0;
+    const offerEnabled = settings?.cashierOfferEnabled && settings?.cashierOfferDiscount > 0;
+    const offerPct = settings?.cashierOfferDiscount || 0;
+    const offerLabel = settings?.cashierOfferLabel || 'Special Offer';
+    const discountAmt = offerApplied ? Math.round(baseTotal * (offerPct / 100) * 100) / 100 : 0;
+    const total = Math.max(0, Math.round((baseTotal - discountAmt) * 100) / 100);
 
     /* ── Initiate payment on mount ────────────────────────────────── */
     useEffect(() => {
@@ -106,6 +113,13 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
             cancelled = true;
         };
     }, [order?._id, api]);
+
+    /* ── Auto-apply offer if enabled on mount ─────────────────────── */
+    useEffect(() => {
+        if (settings?.cashierOfferEnabled && settings?.cashierOfferDiscount > 0) {
+            setOfferApplied(true);
+        }
+    }, [settings]);
 
     /* ── Cancel payment on close ──────────────────────────────────── */
     const handleClose = useCallback(async () => {
@@ -240,6 +254,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                     ? parseFloat(amountReceived)
                     : parseFloat(paidAmount),
                 transactionId: null,
+                ...(offerApplied && { discount: discountAmt, discountLabel: offerLabel }),
             };
 
             const res = await api.post(`/api/payments/${order._id}/process`, payload);
@@ -297,12 +312,46 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                 {/* ── Amount Banner ───────────────────────────────── */}
                 {step !== 'success' && (
                     <div className="px-6 py-4 bg-[var(--theme-bg-muted)] border-b border-[var(--theme-border)] flex-shrink-0">
-                        <p className="text-[10px] text-[var(--theme-text-muted)] font-bold uppercase tracking-widest mb-1">Amount Due</p>
-                        <p className="text-3xl font-black text-orange-400">{formatPrice(total)}</p>
-                        <p className="text-xs text-[var(--theme-text-subtle)] mt-1">
-                            {order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').length || 0} items •{' '}
-                            {new Date(order.createdAt).toLocaleTimeString()}
-                        </p>
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] text-[var(--theme-text-muted)] font-bold uppercase tracking-widest mb-1">Amount Due</p>
+                                {offerApplied && (
+                                    <p className="text-sm line-through text-[var(--theme-text-subtle)]">{formatPrice(baseTotal)}</p>
+                                )}
+                                <p className="text-3xl font-black text-orange-400">{formatPrice(total)}</p>
+                                {offerApplied && (
+                                    <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">
+                                        -{offerPct}% off • Saving {formatPrice(discountAmt)}
+                                    </p>
+                                )}
+                                <p className="text-xs text-[var(--theme-text-subtle)] mt-1">
+                                    {order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').length || 0} items •{' '}
+                                    {new Date(order.createdAt).toLocaleTimeString()}
+                                </p>
+                            </div>
+                            {offerEnabled && step !== 'processing' && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOfferApplied(p => !p);
+                                        setAmountReceived('');
+                                    }}
+                                    className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all ${
+                                        offerApplied
+                                            ? 'bg-amber-500/15 border-amber-400/40 text-amber-400'
+                                            : 'bg-[var(--theme-bg-hover)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:border-amber-400/40 hover:text-amber-400'
+                                    }`}
+                                >
+                                    <Tag size={15} />
+                                    <span className="text-[9px] font-black uppercase tracking-wider leading-none">{offerLabel}</span>
+                                    <span className="text-[9px] font-bold text-current leading-none">{offerApplied ? 'Applied' : `${offerPct}% off`}</span>
+                                    {offerApplied
+                                        ? <ToggleRight size={16} className="text-amber-400" />
+                                        : <ToggleLeft size={16} />
+                                    }
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -586,6 +635,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api }) => {
                             <h3 className="text-2xl font-black text-[var(--theme-text-main)] mb-1">Payment Successful!</h3>
                             <p className="text-emerald-400 text-sm font-medium mb-4">
                                 {method?.label} • {formatPrice(total)}
+                                {offerApplied && <span className="ml-2 text-amber-400 text-xs">({offerLabel} applied)</span>}
                             </p>
 
                             {method?.id === 'cash' && change > 0 && (

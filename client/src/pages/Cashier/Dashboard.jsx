@@ -517,6 +517,7 @@ const CashierDashboard = () => {
                     onClose={handleClosePayment}
                     onSuccess={handlePaymentSuccess}
                     api={api}
+                    settings={settings}
                 />
             )}
         </div>

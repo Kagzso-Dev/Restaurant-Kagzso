@@ -25,6 +25,9 @@ const fmt = (doc) => doc ? {
     takeawayEnabled:    doc.takeaway_enabled !== false,
     waiterServiceEnabled: doc.waiter_service_enabled !== false,
     enforceMenuView:    doc.enforce_menu_view === true,
+    cashierOfferEnabled: doc.cashier_offer_enabled === true,
+    cashierOfferLabel:   doc.cashier_offer_label || '',
+    cashierOfferDiscount: parseFloat(doc.cashier_offer_discount || 0),
     createdAt:         doc.$createdAt,
     updatedAt:         doc.$updatedAt,
 } : null;
@@ -59,7 +62,10 @@ const Setting = {
                         table_map_enabled: true,
                         takeaway_enabled: true,
                         waiter_service_enabled: true,
-                        enforce_menu_view: false
+                        enforce_menu_view: false,
+                        cashier_offer_enabled: false,
+                        cashier_offer_label: '',
+                        cashier_offer_discount: 0
                     }
                 );
                 return fmt(newDoc);
@@ -104,7 +110,13 @@ const Setting = {
     async update(params) {
         console.log('[Setting] Update raw input keys:', Object.keys(params).join(', '));
         console.log('[Setting] Update raw input types:', Object.entries(params).map(([k,v]) => `${k}: ${typeof v}`).join(', '));
-        const { restaurantName, address, currency, currencySymbol, taxRate, gstNumber, pendingColor, acceptedColor, preparingColor, readyColor, dashboardView, menuView, dineInEnabled, tableMapEnabled, takeawayEnabled, waiterServiceEnabled, enforceMenuView } = params;
+        const { 
+            restaurantName, address, currency, currencySymbol, taxRate, gstNumber, 
+            pendingColor, acceptedColor, preparingColor, readyColor, 
+            dashboardView, menuView, dineInEnabled, tableMapEnabled, 
+            takeawayEnabled, waiterServiceEnabled, enforceMenuView,
+            cashierOfferEnabled, cashierOfferLabel, cashierOfferDiscount
+        } = params;
         await this.get(); // ensures row exists
 
         const data = {};
@@ -130,6 +142,13 @@ const Setting = {
         if (takeawayEnabled !== undefined) data.takeaway_enabled = (takeawayEnabled === true || takeawayEnabled === 'true');
         if (waiterServiceEnabled !== undefined) data.waiter_service_enabled = (waiterServiceEnabled === true || waiterServiceEnabled === 'true');
         if (enforceMenuView !== undefined) data.enforce_menu_view = (enforceMenuView === true || enforceMenuView === 'true');
+        
+        if (cashierOfferEnabled !== undefined) data.cashier_offer_enabled = (cashierOfferEnabled === true || cashierOfferEnabled === 'true');
+        if (cashierOfferLabel !== undefined) data.cashier_offer_label = String(cashierOfferLabel);
+        if (cashierOfferDiscount !== undefined) {
+            const val = parseFloat(cashierOfferDiscount);
+            if (!isNaN(val)) data.cashier_offer_discount = val;
+        }
 
         if (Object.keys(data).length === 0) return this.get();
 
@@ -175,6 +194,9 @@ const Setting = {
                         { key: 'secondary_qr_url', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'secondary_qr_url', 4096, false, null) },
                         { key: 'standard_qr_file_id', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'standard_qr_file_id', 100, false, null) },
                         { key: 'secondary_qr_file_id', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'secondary_qr_file_id', 100, false, null) },
+                        { key: 'cashier_offer_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'cashier_offer_enabled', false, false) },
+                        { key: 'cashier_offer_label', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'cashier_offer_label', 100, false, '') },
+                        { key: 'cashier_offer_discount', fn: () => databases.createFloatAttribute(databaseId, COLLECTIONS.settings, 'cashier_offer_discount', false, 0) },
                     ];
 
                     const toCreate = repairSpec.filter(s => !attrNames.includes(s.key));

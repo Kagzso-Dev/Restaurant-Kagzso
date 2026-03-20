@@ -52,6 +52,96 @@ const WorkingProcess = () => {
         };
     }, [user, socket, selectedOrder]);
 
+    const printKOT = () => {
+        if (!selectedOrder) return;
+
+        const statusColors = {
+            pending:   '#f59e0b',
+            accepted:  '#3b82f6',
+            preparing: '#8b5cf6',
+            ready:     '#10b981',
+            cancelled: '#ef4444',
+        };
+
+        const getItemStatusStyle = (status) => {
+            const color = statusColors[status?.toLowerCase()] || '#6b7280';
+            return `border:1px solid ${color};color:${color};font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;text-transform:uppercase;`;
+        };
+
+        const orderStatusColor = statusColors[selectedOrder.orderStatus?.toLowerCase()] || '#6b7280';
+
+        const itemsHTML = selectedOrder.items.map((item, idx) => `
+            <tr style="border-bottom:1px dashed #e5e7eb;">
+                <td style="padding:8px 4px;">
+                    <span style="font-weight:700;">${item.name}</span>
+                    ${item.notes ? `<div style="font-size:11px;color:#6b7280;font-style:italic;margin-top:2px;">Note: ${item.notes}</div>` : ''}
+                </td>
+                <td style="padding:8px 4px;text-align:center;font-weight:700;font-size:18px;">${item.quantity}</td>
+                <td style="padding:8px 4px;text-align:right;">
+                    <span style="${getItemStatusStyle(item.status)}">${item.status || ''}</span>
+                </td>
+            </tr>
+        `).join('');
+
+        const tableOrToken = selectedOrder.orderType === 'dine-in'
+            ? `TBL ${selectedOrder.tableId?.number || selectedOrder.tableId || '?'}`
+            : `TOK ${selectedOrder.tokenNumber}`;
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>KOT - ${selectedOrder.orderNumber}</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace, sans-serif; background:#fff; color:#000; padding:12px; }
+        @page { size: 80mm auto; margin: 5mm; }
+    </style>
+</head>
+<body>
+    <div style="max-width:320px;margin:0 auto;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0.05;pointer-events:none;transform:rotate(45deg);">
+            <span style="font-size:80px;font-weight:900;letter-spacing:4px;">KOT</span>
+        </div>
+        <div style="text-align:center;border-bottom:2px dashed #d1d5db;padding-bottom:12px;margin-bottom:12px;">
+            <h1 style="font-size:22px;font-weight:900;letter-spacing:1px;">KITCHEN ORDER</h1>
+            <p style="font-size:11px;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:2px;margin-top:4px;">${selectedOrder.orderType}</p>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:12px;">
+            <div>
+                <p><strong>Order:</strong> ${selectedOrder.orderNumber}</p>
+                <p><strong>Time:</strong> ${new Date(selectedOrder.createdAt).toLocaleTimeString()}</p>
+            </div>
+            <div style="text-align:right;">
+                <p style="font-size:18px;font-weight:900;">${tableOrToken}</p>
+            </div>
+        </div>
+        <table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:16px;">
+            <thead>
+                <tr style="border-bottom:2px solid #000;">
+                    <th style="padding:4px;text-align:left;">Item</th>
+                    <th style="padding:4px;text-align:center;">Qty</th>
+                    <th style="padding:4px;text-align:right;">Status</th>
+                </tr>
+            </thead>
+            <tbody>${itemsHTML}</tbody>
+        </table>
+        <div style="border-top:2px solid #000;padding-top:12px;text-align:center;">
+            <p style="font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Order Status</p>
+            <div style="font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:2px;padding:8px;border:2px solid ${orderStatusColor};color:${orderStatusColor};">
+                ${selectedOrder.orderStatus}
+            </div>
+        </div>
+    </div>
+    <script>window.onload = function(){ window.print(); window.onafterprint = function(){ window.close(); }; };<\/script>
+</body>
+</html>`;
+
+        const win = window.open('', '_blank', 'width=400,height=600');
+        win.document.write(html);
+        win.document.close();
+    };
+
     const getStatusColor = (status) => {
         switch (status?.toLowerCase()) {
             case 'pending':   return 'text-[var(--status-pending)] bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]';
@@ -80,7 +170,7 @@ const WorkingProcess = () => {
                         <p className="text-[var(--theme-text-main)] font-bold">{user.username}</p>
                         <p className="text-xs text-green-400 font-mono">Connected</p>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-[var(--theme-bg-hover)] flex items-center justify-center text-[var(--theme-text-muted)]">
+                    <div className="hidden md:flex w-10 h-10 rounded-full bg-[var(--theme-bg-hover)] items-center justify-center text-[var(--theme-text-muted)]">
                         {user.username.charAt(0).toUpperCase()}
                     </div>
                 </div>
@@ -127,32 +217,6 @@ const WorkingProcess = () => {
 
                 {/* Right: Order Details */}
                 <div className="lg:col-span-2 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] flex flex-col overflow-hidden relative">
-                    <style>
-                        {`
-                        @media print {
-                            body * {
-                                visibility: hidden;
-                            }
-                            #printable-kot, #printable-kot * {
-                                visibility: visible;
-                            }
-                            #printable-kot {
-                                position: absolute;
-                                left: 0;
-                                top: 0;
-                                width: 100%;
-                                height: 100%;
-                                margin: 0;
-                                padding: 0;
-                                background: white;
-                            }
-                            @page {
-                                size: auto;
-                                margin: 0mm;
-                            }
-                        }
-                        `}
-                    </style>
                     {selectedOrder ? (
                         <div className="flex flex-col h-full">
                             <div className="flex-1 p-8 overflow-y-auto custom-scrollbar flex justify-center bg-[var(--theme-bg-dark)]">
@@ -231,7 +295,7 @@ const WorkingProcess = () => {
                             {/* Actions */}
                             <div className="p-6 bg-[var(--theme-bg-hover)] border-t border-[var(--theme-border)] flex items-center justify-end gap-4">
                                 <button
-                                    onClick={() => window.print()}
+                                    onClick={printKOT}
                                     className="flex items-center space-x-2 px-6 py-3 bg-[var(--theme-bg-card)] hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-main)] rounded-xl transition-colors font-semibold border border-[var(--theme-border)]"
                                 >
                                     <Printer size={20} />

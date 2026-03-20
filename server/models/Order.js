@@ -35,6 +35,7 @@ const fmtOrder = (doc, items = [], tableNum = null) => ({
     totalAmount:   parseFloat(doc.total_amount),
     tax:           parseFloat(doc.tax    || 0),
     discount:      parseFloat(doc.discount || 0),
+    discountLabel: doc.discount_label || '',
     finalAmount:   parseFloat(doc.final_amount),
     waiterId:      doc.waiter_id,
     prepStartedAt: doc.prep_started_at,
@@ -252,6 +253,7 @@ const Order = {
             totalAmount: 'total_amount',
             tax: 'tax',
             discount: 'discount',
+            discountLabel: 'discount_label',
             finalAmount: 'final_amount',
             prepStartedAt: 'prep_started_at',
             readyAt: 'ready_at',
@@ -271,8 +273,29 @@ const Order = {
         if (Object.keys(data).length === 0) return this.findById(id);
         
         console.log(`[Order.updateById] Updating ID=${id} in ${COLLECTIONS.orders}:`, JSON.stringify(data, null, 2));
-        await databases.updateDocument(databaseId, COLLECTIONS.orders, id, data);
-        return this.findById(id);
+        try {
+            await databases.updateDocument(databaseId, COLLECTIONS.orders, id, data);
+            return this.findById(id);
+        } catch (error) {
+            // Self-repair: If attribute is missing, try to create it
+            if (error.code === 400 && (error.message?.includes('Unknown attribute') || error.message?.includes('invalid document structure'))) {
+                console.warn('[Order] Schema mismatch detected during update. Attempting repair...');
+                try {
+                    const existingAttrs = await databases.listAttributes(databaseId, COLLECTIONS.orders);
+                    const attrNames = existingAttrs.attributes.map(a => a.key);
+
+                    if (!attrNames.includes('discount_label')) {
+                        await databases.createStringAttribute(databaseId, COLLECTIONS.orders, 'discount_label', 100, false, '');
+                        console.log('[Order] Schema repair tasks dispatched. Waiting for indexer...');
+                        await new Promise(r => setTimeout(r, 2000));
+                    }
+                    return this.updateById(id, updates);
+                } catch (schemaErr) {
+                    console.error('[Order] Schema auto-repair failed:', schemaErr.message);
+                }
+            }
+            throw error;
+        }
     },
 
     async atomicPaymentStatusUpdate(id, fromStatus, toStatus) {

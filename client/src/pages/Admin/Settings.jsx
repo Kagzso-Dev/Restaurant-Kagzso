@@ -4,7 +4,8 @@ import { AuthContext } from '../../context/AuthContext';
 import {
     Save, Lock, CheckCircle2, AlertCircle,
     QrCode, Upload, Camera, Loader2, Eye, EyeOff,
-    LayoutGrid, Grid, List, Palette, Building2, Shield, Grid2X2
+    LayoutGrid, Grid, List, Palette, Building2, Shield, Grid2X2,
+    Tag, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 /* ── QR Upload Card ────────────────────────────────────────────────────────── */
@@ -171,7 +172,10 @@ const Settings = () => {
         dashboardView: 'all',
         menuView: 'grid',
         dineInEnabled: true, tableMapEnabled: true, takeawayEnabled: true, waiterServiceEnabled: true,
-        enforceMenuView: false
+        enforceMenuView: false,
+        cashierOfferEnabled: false,
+        cashierOfferLabel: '',
+        cashierOfferDiscount: 0,
     });
     const [passwordData, setPasswordData] = useState({ role: 'admin', newPassword: '', confirmPassword: '' });
     const [qrUrls, setQrUrls] = useState({ standardQrUrl: null, secondaryQrUrl: null });
@@ -205,6 +209,9 @@ const Settings = () => {
                 takeawayEnabled: settings.takeawayEnabled !== false,
                 waiterServiceEnabled: settings.waiterServiceEnabled !== false,
                 enforceMenuView: settings.enforceMenuView === true,
+                cashierOfferEnabled: settings.cashierOfferEnabled === true,
+                cashierOfferLabel: settings.cashierOfferLabel || '',
+                cashierOfferDiscount: settings.cashierOfferDiscount || 0,
             });
         }
     }, [settings]);
@@ -230,7 +237,7 @@ const Settings = () => {
         if (e) e.preventDefault();
         setLoading(true);
         try {
-            const res = await api.put('/api/settings', generalConfig, { headers: { Authorization: `Bearer ${user.token}` } });
+            await api.put('/api/settings', generalConfig, { headers: { Authorization: `Bearer ${user.token}` } });
             // Update context state immediately from response
             if (fetchSettings) await fetchSettings(); 
             setMsg(key, 'success', 'Saved successfully');
@@ -301,6 +308,52 @@ const Settings = () => {
                             </Field>
                         </div>
                     </div>
+
+                    {/* Cashier Payment Offer */}
+                    <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-amber-200 dark:border-amber-500/20">
+                            <div className="flex items-center gap-2">
+                                <Tag size={15} className="text-amber-500" />
+                                <p className="text-xs font-semibold text-[var(--theme-text-main)]">Cashier Payment Offer</p>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium">Optional</span>
+                            </div>
+                            <button type="button"
+                                onClick={() => setGeneralConfig(p => ({ ...p, cashierOfferEnabled: !p.cashierOfferEnabled }))}
+                                className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 transition-opacity">
+                                {generalConfig.cashierOfferEnabled
+                                    ? <ToggleRight size={22} className="text-amber-500" />
+                                    : <ToggleLeft size={22} className="text-gray-400" />}
+                                <span>{generalConfig.cashierOfferEnabled ? 'Enabled' : 'Disabled'}</span>
+                            </button>
+                        </div>
+                        {generalConfig.cashierOfferEnabled && (
+                            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Field label="Offer Label (e.g. Happy Hour, Weekend Deal)">
+                                    <input type="text" name="cashierOfferLabel"
+                                        value={generalConfig.cashierOfferLabel}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Happy Hour Discount"
+                                        className={inputCls} />
+                                </Field>
+                                <Field label="Discount (%)">
+                                    <input type="number" name="cashierOfferDiscount"
+                                        value={generalConfig.cashierOfferDiscount}
+                                        onChange={handleChange}
+                                        min="0" max="100" step="0.5"
+                                        className={inputCls} />
+                                </Field>
+                                <div className="sm:col-span-2">
+                                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                                        <CheckCircle2 size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                                        <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                                            Cashier will see a <strong>"{generalConfig.cashierOfferLabel || 'Offer'}"</strong> button during payment to apply <strong>{generalConfig.cashierOfferDiscount}% off</strong> to the bill.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <Footer section="general" color="blue" label="Save Business Details" msgs={msgs} loading={loading} />
                 </form>
             </Card>
