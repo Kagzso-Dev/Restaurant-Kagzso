@@ -270,6 +270,7 @@ const Order = {
         
         if (Object.keys(data).length === 0) return this.findById(id);
         
+        console.log(`[Order.updateById] Updating ID=${id} in ${COLLECTIONS.orders}:`, JSON.stringify(data, null, 2));
         await databases.updateDocument(databaseId, COLLECTIONS.orders, id, data);
         return this.findById(id);
     },
@@ -403,8 +404,14 @@ const Order = {
             final_amount: newFinalAmount,
         };
 
-        if (order.order_status === 'ready' || order.order_status === 'accepted') {
-            updates.order_status = 'preparing';
+        const currentStatus = (order.order_status || '').toLowerCase();
+        // Always reopen the KOT whenever new items are added
+        updates.kot_status = 'Open';
+        if (['ready', 'preparing', 'accepted'].includes(currentStatus)) {
+            updates.order_status = 'pending';
+            console.log(`[Order.addItems] Resetting Order=${orderId} to PENDING because new items added to ${currentStatus} order`);
+        } else {
+            console.log(`[Order.addItems] Reopening KOT for Order=${orderId} (was ${currentStatus})`);
         }
 
         const updatedOrderDoc = await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, updates);

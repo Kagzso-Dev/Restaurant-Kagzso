@@ -54,10 +54,25 @@ const CancelOrderModal = ({ order, item, isOpen, onClose, onConfirm, title = "Ca
                             </p>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <label className="text-xs font-bold text-[var(--theme-text-subtle)] uppercase tracking-widest ml-1">
                                 Cancellation Reason
                             </label>
+
+                            {/* Quick reasons */}
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {['Availability Issue', 'Out of Stock', 'Guest Changed Mind', 'Order Mistake'].map(r => (
+                                    <button
+                                        key={r}
+                                        type="button"
+                                        onClick={() => setReason(r)}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${reason === r ? 'bg-red-600 text-white border-red-600' : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-subtle)] border-[var(--theme-border)] hover:border-red-500/50'}`}
+                                    >
+                                        {r}
+                                    </button>
+                                ))}
+                            </div>
+
                             <textarea
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}

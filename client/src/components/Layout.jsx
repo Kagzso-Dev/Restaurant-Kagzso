@@ -59,7 +59,7 @@ const Layout = () => {
     // ── Auth Guards ──────────────────────────────────────────────────────────
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--theme-bg-dark)' }}>
+            <div className="flex items-center justify-center min-h-dynamic-screen" style={{ backgroundColor: 'var(--theme-bg-dark)' }}>
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-14 h-14 border-[3px] border-orange-500 border-t-transparent rounded-full animate-spin" />
                     <p className="text-[var(--theme-text-muted)] text-sm font-medium tracking-wide">Loading...</p>
@@ -116,7 +116,7 @@ const Layout = () => {
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-y-auto overflow-x-hidden pt-safe">
-                    <div className="w-full px-3 sm:px-4 md:px-6 pb-28 lg:pb-6 animate-fade-in max-w-[1600px] mx-auto overflow-x-hidden">
+                    <div className="w-full px-3 sm:px-4 md:px-6 animate-fade-in max-w-[1600px] mx-auto overflow-x-hidden content-scroll-pad">
                         <Outlet />
                     </div>
                 </main>

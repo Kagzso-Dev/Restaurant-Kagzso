@@ -8,8 +8,7 @@ import {
 import {
     TrendingUp, Award, Clock, ChefHat, Download, RefreshCw, FileText
 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 /* ── Analytics Module ─────────────────────────────────────────────────── */
 
@@ -28,7 +27,6 @@ const Analytics = () => {
     const [reportData, setReportData] = useState([]);
     const [items, setItems] = useState([]);
 
-    const dashboardRef = useRef(null);
     // Keep a ref so socket callbacks always see the latest range
     const reportRangeRef = useRef(reportRange);
     useEffect(() => { reportRangeRef.current = reportRange; }, [reportRange]);
@@ -92,33 +90,76 @@ const Analytics = () => {
         }
     }, [socket]);
 
-    /* ── PDF Export ──────────────────────────────────────────────────── */
-    const exportPDF = async () => {
-        const element = dashboardRef.current;
-        const canvas = await html2canvas(element, {
-            scale: 2,
-            backgroundColor: '#0f172a',
-            logging: false,
-            useCORS: true
-        });
+    /* ── Excel Export ─────────────────────────────────────────────────── */
+    const exportExcel = () => {
+        const wb = XLSX.utils.book_new();
+        const date = new Date().toISOString().split('T')[0];
 
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        // Sheet 1: Summary
+        const wsSummary = XLSX.utils.aoa_to_sheet([
+            ['Kagzso Analytics Report'],
+            ['Range', reportRange.toUpperCase()],
+            ['Generated', new Date().toLocaleString()],
+            [],
+            ['Metric', 'Value'],
+            ['Total Revenue', summary.totalRevenue],
+            ['Order Count', summary.orderCount],
+            ['Avg Order Value', summary.avgOrderValue],
+            ['Revenue Growth (%)', growth],
+        ]);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
 
-        pdf.setFontSize(18);
-        pdf.setTextColor(249, 115, 22);
-        pdf.text(`Kagzso Analytics Report - ${reportRange.toUpperCase()}`, 10, 15);
-        pdf.setFontSize(10);
-        pdf.setTextColor(150);
-        pdf.text(`Generated: ${new Date().toLocaleString()}`, 10, 22);
-        const summaryTotal = items.reduce((acc, curr) => acc + curr.totalRevenue, 0);
-        const ordersTotal = items.reduce((acc, curr) => acc + curr.totalOrders, 0);
-        pdf.text(`Total Revenue: ${formatPrice(summaryTotal)} | Items Sold: ${ordersTotal}`, 10, 28);
-        pdf.addImage(imgData, 'PNG', 0, 35, pdfWidth, pdfHeight);
-        pdf.save(`Kagzso_Report_${reportRange}_${new Date().toISOString().split('T')[0]}.pdf`);
+        // Sheet 2: Daily/Weekly Report
+        if (reportData.length > 0) {
+            const reportKeys = Object.keys(reportData[0]);
+            const wsReport = XLSX.utils.aoa_to_sheet([
+                reportKeys,
+                ...reportData.map(row => reportKeys.map(k => row[k])),
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsReport, 'Report');
+        }
+
+        // Sheet 3: Menu Items Performance
+        if (items.length > 0) {
+            const itemKeys = Object.keys(items[0]);
+            const wsItems = XLSX.utils.aoa_to_sheet([
+                itemKeys,
+                ...items.map(row => itemKeys.map(k => row[k])),
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsItems, 'Items');
+        }
+
+        // Sheet 4: Heatmap
+        if (heatmap.length > 0) {
+            const heatKeys = Object.keys(heatmap[0]);
+            const wsHeat = XLSX.utils.aoa_to_sheet([
+                heatKeys,
+                ...heatmap.map(row => heatKeys.map(k => row[k])),
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsHeat, 'Heatmap');
+        }
+
+        // Sheet 5: Waiters
+        if (waiters.length > 0) {
+            const wKeys = Object.keys(waiters[0]);
+            const wsWaiters = XLSX.utils.aoa_to_sheet([
+                wKeys,
+                ...waiters.map(row => wKeys.map(k => row[k])),
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsWaiters, 'Waiters');
+        }
+
+        // Sheet 6: Kitchen
+        if (kitchen.length > 0) {
+            const kKeys = Object.keys(kitchen[0]);
+            const wsKitchen = XLSX.utils.aoa_to_sheet([
+                kKeys,
+                ...kitchen.map(row => kKeys.map(k => row[k])),
+            ]);
+            XLSX.utils.book_append_sheet(wb, wsKitchen, 'Kitchen');
+        }
+
+        XLSX.writeFile(wb, `Kagzso_Analytics_${reportRange}_${date}.xlsx`);
     };
 
 
@@ -142,7 +183,7 @@ const Analytics = () => {
     );
 
     return (
-        <div className="space-y-6 animate-fade-in" ref={dashboardRef}>
+        <div className="space-y-6 animate-fade-in">
             {/* ── Header ────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--theme-bg-card)] p-5 rounded-2xl border border-[var(--theme-border)]">
                 <div>
@@ -176,9 +217,9 @@ const Analytics = () => {
                         <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
                     </button>
                     <button
-                        onClick={exportPDF}
+                        onClick={exportExcel}
                         className="p-2.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl transition-all shadow-glow-orange active:scale-95 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        title="Export PDF"
+                        title="Export Excel"
                     >
                         <Download size={18} />
                     </button>

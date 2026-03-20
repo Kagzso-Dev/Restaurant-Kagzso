@@ -164,14 +164,9 @@ const WaiterDashboard = () => {
         try {
             setLoading(true);
             setFetchError(false);
-            // Fetch only active orders to minimize API usage (300-400/day adds up fast!)
-            // We'll fetch cancelled orders only when requested, or if the list is small.
-            // For now, let's just fetch active.
+            // Fetch all recent orders — frontend decides active vs history by paymentStatus
             const res = await api.get('/api/orders', {
-                params: { 
-                    status: activeTab === 'active' ? 'active' : 'cancelled',
-                    limit: 100 
-                },
+                params: { limit: 100 },
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             setOrders(res.data.orders || []);
@@ -181,7 +176,7 @@ const WaiterDashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [user, activeTab]);
+    }, [user]);
 
     useEffect(() => {
         if (user) fetchOrders();
@@ -245,24 +240,27 @@ const WaiterDashboard = () => {
         }
     };
 
+    // Active = not paid yet AND not cancelled; History = paid OR cancelled
+    const activeOrders  = orders.filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled');
+    const historyOrders = orders.filter(o => o.paymentStatus === 'paid' || o.orderStatus === 'cancelled');
+
     const counts = {
-        pending: orders.filter(o => o.orderStatus === 'pending').length,
-        accepted: orders.filter(o => o.orderStatus === 'accepted').length,
-        preparing: orders.filter(o => o.orderStatus === 'preparing').length,
-        ready: orders.filter(o => o.orderStatus === 'ready').length,
-        cancelled: orders.filter(o => o.orderStatus === 'cancelled').length,
+        pending:  activeOrders.filter(o => o.orderStatus === 'pending').length,
+        accepted: activeOrders.filter(o => o.orderStatus === 'accepted').length,
+        preparing:activeOrders.filter(o => o.orderStatus === 'preparing').length,
+        ready:    activeOrders.filter(o => o.orderStatus === 'ready').length,
+        history:  historyOrders.length,
     };
 
     const filteredOrders = activeTab === 'active'
-        ? orders.filter(o => {
-            if (['completed', 'cancelled'].includes(o.orderStatus)) return false;
-            if (statusFilter === 'pending') return o.orderStatus === 'pending';
-            if (statusFilter === 'accepted') return o.orderStatus === 'accepted';
+        ? activeOrders.filter(o => {
+            if (statusFilter === 'pending')   return o.orderStatus === 'pending';
+            if (statusFilter === 'accepted')  return o.orderStatus === 'accepted';
             if (statusFilter === 'preparing') return o.orderStatus === 'preparing';
-            if (statusFilter === 'ready') return o.orderStatus === 'ready';
+            if (statusFilter === 'ready')     return o.orderStatus === 'ready';
             return true;
         })
-        : orders.filter(o => o.orderStatus === 'cancelled');
+        : historyOrders;
 
     return (
         <div className="space-y-5 animate-fade-in pb-10 text-left">
@@ -350,7 +348,7 @@ const WaiterDashboard = () => {
                             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${activeTab === 'cancelled' ? 'bg-[var(--theme-bg-card)] text-red-500 shadow-sm border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
                         >
                             <History size={13} />
-                            History ({counts.cancelled})
+                            History ({counts.history})
                         </button>
                     </div>
 
@@ -434,8 +432,8 @@ const WaiterDashboard = () => {
                     ) : (
                         <>
                             <History size={52} className="mb-3 opacity-20" />
-                            <h3 className="text-lg font-bold text-[var(--theme-text-muted)]">No cancelled orders</h3>
-                            <p className="text-sm mt-1">Hooray! No wastage today.</p>
+                            <h3 className="text-lg font-bold text-[var(--theme-text-muted)]">No history yet</h3>
+                            <p className="text-sm mt-1">Completed & cancelled orders appear here.</p>
                         </>
                     )}
                 </div>

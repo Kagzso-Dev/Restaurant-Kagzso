@@ -441,6 +441,7 @@ const NewOrder = () => {
                                                 viewMode={viewMode}
                                                 formatPrice={formatPrice}
                                                 onAdd={addToCart}
+                                                cartQty={cart.find(i => i._id === item._id)?.quantity || 0}
                                             />
                                         ))}
                                     </div>

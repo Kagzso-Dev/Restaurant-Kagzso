@@ -122,7 +122,8 @@ const createOrder = async (req, res) => {
         updateDailyAnalytics();
         res.status(201).json(createdOrder);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`API Error (${error.code || 500}):`, error.message);
+        res.status(error.code || 500).json({ message: error.message });
     }
 };
 
@@ -140,19 +141,33 @@ const updateOrderStatus = async (req, res) => {
         if (req.role === 'kitchen' && status === 'completed') {
             return res.status(403).json({ message: 'Kitchen cannot mark orders as completed' });
         }
-        if (status === 'cancelled' &&
-            ['preparing', 'ready'].includes(order.orderStatus) &&
-            req.role !== 'admin') {
-            return res.status(403).json({ message: 'Only admin can cancel after preparation starts' });
-        }
-
         const updates = { orderStatus: status };
+        // KOT only closes on payment — not on ready (kitchen keeps ticket visible until paid)
         if (status === 'completed' && order.paymentStatus === 'paid') updates.kotStatus = 'Closed';
-        if (status === 'preparing' && !order.prepStartedAt) updates.prepStartedAt = new Date();
-        if (status === 'ready' && !order.readyAt) updates.readyAt = new Date();
-        if (status === 'completed' && !order.completedAt) updates.completedAt = new Date();
+        if (status === 'preparing' && !order.prepStartedAt) updates.prepStartedAt = new Date().toISOString();
+        if (status === 'ready' && !order.readyAt) updates.readyAt = new Date().toISOString();
+        if (status === 'completed' && !order.completedAt) updates.completedAt = new Date().toISOString();
+
+        console.log(`[updateOrderStatus] Processing update for ID=${req.params.id}:`, {
+            role: req.role,
+            status,
+            updates
+        });
 
         const updatedOrder = await Order.updateById(req.params.id, updates);
+
+        // Sync items status for Accepted/Preparing/Ready actions
+        if (['accepted', 'preparing', 'ready'].includes(status)) {
+            const itemStatus = status.toUpperCase();
+            const activeItems = (order.items || []).filter(i => i.status !== 'CANCELLED');
+            
+            console.log(`[updateOrderStatus] Syncing ${activeItems.length} items to ${itemStatus} for Order=${order._id}`);
+            
+            await Promise.all(activeItems.map(item => {
+                console.log(`  -> Syncing Item ID=${item._id} to ${itemStatus}`);
+                return Order.updateItemStatus(order._id, item._id, itemStatus);
+            }));
+        }
 
         // Table lifecycle: completed + paid → cleaning
         if (status === 'completed' &&
@@ -185,7 +200,8 @@ const updateOrderStatus = async (req, res) => {
         updateDailyAnalytics();
         res.json(updatedOrder);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`API Error (${error.code || 500}):`, error.message);
+        res.status(error.code || 500).json({ message: error.message });
     }
 };
 
@@ -210,6 +226,20 @@ const updateItemStatus = async (req, res) => {
         }
 
         const updatedOrder = await Order.updateItemStatus(id, itemId, status);
+        
+        // Auto-Ready: check if all active items are now READY
+        const activeItems = updatedOrder.items.filter(i => i.status !== 'CANCELLED');
+        const allReady    = activeItems.length > 0 && activeItems.every(i => i.status?.toUpperCase() === 'READY');
+        
+        if (allReady && updatedOrder.orderStatus !== 'ready') {
+            const finalOrder = await Order.updateById(id, { 
+                orderStatus: 'ready',
+                readyAt: new Date()
+            });
+            req.app.get('io').to('restaurant_main').emit('order-updated', finalOrder);
+            return res.json(finalOrder);
+        }
+
         req.app.get('io').to('restaurant_main').emit('itemUpdated', updatedOrder);
         req.app.get('io').to('restaurant_main').emit('order-updated', updatedOrder);
 
@@ -218,7 +248,8 @@ const updateItemStatus = async (req, res) => {
         updateDailyAnalytics();
         res.json(updatedOrder);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`API Error (${error.code || 500}):`, error.message);
+        res.status(error.code || 500).json({ message: error.message });
     }
 };
 
@@ -303,7 +334,8 @@ const processPayment = async (req, res) => {
 
         res.json({ success: true, message: 'Payment successful & token closed', order: updatedOrder });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`API Error (${error.code || 500}):`, error.message);
+        res.status(error.code || 500).json({ message: error.message });
     }
 };
 
@@ -317,10 +349,12 @@ const cancelOrder = async (req, res) => {
         if (!order) {
             return res.status(404).json({ message: 'Order not found' });
         }
-        if (['completed', 'cancelled'].includes(order.orderStatus)) {
-            return res.status(400).json({
-                message: `Cannot cancel an order that is already ${order.orderStatus}`,
-            });
+        if (['ready', 'completed', 'cancelled'].includes(order.orderStatus)) {
+            if (req.role !== 'admin') {
+                return res.status(400).json({
+                    message: `Cannot cancel an order that is already ${order.orderStatus}`,
+                });
+            }
         }
 
         // Role-based cancellation rules
@@ -361,7 +395,8 @@ const cancelOrder = async (req, res) => {
         updateDailyAnalytics();
         res.json(updatedOrder);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`API Error (${error.code || 500}):`, error.message);
+        res.status(error.code || 500).json({ message: error.message });
     }
 };
 
@@ -387,9 +422,20 @@ const cancelOrderItem = async (req, res) => {
         if (currentStatus === 'CANCELLED') {
             return res.status(400).json({ message: 'Item is already cancelled' });
         }
-        if (req.role === 'waiter' && ['PREPARING', 'READY'].includes(currentStatus)) {
+        if (['READY'].includes(currentStatus)) {
+            if (req.role !== 'admin') {
+                return res.status(403).json({ message: 'Cannot cancel an item that is already ready' });
+            }
+        }
+        if (order.orderStatus === 'ready') {
+            if (req.role !== 'admin') {
+                return res.status(403).json({ message: 'Cannot cancel items in a ready order' });
+            }
+        }
+
+        if (req.role === 'waiter' && ['PREPARING'].includes(currentStatus)) {
             return res.status(403).json({
-                message: 'Waiters cannot cancel items that are preparing or ready',
+                message: 'Waiters cannot cancel items that are preparing',
             });
         }
 
@@ -434,7 +480,8 @@ const cancelOrderItem = async (req, res) => {
         updateDailyAnalytics();
         res.json(updatedOrder);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`API Error (${error.code || 500}):`, error.message);
+        res.status(error.code || 500).json({ message: error.message });
     }
 };
 
@@ -444,7 +491,8 @@ const getOrderById = async (req, res) => {
         if (!order) return res.status(404).json({ message: 'Order not found' });
         res.json(order);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`API Error (${error.code || 500}):`, error.message);
+        res.status(error.code || 500).json({ message: error.message });
     }
 };
 
@@ -459,7 +507,8 @@ const searchOrders = async (req, res) => {
         const orders = await Order.search(q, limit);
         res.json({ orders });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`API Error (${error.code || 500}):`, error.message);
+        res.status(error.code || 500).json({ message: error.message });
     }
 };
 

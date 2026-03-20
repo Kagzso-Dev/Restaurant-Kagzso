@@ -183,7 +183,7 @@ const processPayment = async (req, res) => {
 
         invalidateCache('dashboard');
         invalidateCache('analytics');
-        updateDailyAnalytics().catch(err => console.error('[paymentController] Analytics update failed:', err));
+        updateDailyAnalytics();
 
         res.json({
             success: true,

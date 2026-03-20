@@ -52,10 +52,10 @@ const SCHEMA = {
             { key: 'number', type: 'integer', required: true },
             { key: 'capacity', type: 'integer', required: true },
             { key: 'status', type: 'string', size: 50, required: false, default: 'available' },
-            { key: 'lockedBy', type: 'string', size: 50, required: false, default: null },
-            { key: 'reservedAt', type: 'string', size: 50, required: false, default: null },
-            { key: 'reservationExpiresAt', type: 'string', size: 50, required: false, default: null },
-            { key: 'currentOrderId', type: 'string', size: 50, required: false, default: null }
+            { key: 'locked_by', type: 'string', size: 50, required: false, default: null },
+            { key: 'reserved_at', type: 'string', size: 50, required: false, default: null },
+            { key: 'reservation_expires_at', type: 'string', size: 50, required: false, default: null },
+            { key: 'current_order_id', type: 'string', size: 50, required: false, default: null }
         ],
         indexes: [
             { key: 'idx_number', type: 'unique', attributes: ['number'] }

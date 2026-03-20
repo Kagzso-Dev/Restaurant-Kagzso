@@ -2,8 +2,9 @@ import { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
 import logoImg from '../../assets/logo.png';
-import { ChefHat, Clock, RefreshCw, CheckCheck, Utensils, XCircle } from 'lucide-react';
+import { ChefHat, Clock, RefreshCw, CheckCheck, Utensils, XCircle, Plus } from 'lucide-react';
 import CancelOrderModal from '../../components/CancelOrderModal';
+import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
 
@@ -46,18 +47,25 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
 
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)]';
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
+    const hasNewItems = order.items?.some(i => 
+        i.status?.toUpperCase() === 'PENDING' && 
+        (new Date(i.createdAt) - new Date(order.createdAt)) > 30000
+    );
 
     return (
         <div className={`
             relative rounded-xl overflow-hidden border-l-4 transition-all duration-300
             flex flex-col shadow-sm sm:hover:scale-[1.01] sm:hover:shadow-lg
             ${tColor}
-            ${order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
+            ${hasNewItems ? `ring-2 ring-[var(--status-pending)] shadow-[0_0_20px_var(--status-pending-bg)] animate-pulse` : ''}
+            ${hasNewItems ? 'border-l-[var(--status-pending)]' : (
+                order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
                 order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
                 order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
                 order.orderStatus === 'ready' ? 'border-l-[var(--status-ready)]' :
-                'border-l-[var(--theme-border)]'}
-            ${isReady ? 'animate-pulse' : ''}
+                'border-l-[var(--theme-border)]'
+            )}
+            ${isReady && !hasNewItems ? 'animate-pulse' : ''}
             ${urgency ? 'ring-2 ring-red-500/30' : ''}
             ${isList ? 'flex-row items-center h-16 sm:h-20 px-3' : ''}
             animate-fade-in
@@ -69,9 +77,20 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                         <p className={`text-[8px] text-inherit opacity-70 uppercase tracking-widest font-semibold ${isCompact ? 'hidden' : ''}`}>Order</p>
                         <h3 className={`${isMini ? 'text-[10px]' : (isCompact ? 'text-[11px]' : 'text-sm')} font-black text-inherit leading-none tracking-tighter whitespace-nowrap`}>{order.orderNumber}</h3>
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                        {!isList && <StatusBadge status={order.orderStatus} size={isMini ? 'xs' : 'sm'} />}
-                    </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    {!isList && <StatusBadge status={order.orderStatus} size={isMini ? 'xs' : 'sm'} />}
+                    
+                    {/* Overall Order Cancel Button - Hidden if ready (unless admin), or finished */}
+                    {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (order.orderStatus !== 'ready' || userRole === 'admin') && (userRole === 'kitchen' || userRole === 'admin') && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onCancel(order); }}
+                            className="p-1 hover:bg-red-500/10 rounded-lg text-red-500 transition-all ml-0.5"
+                            title="Cancel entire order"
+                        >
+                            <XCircle size={isMini ? 12 : 16} />
+                        </button>
+                    )}
+                </div>
                 </div>
 
                 <div className={`flex items-center justify-between mt-1 text-[9px] text-inherit opacity-60 ${isCompact ? 'flex-col items-start gap-0.5' : ''}`}>
@@ -90,34 +109,88 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
 
             {/* Items List */}
             <div className={`flex-1 overflow-y-auto custom-scrollbar ${isList ? 'p-0 px-3 h-full flex flex-wrap items-center gap-2' : (isMini ? 'p-1.5 space-y-1 max-h-[120px]' : 'p-2.5 space-y-1.5 max-h-[180px]')}`}>
-                {order.items.map(item => (
-                    <div key={item._id} className={`${isList ? 'inline-flex items-center' : 'flex flex-col gap-0.5'}`}>
-                        <div className="flex items-start justify-between gap-1.5">
-                            <div className="flex items-start gap-1.5 min-w-0">
-                                <div className={`
-                                    rounded-md flex-shrink-0
-                                    flex items-center justify-center font-bold transition-colors
-                                    ${isMini ? 'w-3.5 h-3.5 text-[7px]' : (isCompact ? 'w-4 h-4 text-[8px]' : 'w-5 h-5 text-[10px]')}
-                                    ${item.status?.toUpperCase() === 'READY'     ? 'bg-[var(--status-ready-bg)] text-[var(--status-ready)]' :
-                                      item.status?.toUpperCase() === 'PREPARING' ? 'bg-[var(--status-preparing-bg)] text-[var(--status-preparing)]' :
-                                      item.status?.toUpperCase() === 'ACCEPTED'  ? 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted)]' :
-                                      item.status === 'CANCELLED' ? 'bg-red-500/10 text-red-400 opacity-50' :
-                                      'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)]'}
-                                `}>
-                                    {item.quantity}
+                {order.items.map(item => {
+                    const status = item.status?.toUpperCase() || 'PENDING';
+                    const isCancelled = status === 'CANCELLED';
+                    const isItemReady = status === 'READY';
+                    // Item is "new add" if it's PENDING and was added 30s+ after the order was created
+                    const isNewAdd = status === 'PENDING' &&
+                        (new Date(item.createdAt) - new Date(order.createdAt)) > 30000;
+
+                    const nextStatus =
+                        status === 'PENDING'   ? 'ACCEPTED'  :
+                        status === 'ACCEPTED'  ? 'PREPARING' :
+                        status === 'PREPARING' ? 'READY'     : 'PENDING';
+
+                    // Cancel is only allowed for PENDING items — locked items (READY/PREPARING) stay untouched
+                    const canCancelThisItem =
+                        !isCancelled && status === 'PENDING' &&
+                        (userRole === 'kitchen' || userRole === 'admin');
+
+                    return (
+                        <div key={item._id} className={`${isList ? 'inline-flex items-center' : 'flex flex-col gap-0.5'} group`}>
+                            <div className="flex items-center justify-between gap-1.5 w-full">
+                                <div
+                                    className={`flex items-start gap-1.5 min-w-0 flex-1 cursor-pointer hover:opacity-80 transition-opacity ${isCancelled ? 'cursor-not-allowed opacity-50' : ''}`}
+                                    onClick={() => !isCancelled && status !== 'READY' && onUpdateItemStatus(order._id, item._id, nextStatus)}
+                                >
+                                    <div className={`
+                                        rounded-md flex-shrink-0
+                                        flex items-center justify-center font-bold transition-all
+                                        ${isMini ? 'w-3.5 h-3.5 text-[7px]' : (isCompact ? 'w-4 h-4 text-[8px]' : 'w-5 h-5 text-[10px]')}
+                                        ${status === 'READY'     ? 'bg-[var(--status-ready)] text-white shadow-sm' :
+                                          status === 'PREPARING' ? 'bg-[var(--status-preparing)] text-white shadow-sm' :
+                                          status === 'ACCEPTED'  ? 'bg-[var(--status-accepted)] text-white shadow-sm' :
+                                          isCancelled ? 'bg-red-500/20 text-red-400' :
+                                          isNewAdd ? 'bg-orange-500 text-white shadow-sm animate-pulse' :
+                                          'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)]'}
+                                    `}>
+                                        {item.quantity}
+                                    </div>
+                                    <div className="min-w-0 text-left">
+                                        <div className="flex items-center gap-1 flex-wrap">
+                                            <p className={`font-semibold leading-tight transition-colors ${isMini ? 'text-[9px]' : (isCompact ? 'text-[10px]' : 'text-xs')} ${
+                                                isItemReady  ? 'text-[var(--status-ready)] opacity-100' :
+                                                isCancelled  ? 'text-red-500/50 line-through italic' :
+                                                'text-inherit'
+                                            }`}>
+                                                {item.name}
+                                            </p>
+                                            {/* NEW badge — only on freshly added items, hidden in mini view */}
+                                            {isNewAdd && !isMini && (
+                                                <span className="bg-orange-500 text-white text-[7px] font-black px-1 py-px rounded uppercase tracking-widest leading-none">
+                                                    NEW
+                                                </span>
+                                            )}
+                                            {/* DONE badge — item already finished, locked */}
+                                            {isItemReady && !isMini && (
+                                                <span className="bg-[var(--status-ready-bg)] text-[var(--status-ready)] text-[7px] font-black px-1 py-px rounded uppercase tracking-widest leading-none">
+                                                    Done
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="min-w-0 text-left">
-                                    <p className={`font-semibold leading-tight transition-colors ${isMini ? 'text-[9px]' : (isCompact ? 'text-[10px]' : 'text-xs')} ${['READY', 'ready'].includes(item.status) ? 'text-[var(--status-ready)] line-through' :
-                                        item.status === 'CANCELLED' ? 'text-red-600/50 line-through' :
-                                            'text-inherit'
-                                        }`}>
-                                        {item.name}
-                                    </p>
-                                </div>
+
+                                {/* Cancel only for PENDING items — READY/PREPARING items are permanently locked */}
+                                {canCancelThisItem && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onCancelItem(order, item); }}
+                                        className="sm:opacity-0 group-hover:opacity-100 opacity-100 p-2 sm:p-0.5 hover:bg-red-500/10 rounded-lg text-red-500 transition-all ml-1"
+                                        title="Cancel item"
+                                    >
+                                        <XCircle size={isMini ? 10 : 14} />
+                                    </button>
+                                )}
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
+            </div>
+
+            {/* Click Indicator for Mobile */}
+            <div className="absolute top-2 right-2 sm:hidden text-[7px] font-black uppercase text-[var(--theme-text-muted)] opacity-30 flex items-center gap-1">
+                Tap for Details <Plus size={8} />
             </div>
 
             {/* Action Buttons */}
@@ -125,20 +198,20 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                 <div className={`border-l border-[var(--theme-border)] shrink-0 ${isList ? 'h-full border-t-0 p-2 w-28 flex flex-col justify-center' : (isMini ? 'p-1.5 border-t flex gap-1' : 'p-2.5 border-t flex gap-2 text-left')}`}>
                     {order.orderStatus === 'pending' && (
                         <button
-                            onClick={() => onUpdateStatus(order._id, 'accepted')}
+                            onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, 'accepted'); }}
                             style={{ backgroundColor: 'var(--status-accepted)' }}
-                            className={`w-full py-1.5 text-white text-[9px] font-black rounded shadow-md transition-all active:scale-95 brightness-90 hover:brightness-100 ${isList ? 'h-8' : ''}`}
+                            className={`w-full py-2 sm:py-1.5 text-white text-[10px] sm:text-[9px] font-black rounded-lg sm:rounded shadow-md transition-all active:scale-95 brightness-90 hover:brightness-100 ${isList ? 'h-8' : ''}`}
                         >
                             Accept
                         </button>
                     )}
                     {(order.orderStatus === 'accepted' || order.orderStatus === 'preparing') && (
                         <button
-                            onClick={() => onUpdateStatus(order._id, order.orderStatus === 'accepted' ? 'preparing' : 'ready')}
+                            onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, order.orderStatus === 'accepted' ? 'preparing' : 'ready'); }}
                             style={{ 
                                 backgroundColor: order.orderStatus === 'accepted' ? 'var(--status-preparing)' : 'var(--status-ready)' 
                             }}
-                            className={`w-full py-1.5 text-white text-[9px] font-black rounded shadow-md transition-all active:scale-95 brightness-90 hover:brightness-100 ${isList ? 'h-8' : ''}`}
+                            className={`w-full py-2 sm:py-1.5 text-white text-[10px] sm:text-[9px] font-black rounded-lg sm:rounded shadow-md transition-all active:scale-95 brightness-90 hover:brightness-100 ${isList ? 'h-8' : ''}`}
                         >
                             {order.orderStatus === 'accepted' ? (isMini ? 'Go' : 'Start') : 'Ready ✓'}
                         </button>
@@ -154,8 +227,10 @@ const KitchenDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'cancelled'
+    const [filterType, setFilterType] = useState('all'); // 'all', 'dine-in', 'takeaway'
     const [lastRefresh, setLastRefresh] = useState(new Date());
     const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, item: null });
+    const [detailsModal, setDetailsModal] = useState({ isOpen: false, order: null });
     const { user, socket, socketConnected, settings } = useContext(AuthContext);
 
     const fetchOrders = useCallback(async () => {
@@ -257,20 +332,24 @@ const KitchenDashboard = () => {
         }
     };
 
+    const ACTIVE_STATUSES = ['pending', 'accepted', 'preparing', 'ready'];
+    // Only count orders that are actually visible in the kitchen display (kotStatus not Closed)
+    const activeKotOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.orderStatus) && o.kotStatus !== 'Closed');
+
     const counts = {
-        pending: orders.filter(o => o.orderStatus === 'pending').length,
-        accepted: orders.filter(o => o.orderStatus === 'accepted').length,
-        preparing: orders.filter(o => o.orderStatus === 'preparing').length,
-        ready: orders.filter(o => o.orderStatus === 'ready').length,
+        pending: activeKotOrders.filter(o => o.orderStatus === 'pending').length,
+        accepted: activeKotOrders.filter(o => o.orderStatus === 'accepted').length,
+        preparing: activeKotOrders.filter(o => o.orderStatus === 'preparing').length,
+        ready: activeKotOrders.filter(o => o.orderStatus === 'ready').length,
         cancelled: orders.filter(o => o.orderStatus === 'cancelled').length,
         completed: orders.filter(o => o.orderStatus === 'completed').length,
     };
-
-    const displayOrders = activeTab === 'active'
-        ? orders.filter(o => ['pending', 'accepted', 'preparing', 'ready'].includes(o.orderStatus))
+    const displayOrders = (activeTab === 'active'
+        ? activeKotOrders
         : activeTab === 'cancelled'
             ? orders.filter(o => o.orderStatus === 'cancelled')
-            : orders.filter(o => o.orderStatus === 'completed');
+            : orders.filter(o => o.orderStatus === 'completed')
+    ).filter(o => filterType === 'all' ? true : o.orderType === filterType);
 
     return (
         <div className="space-y-5 animate-fade-in pb-10 text-left">
@@ -288,7 +367,7 @@ const KitchenDashboard = () => {
                                 <span className="text-[var(--theme-text-muted)] font-normal ml-2 text-sm md:text-base">Control Center</span>
                             </h1>
                             <p className="text-xs text-[var(--theme-text-muted)]">
-                                Watching {orders.filter(o => o.kotStatus === 'Open').length} live tickets
+                                Watching {orders.filter(o => ACTIVE_STATUSES.includes(o.orderStatus) && o.kotStatus !== 'Closed').length} live tickets
                             </p>
                         </div>
                     </div>
@@ -331,7 +410,7 @@ const KitchenDashboard = () => {
                         onClick={() => setActiveTab('active')}
                         className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'active' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
                     >
-                        Active KOTs ({counts.pending + counts.preparing + counts.ready})
+                        Active KOTs ({counts.pending + counts.accepted + counts.preparing + counts.ready})
                     </button>
                     <button
                         onClick={() => setActiveTab('cancelled')}
@@ -345,6 +424,24 @@ const KitchenDashboard = () => {
                     >
                         Completed ({counts.completed})
                     </button>
+                </div>
+
+                {/* ── Order Type Filter ──────────────────────────────────── */}
+                <div className="flex gap-1.5 p-1 bg-[var(--theme-bg-hover)] rounded-xl border border-[var(--theme-border)] w-fit">
+                    {['all', 'dine-in', 'takeaway'].map(t => (
+                        <button
+                            key={t}
+                            onClick={() => setFilterType(t)}
+                            className={`
+                                px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all
+                                ${filterType === t 
+                                    ? 'bg-[var(--theme-bg-card)] text-[var(--theme-text-main)] shadow-sm ring-1 ring-white/10' 
+                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-white/5'}
+                            `}
+                        >
+                            {t}
+                        </button>
+                    ))}
                 </div>
 
                 {activeTab === 'active' && (
@@ -393,25 +490,51 @@ const KitchenDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className={`grid gap-2 sm:gap-3 ${
+                <div className={`grid gap-2 sm:gap-4 ${
                     settings.dashboardView === 'one' ? 'grid-cols-1' :
                     settings.dashboardView === 'two' ? 'grid-cols-1 sm:grid-cols-2' :
-                    'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                    'grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
                 }`}>
                     {displayOrders.map(order => (
-                        <KotTicket
+                        <div 
                             key={order._id}
-                            order={order}
-                            onUpdateStatus={updateStatus}
-                            onUpdateItemStatus={updateItemStatus}
-                            onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
-                            onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
-                            userRole={user.role}
-                            viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
-                        />
+                            onClick={(e) => {
+                                // Don't open if clicking action elements or small toggles
+                                if (e.target.closest('button')) return;
+                                setDetailsModal({ isOpen: true, order: order });
+                            }}
+                            className="transition-transform active:scale-[0.98]"
+                        >
+                            <KotTicket
+                                order={order}
+                                onUpdateStatus={updateStatus}
+                                onUpdateItemStatus={updateItemStatus}
+                                onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
+                                onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
+                                userRole={user.role}
+                                viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
+                            />
+                        </div>
                     ))}
                 </div>
             )}
+
+            <OrderDetailsModal
+                order={detailsModal.order}
+                isOpen={detailsModal.isOpen}
+                onClose={() => setDetailsModal({ isOpen: false, order: null })}
+                formatPrice={(p) => `₹${p}`}
+                onCancelItem={(o, i) => {
+                    setDetailsModal({ isOpen: false, order: null });
+                    setCancelModal({ isOpen: true, order: o, item: i });
+                }}
+                onCancelOrder={(o) => {
+                    setDetailsModal({ isOpen: false, order: null });
+                    setCancelModal({ isOpen: true, order: o, item: null });
+                }}
+                userRole={user.role}
+                settings={settings}
+            />
 
             <CancelOrderModal
                 isOpen={cancelModal.isOpen}

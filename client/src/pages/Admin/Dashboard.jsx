@@ -1,12 +1,11 @@
-import { useState, useEffect, useContext, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
 import {
     TrendingUp, TrendingDown, ShoppingBag, Clock, DollarSign,
     Download, RefreshCw, ChevronDown, FileText
 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 /* ── Skeleton Card ───────────────────────────────────────────────────────── */
 const SkeletonCard = () => (
@@ -87,8 +86,8 @@ const AdminDashboard = () => {
     const [dbStats, setDbStats] = useState(null);
     const [dbSummary, setDbSummary] = useState(null);
     const [statsLoading, setStatsLoading] = useState(true);
+    const [filterType, setFilterType] = useState('all'); // 'all', 'dine-in', 'takeaway'
 
-    const dashboardRef = useRef(null);
 
     const PER_PAGE = 10;
     const { user, socket, formatPrice, settings } = useContext(AuthContext);
@@ -201,39 +200,59 @@ const AdminDashboard = () => {
     const avgOrderValue = dbSummary?.avgOrderValue   ?? 0;
     const orderCount    = dbSummary?.orderCount      ?? 0;
 
-    /* ── Pagination ──────────────────────────────────────────────────── */
+    /* ── Filtered & Paginated Orders ─────────────────────────────────── */
+    const filteredOrders = useMemo(() => {
+        if (filterType === 'all') return orders;
+        return orders.filter(o => o.orderType?.toLowerCase() === filterType.toLowerCase());
+    }, [orders, filterType]);
+
     const paginated = useMemo(() => {
         const start = (page - 1) * PER_PAGE;
-        return orders.slice(start, start + PER_PAGE);
-    }, [orders, page]);
-    const totalPages = Math.ceil(orders.length / PER_PAGE);
+        return filteredOrders.slice(start, start + PER_PAGE);
+    }, [filteredOrders, page]);
 
-    /* ── PDF Export ──────────────────────────────────────────────────── */
-    const exportPDF = async () => {
-        const element = dashboardRef.current;
-        if (!element) return;
+    const totalPages = Math.ceil(filteredOrders.length / PER_PAGE);
 
-        const canvas = await html2canvas(element, {
-            scale: 2,
-            backgroundColor: '#0f172a',
-            logging: false,
-            useCORS: true
-        });
+    // Reset to page 1 when filter changes
+    useEffect(() => {
+        setPage(1);
+    }, [filterType]);
 
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    /* ── Excel Export ─────────────────────────────────────────────────── */
+    const exportExcel = () => {
+        const wb = XLSX.utils.book_new();
 
-        pdf.setFontSize(18);
-        pdf.setTextColor(249, 115, 22);
-        pdf.text(`Kagzso Business Dashboard`, 10, 15);
-        pdf.setFontSize(10);
-        pdf.setTextColor(150);
-        pdf.text(`Generated: ${new Date().toLocaleString()}`, 10, 22);
-        pdf.addImage(imgData, 'PNG', 0, 30, pdfWidth, pdfHeight);
-        pdf.save(`Kagzso_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`);
+        // Sheet 1: Summary
+        const summaryData = [
+            ['Kagzso Dashboard Report'],
+            ['Generated', new Date().toLocaleString()],
+            [],
+            ['Metric', 'Value'],
+            ['Total Revenue (30d)', totalRevenue],
+            ['Active Orders', activeCount],
+            ['Completed Today', completedCount],
+            ['Avg Order Value', avgOrderValue],
+            ['Total Orders (30d)', orderCount],
+        ];
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+        // Sheet 2: Orders
+        const ordersData = [
+            ['Order ID', 'Type', 'Items', 'Status', 'Date', 'Amount'],
+            ...orders.map(o => [
+                o.orderNumber,
+                o.orderType,
+                o.items?.length ?? 0,
+                o.orderStatus,
+                new Date(o.createdAt).toLocaleDateString(),
+                o.finalAmount,
+            ]),
+        ];
+        const wsOrders = XLSX.utils.aoa_to_sheet(ordersData);
+        XLSX.utils.book_append_sheet(wb, wsOrders, 'Orders');
+
+        XLSX.writeFile(wb, `Kagzso_Dashboard_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     /* ── Handle Refresh (orders + DB stats + growth) ─────────────────── */
@@ -244,7 +263,7 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div className="space-y-5 animate-fade-in" ref={dashboardRef}>
+        <div className="space-y-5 animate-fade-in">
 
             {/* ── Page Header ─────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[var(--theme-bg-card2)] rounded-2xl p-5 border border-[var(--theme-border)]">
@@ -265,11 +284,11 @@ const AdminDashboard = () => {
                         <span className="hidden sm:inline">Refresh</span>
                     </button>
                     <button
-                        onClick={exportPDF}
+                        onClick={exportExcel}
                         className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl text-sm font-semibold transition-colors shadow-glow-orange min-h-[44px]"
                     >
                         <Download size={15} />
-                        <span>Export PDF</span>
+                        <span>Export Excel</span>
                     </button>
                 </div>
             </div>
@@ -339,10 +358,21 @@ const AdminDashboard = () => {
                         <h2 className="text-base font-bold text-[var(--theme-text-main)]">Recent Orders</h2>
                         <p className="text-xs text-[var(--theme-text-subtle)] mt-0.5">{orders.length} total records</p>
                     </div>
-                    <div className="flex gap-2">
-                        <button className="flex items-center gap-1.5 px-3 py-2 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] rounded-xl text-xs font-medium transition-colors min-h-[44px]">
-                            Filter <ChevronDown size={13} />
-                        </button>
+                    <div className="flex bg-[var(--theme-bg-hover)] p-1 rounded-xl border border-[var(--theme-border)]">
+                        {['all', 'dine-in', 'takeaway'].map((type) => (
+                            <button
+                                key={type}
+                                onClick={() => setFilterType(type)}
+                                className={`
+                                    px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all
+                                    ${filterType === type 
+                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' 
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                                `}
+                            >
+                                {type.replace('-', ' ')}
+                            </button>
+                        ))}
                     </div>
                 </div>
 

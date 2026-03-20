@@ -186,7 +186,7 @@ const CashierDashboard = () => {
             const res = await api.get('/api/orders', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
-            const unpaid = (res.data.orders || []).filter(o => o.paymentStatus !== 'paid');
+            const unpaid = (res.data.orders || []).filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled');
             setOrders(unpaid);
         } catch (err) {
             console.error('Error fetching orders', err);
@@ -216,8 +216,8 @@ const CashierDashboard = () => {
         if (socket) {
             // Real-time updates: no polling needed
             const onNewOrder = (order) => {
-                // Add new unpaid orders to the list
-                if (order.paymentStatus !== 'paid') {
+                // Add new unpaid and non-cancelled orders to the list
+                if (order.paymentStatus !== 'paid' && order.orderStatus !== 'cancelled') {
                     setOrders(prev => {
                         if (prev.find(o => o._id === order._id)) return prev;
                         return [order, ...prev];
@@ -227,8 +227,8 @@ const CashierDashboard = () => {
 
             const onOrderUpdate = (order) => {
                 setOrders(prev => {
-                    // Remove paid orders from the pending list
-                    if (order.paymentStatus === 'paid') {
+                    // Remove paid or cancelled orders from the pending list
+                    if (order.paymentStatus === 'paid' || order.orderStatus === 'cancelled') {
                         return prev.filter(o => o._id !== order._id);
                     }
                     // Update existing order

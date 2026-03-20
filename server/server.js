@@ -171,6 +171,10 @@ app.post('/api/analytics/backfill',
     }
 );
 
+// ─── AI Assistant (Admin only) ───────────────────────────────────────────────
+const aiController = require('./controllers/aiController');
+app.post('/api/ai/chat', protect, authorize('admin'), aiController.chat);
+
 // GET /api/analytics/daily?range=week|month|year → read from daily_analytics table
 app.get('/api/analytics/daily',
     protect,

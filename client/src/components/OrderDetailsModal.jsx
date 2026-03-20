@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
     X, Clock, Utensils, Package, CreditCard,
-    Printer, Wallet, CheckCircle2, ChefHat, Plus
+    Printer, Wallet, CheckCircle2, ChefHat, Plus, XCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { printBill } from './BillPrint';
@@ -14,6 +14,7 @@ const OrderDetailsModal = ({
     formatPrice,
     onProcessPayment,
     onCancelItem,
+    onCancelOrder,
     userRole,
     settings = {},
 }) => {
@@ -41,11 +42,20 @@ const OrderDetailsModal = ({
 
     const canCancelItem = (item) => {
         if (!onCancelItem || isCompleted || isCancelled || isReady) return false;
-        if (item.status === 'CANCELLED' || item.status === 'Cancelled') return false;
+
         const s = item.status?.toUpperCase();
+
+        // Items already cancelled — no button
+        if (s === 'CANCELLED') return false;
+
+        // Items already done in kitchen — permanently locked, never cancellable
+        // even if new items were added and order status changed
+        if (['READY', 'COMPLETED', 'PREPARING'].includes(s) && userRole === 'waiter') return false;
+        if (['READY', 'COMPLETED'].includes(s)) return false;
+
         if (userRole === 'waiter') return s === 'PENDING';
-        if (userRole === 'kitchen') return ['PENDING', 'PREPARING'].includes(s);
-        if (userRole === 'admin' || userRole === 'cashier') return true;
+        if (userRole === 'kitchen') return s === 'PENDING';
+        if (userRole === 'admin' || userRole === 'cashier') return s === 'PENDING';
         return false;
     };
 
@@ -97,12 +107,24 @@ const OrderDetailsModal = ({
                             </span>
                         </p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="w-9 h-9 flex items-center justify-center bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] rounded-xl text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all active:scale-90"
-                    >
-                        <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Overall Order Cancel Button - Hidden if Ready (unless admin), or finished */}
+                        {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (order.orderStatus !== 'ready' || userRole === 'admin') && (userRole === 'kitchen' || userRole === 'admin') && onCancelOrder && (
+                            <button
+                                onClick={() => onCancelOrder(order)}
+                                className="w-9 h-9 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500 rounded-xl text-rose-500 hover:text-white transition-all active:scale-90"
+                                title="Cancel entire order"
+                            >
+                                <XCircle size={18} />
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="w-9 h-9 flex items-center justify-center bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] rounded-xl text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all active:scale-90"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
@@ -110,8 +132,8 @@ const OrderDetailsModal = ({
 
                     {/* TOP SECTION: INFO cards (Responsive Grid) */}
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                        {/* Info Block - 7 cols on tablet+ */}
-                        <div className="sm:col-span-8 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-5 sm:p-6 shadow-inner relative overflow-hidden">
+                        {/* Info Block - 8 cols on desktop, full width on tablets/mobile */}
+                        <div className="sm:col-span-12 lg:col-span-8 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-5 sm:p-6 shadow-inner relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500/40" />
                             <div className="flex items-center justify-between mb-6">
                                 <div>
@@ -174,35 +196,61 @@ const OrderDetailsModal = ({
                             </div>
                         </div>
 
-                        {/* Financial Block - 5 cols on tablet+ */}
-                        {userRole === 'waiter' ? (
-                            <div className="sm:col-span-4 relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 border border-blue-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xl shadow-blue-500/20 group">
-                                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150" />
-                                <div className="absolute top-4 right-4 opacity-10"><CreditCard size={48} strokeWidth={1} /></div>
-                                
-                                <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-auto relative z-10">Total Bill</p>
-                                
-                                <div className="relative z-10 mt-4">
-                                    <p className="text-3xl font-black text-white leading-none tracking-tighter drop-shadow-md">{formatPrice(order.finalAmount)}</p>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">{order.items?.length} Items</span>
-                                        <span className="w-1 h-1 rounded-full bg-white/30" />
-                                        <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Sub: {formatPrice(order.totalAmount)}</span>
+                        {/* Financial Block - Full width on mobile/tablet, 4 cols on Desktop */}
+                        <div className={`sm:col-span-12 lg:col-span-4 relative overflow-hidden rounded-2xl p-5 sm:p-6 flex flex-col gap-3 shadow-xl ${
+                            isPaid
+                                ? 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 border border-emerald-500/20 shadow-emerald-500/20'
+                                : userRole === 'waiter'
+                                    ? 'bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 border border-blue-500/20 shadow-blue-500/20'
+                                    : 'bg-gradient-to-br from-orange-500 via-orange-600 to-amber-700 border border-orange-500/20 shadow-orange-500/20'
+                        }`}>
+                            <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/10 rounded-full blur-2xl" />
+                            <div className="absolute bottom-0 left-0 w-20 h-20 bg-black/10 rounded-full blur-2xl" />
+                            <div className="absolute top-3 right-3 opacity-10"><CreditCard size={44} strokeWidth={1} /></div>
+
+                            {/* Header */}
+                            <div className="relative z-10 flex items-center justify-between">
+                                <p className="text-[9px] font-black text-white/60 uppercase tracking-[0.2em]">Order Total</p>
+                                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                                    isPaid
+                                        ? 'bg-white/20 border-white/30 text-white'
+                                        : 'bg-white/10 border-white/20 text-white/70'
+                                }`}>
+                                    {isPaid ? '✓ Paid' : 'Unpaid'}
+                                </span>
+                            </div>
+
+                            {/* Final Amount */}
+                            <div className="relative z-10">
+                                <p className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tighter drop-shadow-md whitespace-nowrap">
+                                    {formatPrice(order.finalAmount)}
+                                </p>
+                            </div>
+
+                            {/* Breakdown */}
+                            <div className="relative z-10 border-t border-white/15 pt-3 space-y-1.5">
+                                <div className="flex justify-between text-[9px] font-bold text-white/60 uppercase tracking-widest">
+                                    <span>Subtotal</span>
+                                    <span>{formatPrice(order.totalAmount)}</span>
+                                </div>
+                                {order.tax > 0 && (
+                                    <div className="flex justify-between text-[9px] font-bold text-white/60 uppercase tracking-widest">
+                                        <span>Tax</span>
+                                        <span>+ {formatPrice(order.tax)}</span>
                                     </div>
+                                )}
+                                {order.discount > 0 && (
+                                    <div className="flex justify-between text-[9px] font-bold text-emerald-300 uppercase tracking-widest">
+                                        <span>Discount</span>
+                                        <span>- {formatPrice(order.discount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-[9px] font-black text-white/40 uppercase tracking-widest pt-1 border-t border-white/10">
+                                    <span>{order.items?.filter(i => i.status !== 'CANCELLED').length || order.items?.length} items</span>
+                                    {order.paymentMethod && <span>{order.paymentMethod}</span>}
                                 </div>
                             </div>
-                        ) : (
-                            <div className="sm:col-span-4 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-inner relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--theme-border)] opacity-5 -mr-8 -mt-8 rounded-full" />
-                                <p className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em] mb-auto">Order Total</p>
-                                <div className="mt-4">
-                                    <p className="text-3xl font-black text-[var(--theme-text-main)] leading-none tracking-tighter">{formatPrice(order.finalAmount)}</p>
-                                    <p className="text-[10px] text-[var(--theme-text-muted)] mt-1.5 font-bold uppercase tracking-widest flex items-center gap-1">
-                                        Full settled amount
-                                    </p>
-                                </div>
-                            </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* ITEM LIST */}
@@ -266,7 +314,17 @@ const OrderDetailsModal = ({
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <StatusBadge status={item.status || 'Pending'} size="xs" />
+                                                    <StatusBadge
+                                                        status={
+                                                            cancelled ? 'CANCELLED' :
+                                                            order.orderStatus === 'ready' ? 'READY' :
+                                                            // Item-level status is authoritative for locked states otherwise
+                                                            ['READY', 'COMPLETED', 'PREPARING'].includes(item.status?.toUpperCase())
+                                                                ? item.status.toUpperCase()
+                                                                : (item.status || 'PENDING').toUpperCase()
+                                                        }
+                                                        size="xs"
+                                                    />
                                                     <span className="text-[10px] text-[var(--theme-text-muted)] font-bold opacity-40">@ {formatPrice(item.price)}</span>
                                                     {addedAgo !== null && addedAgo >= 1 && !cancelled && (
                                                         <span className="text-[9px] text-blue-400 font-bold italic flex items-center gap-1">
