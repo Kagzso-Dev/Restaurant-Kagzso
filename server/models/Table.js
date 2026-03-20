@@ -16,7 +16,28 @@ const fmt = (doc) => {
     };
 };
 
+let tableMapCache = null;
+let cacheExpiry = 0;
+
 const Table = {
+    // ── Internal helper for efficient table number lookups ──────────────────
+    async getTableMap() {
+        const now = Date.now();
+        if (tableMapCache && now < cacheExpiry) return tableMapCache;
+
+        const all = await this.findAll();
+        const map = {};
+        all.forEach(t => map[t._id] = t.number);
+        
+        tableMapCache = map;
+        cacheExpiry = now + (60 * 60 * 1000); // 1 hour cache
+        return map;
+    },
+
+    async clearMapCache() {
+        tableMapCache = null;
+    },
+
     async findAll() {
         const response = await databases.listDocuments(
             databaseId,

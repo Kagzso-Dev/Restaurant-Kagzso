@@ -1,6 +1,7 @@
 const Setting = require('../models/Setting');
 const User = require('../models/User');
 const { storage, storageBucketId, InputFile, ID } = require('../config/appwrite');
+const { invalidateCache } = require('../utils/cache');
 
 // GET /api/settings
 const getSettings = async (req, res) => {
@@ -14,17 +15,12 @@ const getSettings = async (req, res) => {
 // PUT /api/settings
 const updateSettings = async (req, res) => {
     try {
-        const fs = require('fs');
-        fs.appendFileSync('server_debug.log', `HIT: ${new Date().toISOString()} | updateSettings | Body: ${JSON.stringify(req.body)}\n`);
-        console.log('[Controller] updateSettings Body:', req.body);
         const settings = await Setting.update(req.body);
+        invalidateCache('settings');
         
-        // Safe socket emit
-        const io = req.app.get('socketio');
+        const io = req.app.get('io');
         if (io) {
             io.to('restaurant_main').emit('settings-updated', settings);
-        } else {
-            console.warn('[Controller] socketio not found in app');
         }
 
         res.json(settings);
@@ -140,9 +136,10 @@ const uploadQr = async (req, res) => {
 
         // Persist in settings
         const settings = await Setting.updateQr({ type, fileId, url });
+        invalidateCache('settings');
 
         // Broadcast update to all clients
-        req.app.get('socketio').to('restaurant_main').emit('settings-updated', settings);
+        req.app.get('io').to('restaurant_main').emit('settings-updated', settings);
 
         res.json({
             message: `${type} QR updated successfully`,

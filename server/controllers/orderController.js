@@ -17,15 +17,20 @@ const getOrders = async (req, res) => {
     try {
         const { page = 1, limit = 50, kotStatus, status } = req.query;
         const filter = {};
-
         if (kotStatus) {
             filter.kotStatus = kotStatus === 'Open' ? { $ne: 'Closed' } : kotStatus;
         }
-        if (status) {
+
+        if (status === 'active') {
+            filter.orderStatus = { $in: ['pending', 'accepted', 'preparing', 'ready'] };
+        } else if (status === 'history') {
+            filter.orderStatus = { $in: ['completed', 'cancelled'] };
+        } else if (status) {
             filter.orderStatus = status;
         }
-        // Kitchen only sees active orders by default
-        if (req.role === 'kitchen' && !kotStatus) {
+
+        // Kitchen only sees active orders by default if no filter is provided
+        if (req.role === 'kitchen' && !kotStatus && !status) {
             filter.orderStatus = { $in: ['pending', 'accepted', 'preparing', 'ready'] };
         }
 
@@ -93,16 +98,16 @@ const createOrder = async (req, res) => {
                 reservedAt: null,
             });
             const table = await Table.findById(tableId);
-            req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+            req.app.get('io').to('restaurant_main').emit('table-updated', {
                 tableId: table._id,
                 status: 'occupied',
                 lockedBy: table.lockedBy,
             });
         }
 
-        req.app.get('socketio').to('restaurant_main').emit('new-order', createdOrder);
+        req.app.get('io').to('restaurant_main').emit('new-order', createdOrder);
 
-        createAndEmitNotification(req.app.get('socketio'), {
+        createAndEmitNotification(req.app.get('io'), {
             title: `New Order #${createdOrder.orderNumber}`,
             message: `${createdOrder.items.length} item(s) — ${createdOrder.orderType === 'dine-in' ? 'Dine-In' : 'Takeaway'}`,
             type: 'NEW_ORDER',
@@ -156,15 +161,15 @@ const updateOrderStatus = async (req, res) => {
             order.tableId) {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'cleaning', currentOrderId: null });
-            req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+            req.app.get('io').to('restaurant_main').emit('table-updated', {
                 tableId: tid, status: 'cleaning',
             });
         }
 
-        req.app.get('socketio').to('restaurant_main').emit('order-updated', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('order-updated', updatedOrder);
 
         if (status === 'ready') {
-            createAndEmitNotification(req.app.get('socketio'), {
+            createAndEmitNotification(req.app.get('io'), {
                 title: `Order #${order.orderNumber} Ready`,
                 message: 'Order is ready for pickup/serving',
                 type: 'ORDER_READY',
@@ -205,8 +210,8 @@ const updateItemStatus = async (req, res) => {
         }
 
         const updatedOrder = await Order.updateItemStatus(id, itemId, status);
-        req.app.get('socketio').to('restaurant_main').emit('itemUpdated', updatedOrder);
-        req.app.get('socketio').to('restaurant_main').emit('order-updated', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('itemUpdated', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('order-updated', updatedOrder);
 
         invalidateCache('dashboard');
         invalidateCache('analytics');
@@ -269,13 +274,13 @@ const processPayment = async (req, res) => {
         if (order.orderType === 'dine-in' && order.tableId) {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'cleaning', currentOrderId: null });
-            req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+            req.app.get('io').to('restaurant_main').emit('table-updated', {
                 tableId: tid, status: 'cleaning',
             });
         }
 
-        req.app.get('socketio').to('restaurant_main').emit('order-updated', updatedOrder);
-        req.app.get('socketio').to('restaurant_main').emit('order-completed', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('order-updated', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('order-completed', updatedOrder);
 
         // Audit trail
         PaymentAudit.create({
@@ -343,13 +348,13 @@ const cancelOrder = async (req, res) => {
         if (order.orderType === 'dine-in' && order.tableId) {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'available', currentOrderId: null });
-            req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+            req.app.get('io').to('restaurant_main').emit('table-updated', {
                 tableId: tid, status: 'available',
             });
         }
 
-        req.app.get('socketio').to('restaurant_main').emit('orderCancelled', updatedOrder);
-        req.app.get('socketio').to('restaurant_main').emit('order-updated', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('orderCancelled', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('order-updated', updatedOrder);
 
         invalidateCache('dashboard');
         invalidateCache('analytics');
@@ -417,13 +422,13 @@ const cancelOrderItem = async (req, res) => {
         if (activeItems.length === 0 && order.orderType === 'dine-in' && order.tableId) {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'available', currentOrderId: null });
-            req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+            req.app.get('io').to('restaurant_main').emit('table-updated', {
                 tableId: tid, status: 'available',
             });
         }
 
-        req.app.get('socketio').to('restaurant_main').emit('itemUpdated', updatedOrder);
-        req.app.get('socketio').to('restaurant_main').emit('order-updated', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('itemUpdated', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('order-updated', updatedOrder);
         invalidateCache('dashboard');
         invalidateCache('analytics');
         updateDailyAnalytics();
@@ -480,9 +485,9 @@ const addOrderItems = async (req, res) => {
 
         const updatedOrder = await Order.addItems(id, items, { totalAmount, tax, finalAmount });
 
-        req.app.get('socketio').to('restaurant_main').emit('order-updated', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('order-updated', updatedOrder);
 
-        createAndEmitNotification(req.app.get('socketio'), {
+        createAndEmitNotification(req.app.get('io'), {
             title: `New items on Order #${updatedOrder.orderNumber}`,
             message: `${items.length} new item(s) added`,
             type: 'ORDER_UPDATED',

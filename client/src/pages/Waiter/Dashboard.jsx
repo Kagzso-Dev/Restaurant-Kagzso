@@ -164,7 +164,14 @@ const WaiterDashboard = () => {
         try {
             setLoading(true);
             setFetchError(false);
+            // Fetch only active orders to minimize API usage (300-400/day adds up fast!)
+            // We'll fetch cancelled orders only when requested, or if the list is small.
+            // For now, let's just fetch active.
             const res = await api.get('/api/orders', {
+                params: { 
+                    status: activeTab === 'active' ? 'active' : 'cancelled',
+                    limit: 100 
+                },
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             setOrders(res.data.orders || []);
@@ -174,7 +181,7 @@ const WaiterDashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, activeTab]);
 
     useEffect(() => {
         if (user) fetchOrders();

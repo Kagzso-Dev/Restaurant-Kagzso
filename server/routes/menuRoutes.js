@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { getMenuItems, updateMenuItem, deleteMenuItem, createMenuItem } = require('../controllers/menuController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { cacheMiddleware } = require('../utils/cache');
 
 router.use(protect);
 
 router.route('/')
-    .get(getMenuItems)
+    .get(cacheMiddleware(1800, 'menu'), getMenuItems)
     .post(authorize('admin'), createMenuItem);
 
 router.route('/:id')

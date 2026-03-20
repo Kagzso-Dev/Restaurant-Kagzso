@@ -9,7 +9,7 @@ import { useAI } from '../../context/AIContext';
 const KagzsoAI = () => {
     const { 
         isOpen, setIsOpen, messages, sendMessage, 
-        isTyping, clearChat, context 
+        isTyping, isModelLoading, clearChat, context 
     } = useAI();
     
     const location = useLocation();
@@ -261,6 +261,14 @@ const KagzsoAI = () => {
                             </div>
                         </div>
                     ))}
+                    {isModelLoading && (
+                        <div className="flex justify-center p-4 animate-fade-in">
+                            <div className="bg-orange-500/10 border border-orange-500/20 px-4 py-2 rounded-xl flex items-center gap-3">
+                                <RotateCcw size={14} className="text-orange-500 animate-spin" />
+                                <span className="text-[11px] font-bold text-orange-500 uppercase tracking-wider">Initializing Local AI...</span>
+                            </div>
+                        </div>
+                    )}
                     {isTyping && (
                         <div className="flex justify-start animate-fade-in">
                             <div className="bg-[var(--theme-bg-muted)]/50 border border-white/5 px-5 py-3.5 rounded-2xl rounded-tl-none flex gap-1.5 items-center">

@@ -3,10 +3,12 @@ const router = express.Router();
 const { getCategories, createCategory, updateCategory, deleteCategory } = require('../controllers/categoryController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
+const { cacheMiddleware } = require('../utils/cache');
+
 router.use(protect);
 
 router.route('/')
-    .get(getCategories)
+    .get(cacheMiddleware(3600, 'categories'), getCategories)
     .post(authorize('admin'), createCategory);
 
 router.route('/:id')

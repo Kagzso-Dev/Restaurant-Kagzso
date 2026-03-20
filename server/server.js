@@ -14,6 +14,7 @@ const logger = require('./utils/logger');
 const { getCacheStats } = require('./utils/cache');
 const { socketAuthMiddleware, authorizedRoomJoin, authorizedRoleJoin } = require('./middleware/socketAuth');
 const { backfillDailyAnalytics } = require('./utils/dailyAnalytics');
+const { syncSchema }             = require('./utils/schema_sync');
 
 const app = express();
 const server = http.createServer(app);
@@ -132,6 +133,7 @@ const io = new Server(server, {
 });
 
 io.use(socketAuthMiddleware);
+app.set('io', io);
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
 // Must be registered BEFORE static file serving so /api/* never falls through
@@ -225,16 +227,18 @@ io.on('connection', (socket) => {
         role:     socket.role,
     });
 
-    socket.on('join-branch', () => {
-        authorizedRoomJoin(socket);
-    });
-
-    socket.on('join-role', ({ role }) => {
+    socket.on('join_role', (role) => {
         if (!role) return;
-        authorizedRoleJoin(socket, role);
+        socket.join(`role_${role}`);
+        logger.info(`User ${socket.id} joined room: role_${role}`);
     });
 
-    socket.on('join-room', (room) => {
+    socket.on('join_branch', () => {
+        socket.join('restaurant_main');
+        logger.info(`User ${socket.id} joined restaurant main room`);
+    });
+
+    socket.on('join_room', (room) => {
         socket.join(room);
         logger.debug(`Socket ${socket.id} joined room: ${room}`);
     });
@@ -248,7 +252,7 @@ io.on('connection', (socket) => {
     });
 });
 
-app.set('socketio', io);
+app.set('io', io);
 
 // ─── Auto-Release Timer (reserved tables idle > 10 min) ──────────────────────
 // The recurring interval starts immediately; the INITIAL run is deferred to
@@ -410,12 +414,13 @@ process.on('SIGINT',  () => shutdown('SIGINT'));
 const startServer = async () => {
     try {
         logger.info('Initializing Appwrite Database connectivity...');
-        // We could call a test query here if we want to ensure everything is up
+        
+        // ── Schema Sync ───────────────────────────────────────────────────────────
+        // Ensures all collections and attributes exist in the target database.
+        // Useful after changing APPWRITE_DATABASE_ID in .env
+        await syncSchema();
 
         // ── Backfill daily_analytics from all existing order data ─────────────
-        // Runs in background — only fills in dates that are missing so it's fast
-        // on every subsequent restart. All historical dates with orders are covered
-        // in one pass so the analytics dashboard shows data immediately.
         backfillDailyAnalytics(false).then(({ processed, skipped }) => {
             logger.info(`[dailyAnalytics] Startup backfill complete`, { processed, skipped });
         }).catch(err => {

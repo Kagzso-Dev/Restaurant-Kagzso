@@ -1,4 +1,5 @@
 const Category = require('../models/Category');
+const { invalidateCache } = require('../utils/cache');
 
 // @desc    Get categories
 // @route   GET /api/categories
@@ -24,7 +25,9 @@ const createCategory = async (req, res) => {
     }
     try {
         const category = await Category.create({ name: name.trim(), description, color });
-        req.app.get('socketio').to('restaurant_main').emit('category-updated', { action: 'create', category });
+        invalidateCache('categories');
+        invalidateCache('menu');
+        req.app.get('io').to('restaurant_main').emit('category-updated', { action: 'create', category });
         res.status(201).json(category);
     } catch (error) {
         // Appwrite unique constraint error is usually 409
@@ -45,7 +48,9 @@ const updateCategory = async (req, res) => {
             return res.status(404).json({ message: 'Category not found' });
         }
         const category = await Category.updateById(req.params.id, req.body);
-        req.app.get('socketio').to('restaurant_main').emit('category-updated', { action: 'update', category });
+        invalidateCache('categories');
+        invalidateCache('menu');
+        req.app.get('io').to('restaurant_main').emit('category-updated', { action: 'update', category });
         res.json(category);
     } catch (error) {
         if (error.code === 409 || error.message?.includes('already exists')) {
@@ -65,7 +70,9 @@ const deleteCategory = async (req, res) => {
             return res.status(404).json({ message: 'Category not found' });
         }
         await Category.deleteById(req.params.id);
-        req.app.get('socketio').to('restaurant_main').emit('category-updated', { action: 'delete', id: req.params.id });
+        invalidateCache('categories');
+        invalidateCache('menu');
+        req.app.get('io').to('restaurant_main').emit('category-updated', { action: 'delete', id: req.params.id });
         res.json({ message: 'Category removed' });
     } catch (error) {
         // Logic for handling referenced rows might need manual check if Appwrite doesn't support cascades/restrictions the same way

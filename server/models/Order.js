@@ -123,12 +123,13 @@ const Order = {
         if (response.total === 0) return [];
 
         const orderIds = response.documents.map(r => r.$id);
-        const [itemsResp, tablesResp] = await Promise.all([
+        const Table = require('./Table');
+        const [itemsResp, tableMap] = await Promise.all([
             databases.listDocuments(databaseId, COLLECTIONS.order_items, [
                 Query.equal('order_id', orderIds),
                 Query.limit(1000)
             ]),
-            databases.listDocuments(databaseId, COLLECTIONS.tables, [Query.limit(100)])
+            Table.getTableMap()
         ]);
 
         const itemsByOrderId = {};
@@ -136,9 +137,6 @@ const Order = {
             if (!itemsByOrderId[item.order_id]) itemsByOrderId[item.order_id] = [];
             itemsByOrderId[item.order_id].push(fmtItem(item));
         }
-
-        const tableMap = {};
-        tablesResp.documents.forEach(t => tableMap[t.$id] = t.number);
 
         return response.documents.map(doc => fmtOrder(doc, itemsByOrderId[doc.$id] || [], tableMap[doc.table_id]));
     },
@@ -176,30 +174,23 @@ const Order = {
 
         // 3. Validate relationships: existing menu_item_ids
         // Appwrite $id is a system field — use getDocument per item, not Query.equal('$id')
-        if (data.items && data.items.length > 0) {
-            const menuItemIds = data.items.map(item => item.menuItemId).filter(Boolean);
-            console.log(`[DEBUG] Validating menu items: ${menuItemIds.join(', ')}`);
-
-            const invalidIds = [];
-            await Promise.all(menuItemIds.map(async (mid) => {
-                try {
-                    await databases.getDocument(databaseId, COLLECTIONS.menu_items, mid);
-                } catch {
-                    invalidIds.push(mid);
-                }
-            }));
-
-            if (invalidIds.length > 0) {
-                const errorMsg = `Invalid menu_item_id(s): ${invalidIds.join(', ')}. Ensure all items exist in the database.`;
-                console.error(`[ERROR] ${errorMsg}`);
-                throw new Error(errorMsg);
-            }
-        }
-
-        const seq = await Counter.getNextSequence('tokenNumber_global');
-        const orderNumber = `ORD-${seq}`;
-        
+        const Table = require('./Table');
         try {
+            // 1. Validate all menu items in a single batch query
+            const menuItemIds = (data.items || []).map(i => i.menuItemId).filter(Boolean);
+            if (menuItemIds.length > 0) {
+                const checkResp = await databases.listDocuments(databaseId, COLLECTIONS.menu_items, [
+                    Query.equal('$id', menuItemIds),
+                    Query.limit(menuItemIds.length)
+                ]);
+                if (checkResp.total < menuItemIds.length) {
+                    throw new Error('One or more menu items no longer exist');
+                }
+            }
+
+            const seq = await Counter.getNextSequence('tokenNumber_global');
+            const orderNumber = `ORD-${seq}`;
+            
             const orderDoc = await databases.createDocument(
                 databaseId,
                 COLLECTIONS.orders,
@@ -224,8 +215,10 @@ const Order = {
             );
 
             const orderId = orderDoc.$id;
-            for (const item of data.items) {
-                await databases.createDocument(
+            
+            // 2. Insert items in parallel
+            const itemDocs = await Promise.all(data.items.map(item => 
+                databases.createDocument(
                     databaseId,
                     COLLECTIONS.order_items,
                     ID.unique(),
@@ -238,10 +231,12 @@ const Order = {
                         notes: item.notes || null,
                         status: 'PENDING'
                     }
-                );
-            }
-            
-            return this.findById(orderId);
+                )
+            ));
+
+            // 3. Construct the response object in-memory to save 3+ API calls (find, items-load, table-load)
+            const tableMap = await Table.getTableMap();
+            return fmtOrder(orderDoc, itemDocs.map(fmtItem), tableMap[orderDoc.table_id] || null);
         } catch (err) {
             console.error('Order creation failed:', err);
             throw err;
@@ -340,12 +335,13 @@ const Order = {
         if (response.total === 0) return [];
         
         const orderIds = response.documents.map(r => r.$id);
-        const [itemsResp, tablesResp] = await Promise.all([
+        const Table = require('./Table');
+        const [itemsResp, tableMap] = await Promise.all([
             databases.listDocuments(databaseId, COLLECTIONS.order_items, [
                 Query.equal('order_id', orderIds),
                 Query.limit(1000)
             ]),
-            databases.listDocuments(databaseId, COLLECTIONS.tables, [Query.limit(100)])
+            Table.getTableMap()
         ]);
 
         const itemsByOrderId = {};
@@ -353,9 +349,6 @@ const Order = {
             if (!itemsByOrderId[item.order_id]) itemsByOrderId[item.order_id] = [];
             itemsByOrderId[item.order_id].push(fmtItem(item));
         }
-
-        const tableMap = {};
-        tablesResp.documents.forEach(t => tableMap[t.$id] = t.number);
 
         return response.documents.map(doc => fmtOrder(doc, itemsByOrderId[doc.$id] || [], tableMap[doc.table_id]));
     },
@@ -367,43 +360,36 @@ const Order = {
             throw new Error(`Cannot add items to ${order.order_status} order`);
         }
 
-        // 2. Insert new items into database
-        for (const item of items) {
-            // Senior Validation Guard
+        const Table = require('./Table');
+        // 2. Insert new items into database in parallel
+        const newItemDocs = await Promise.all(items.map(async (item) => {
             if (!item.name || item.price === undefined || item.quantity === undefined) {
-                console.warn("[DEBUG] Invalid item data received:", item);
                 throw new Error(`Incomplete item details for "${item.name || 'Unknown'}"`);
             }
-
-            try {
-                await databases.createDocument(
-                    databaseId,
-                    COLLECTIONS.order_items,
-                    ID.unique(),
-                    {
-                        order_id: orderId,
-                        menu_item_id: item.menuItemId || null,
-                        name: item.name,
-                        price: parseFloat(item.price),
-                        quantity: parseInt(item.quantity),
-                        notes: item.notes || null,
-                        status: 'PENDING'
-                    }
-                );
-            } catch (err) {
-                console.error(`[Order.addItems] Failed to insert item "${item.name}":`, err?.message || err);
-                throw err;
-            }
-        }
+            return databases.createDocument(
+                databaseId,
+                COLLECTIONS.order_items,
+                ID.unique(),
+                {
+                    order_id: orderId,
+                    menu_item_id: item.menuItemId || null,
+                    name: item.name,
+                    price: parseFloat(item.price),
+                    quantity: parseInt(item.quantity),
+                    notes: item.notes || null,
+                    status: 'PENDING'
+                }
+            );
+        }));
 
         // 3. Recalculate totals from ALL items (old and new)
-        const allItems = await loadItems(orderId);
+        const oldItems = await loadItems(orderId);
+        const allItems = [...oldItems, ...newItemDocs.map(fmtItem)];
         const activeItems = allItems.filter(i => i.status !== 'CANCELLED');
         
         const rawTotal = activeItems.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
         const newTotalAmount = parseFloat(rawTotal.toFixed(2));
 
-        // Recalculate tax based on previous order's tax rate or system default
         const oldTotal = parseFloat(order.total_amount) || 0;
         const oldTax = parseFloat(order.tax) || 0;
         const currentTaxRate = oldTotal > 0 ? (oldTax / oldTotal) : 0.05;
@@ -417,13 +403,13 @@ const Order = {
             final_amount: newFinalAmount,
         };
 
-        // 4. Update status if necessary
         if (order.order_status === 'ready' || order.order_status === 'accepted') {
             updates.order_status = 'preparing';
         }
 
-        await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, updates);
-        return this.findById(orderId);
+        const updatedOrderDoc = await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, updates);
+        const tableMap = await Table.getTableMap();
+        return fmtOrder(updatedOrderDoc, allItems, tableMap[updatedOrderDoc.table_id] || null);
     },
 };
 

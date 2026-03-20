@@ -10,11 +10,11 @@ router.use(protect);
 // @route   GET /api/dashboard/growth
 // @desc    Today vs yesterday revenue growth percentage
 // @access  Admin only
-router.get('/growth', authorize('admin'), cacheMiddleware(15, 'dashboard'), getGrowth);
+router.get('/growth', authorize('admin'), cacheMiddleware(60, 'dashboard'), getGrowth);
 
 // @route   GET /api/dashboard/stats
 // @desc    Today's order summary (active, completed, cancelled, revenue)
 // @access  Admin only
-router.get('/stats', authorize('admin'), cacheMiddleware(15, 'dashboard'), getStats);
+router.get('/stats', authorize('admin'), cacheMiddleware(60, 'dashboard'), getStats);
 
 module.exports = router;

@@ -33,7 +33,7 @@ const initiatePayment = async (req, res) => {
             return res.status(400).json({ message: 'Cannot initiate payment for this order' });
         }
 
-        req.app.get('socketio').to('restaurant_main').emit('order-updated', order);
+        req.app.get('io').to('restaurant_main').emit('order-updated', order);
         res.json({ success: true, message: 'Payment initiated — order locked', order });
 
         PaymentAudit.create({
@@ -61,7 +61,7 @@ const cancelPayment = async (req, res) => {
         if (!order) {
             return res.status(400).json({ message: 'No pending payment to cancel' });
         }
-        req.app.get('socketio').to('restaurant_main').emit('order-updated', order);
+        req.app.get('io').to('restaurant_main').emit('order-updated', order);
         invalidateCache('dashboard');
         invalidateCache('analytics');
         res.json({ success: true, message: 'Payment cancelled', order });
@@ -133,14 +133,14 @@ const processPayment = async (req, res) => {
         if (order.orderType === 'dine-in' && order.tableId) {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'cleaning', currentOrderId: null });
-            req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+            req.app.get('io').to('restaurant_main').emit('table-updated', {
                 tableId: tid, status: 'cleaning',
             });
         }
 
-        req.app.get('socketio').to('restaurant_main').emit('order-updated',   updatedOrder);
-        req.app.get('socketio').to('restaurant_main').emit('order-completed', updatedOrder);
-        req.app.get('socketio').to('restaurant_main').emit('payment-success', {
+        req.app.get('io').to('restaurant_main').emit('order-updated',   updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('order-completed', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('payment-success', {
             orderId:       order._id,
             orderNumber:   order.orderNumber,
             paymentMethod,
@@ -148,7 +148,7 @@ const processPayment = async (req, res) => {
             changeAmount,
         });
 
-        createAndEmitNotification(req.app.get('socketio'), {
+        createAndEmitNotification(req.app.get('io'), {
             title:         `Payment Received — Order #${order.orderNumber}`,
             message:       `${paymentMethod.toUpperCase()} payment of ${(orderTotal || 0).toFixed(2)} processed`,
             type:          'PAYMENT_SUCCESS',

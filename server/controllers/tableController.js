@@ -37,7 +37,8 @@ const createTable = async (req, res) => {
             return res.status(400).json({ message: 'Table number already exists' });
         }
         const table = await Table.create({ number, capacity });
-        req.app.get('socketio').to('restaurant_main').emit('table-updated', { action: 'create', table });
+                Table.clearMapCache();
+        req.app.get('io').to('restaurant_main').emit('table-updated', { action: 'create', table });
         res.status(201).json(table);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -75,7 +76,8 @@ const updateTable = async (req, res) => {
         }
 
         const updated = await Table.updateById(req.params.id, updates);
-        req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+                Table.clearMapCache();
+        req.app.get('io').to('restaurant_main').emit('table-updated', {
             tableId: updated._id,
             status: updated.status,
             lockedBy: updated.lockedBy,
@@ -99,7 +101,8 @@ const reserveTable = async (req, res) => {
                 message: `Table is currently "${existing.status}" and cannot be reserved`,
             });
         }
-        req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+                Table.clearMapCache();
+        req.app.get('io').to('restaurant_main').emit('table-updated', {
             tableId: table._id,
             status: 'reserved',
             lockedBy: table.lockedBy,
@@ -129,7 +132,8 @@ const releaseTable = async (req, res) => {
             reservationExpiresAt: null,
             currentOrderId: null,
         });
-        req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+                Table.clearMapCache();
+        req.app.get('io').to('restaurant_main').emit('table-updated', {
             tableId: updated._id, status: 'available',
         });
         res.json(updated);
@@ -157,7 +161,8 @@ const markTableClean = async (req, res) => {
             reservationExpiresAt: null,
             currentOrderId: null,
         });
-        req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+                Table.clearMapCache();
+        req.app.get('io').to('restaurant_main').emit('table-updated', {
             tableId: updated._id, status: 'available',
         });
         res.json(updated);
@@ -180,7 +185,8 @@ const forceResetTable = async (req, res) => {
             reservationExpiresAt: null,
             currentOrderId: null,
         });
-        req.app.get('socketio').to('restaurant_main').emit('table-updated', {
+                Table.clearMapCache();
+        req.app.get('io').to('restaurant_main').emit('table-updated', {
             tableId: updated._id, status: 'available',
         });
         res.json({ message: 'Table force-reset to available', table: updated });
@@ -202,7 +208,8 @@ const deleteTable = async (req, res) => {
             });
         }
         await Table.deleteById(req.params.id);
-        req.app.get('socketio').to('restaurant_main').emit('table-updated', { action: 'delete', id: req.params.id });
+                Table.clearMapCache();
+        req.app.get('io').to('restaurant_main').emit('table-updated', { action: 'delete', id: req.params.id });
         res.json({ message: 'Table removed' });
     } catch (error) {
         res.status(500).json({ message: error.message });

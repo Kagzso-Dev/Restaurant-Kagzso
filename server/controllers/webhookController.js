@@ -69,7 +69,7 @@ const handleRazorpayWebhook = async (req, res) => {
             invalidateCache('analytics');
 
             const updatedOrder = await Order.findById(orderId);
-            const io = req.app.get('socketio');
+            const io = req.app.get('io');
             if (io) {
                 io.to('restaurant_main').emit('order-updated',   updatedOrder);
                 io.to('restaurant_main').emit('payment-success', { orderId: order._id });

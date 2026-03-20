@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AIProvider } from './context/AIContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { AdminRoute, KitchenRoute, CashierRoute, WaiterRoute } from './PrivateRoutes';
 import Layout from './components/Layout';
 import DynamicTheme from './components/DynamicTheme';
+import NotificationToast from './components/NotificationToast'; // Added
 const KagzsoAI = lazy(() => import('./components/AI/KagzsoAI'));
 
 // ── Components ───────────────────────────────────────────────────
@@ -50,6 +52,10 @@ function App() {
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <AIProvider>
+          <NotificationProvider>
+          {/* Global Toast Alerts */}
+          <NotificationToast />
+
           <DynamicTheme />
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -104,6 +110,7 @@ function App() {
         <Suspense fallback={null}>
           <KagzsoAI />
         </Suspense>
+        </NotificationProvider>
         </AIProvider>
       </AuthProvider>
     </BrowserRouter>

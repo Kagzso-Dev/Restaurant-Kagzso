@@ -1,4 +1,5 @@
 const MenuItem = require('../models/MenuItem');
+const { invalidateCache } = require('../utils/cache');
 
 // @desc    Get menu items
 // @route   GET /api/menu
@@ -33,7 +34,8 @@ const createMenuItem = async (req, res) => {
             name: name.trim(), description, price, category, image,
             isVeg, availability: availability !== false,
         });
-        req.app.get('socketio').to('restaurant_main').emit('menu-updated', { action: 'create', item });
+        invalidateCache('menu');
+        req.app.get('io').to('restaurant_main').emit('menu-updated', { action: 'create', item });
         res.status(201).json(item);
     } catch (error) {
         if (error.code === 'ER_NO_REFERENCED_ROW_2') {
@@ -53,7 +55,8 @@ const updateMenuItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
         const updated = await MenuItem.updateById(req.params.id, req.body);
-        req.app.get('socketio').to('restaurant_main').emit('menu-updated', { action: 'update', item: updated });
+        invalidateCache('menu');
+        req.app.get('io').to('restaurant_main').emit('menu-updated', { action: 'update', item: updated });
         res.json(updated);
     } catch (error) {
         if (error.code === 'ER_NO_REFERENCED_ROW_2') {
@@ -73,7 +76,8 @@ const deleteMenuItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
         await MenuItem.deleteById(req.params.id);
-        req.app.get('socketio').to('restaurant_main').emit('menu-updated', { action: 'delete', id: req.params.id });
+        invalidateCache('menu');
+        req.app.get('io').to('restaurant_main').emit('menu-updated', { action: 'delete', id: req.params.id });
         res.json({ message: 'Item removed' });
     } catch (error) {
         res.status(500).json({ message: error.message });
