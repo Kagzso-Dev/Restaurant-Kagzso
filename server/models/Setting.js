@@ -28,6 +28,7 @@ const fmt = (doc) => doc ? {
     cashierOfferEnabled: doc.cashier_offer_enabled === true,
     cashierOfferLabel:   doc.cashier_offer_label || '',
     cashierOfferDiscount: parseFloat(doc.cashier_offer_discount || 0),
+    cashierQrUploadEnabled: doc.cashier_qr_upload_enabled !== false,
     createdAt:         doc.$createdAt,
     updatedAt:         doc.$updatedAt,
 } : null;
@@ -108,14 +109,13 @@ const Setting = {
     },
 
     async update(params) {
-        console.log('[Setting] Update raw input keys:', Object.keys(params).join(', '));
-        console.log('[Setting] Update raw input types:', Object.entries(params).map(([k,v]) => `${k}: ${typeof v}`).join(', '));
-        const { 
-            restaurantName, address, currency, currencySymbol, taxRate, gstNumber, 
-            pendingColor, acceptedColor, preparingColor, readyColor, 
-            dashboardView, menuView, dineInEnabled, tableMapEnabled, 
+        const {
+            restaurantName, address, currency, currencySymbol, taxRate, gstNumber,
+            pendingColor, acceptedColor, preparingColor, readyColor,
+            dashboardView, menuView, dineInEnabled, tableMapEnabled,
             takeawayEnabled, waiterServiceEnabled, enforceMenuView,
-            cashierOfferEnabled, cashierOfferLabel, cashierOfferDiscount
+            cashierOfferEnabled, cashierOfferLabel, cashierOfferDiscount,
+            cashierQrUploadEnabled
         } = params;
         await this.get(); // ensures row exists
 
@@ -149,10 +149,11 @@ const Setting = {
             const val = parseFloat(cashierOfferDiscount);
             if (!isNaN(val)) data.cashier_offer_discount = val;
         }
+        if (cashierQrUploadEnabled !== undefined) data.cashier_qr_upload_enabled = (cashierQrUploadEnabled === true || cashierQrUploadEnabled === 'true');
 
         if (Object.keys(data).length === 0) return this.get();
 
-        console.log('[Setting] Updating Appwrite with:', JSON.stringify(data, null, 2));
+        // logger.debug('[Setting] Updating Appwrite...');
         try {
             const updated = await databases.updateDocument(
                 databaseId,
@@ -160,7 +161,6 @@ const Setting = {
                 SETTINGS_DOC_ID,
                 data
             );
-            console.log('[Setting] Success! Appwrite Return Doc:', JSON.stringify(updated, null, 2));
             const fs = require('fs');
             fs.appendFileSync('server_debug.log', `[UPDATE SUCCESS] ${new Date().toISOString()}: ${JSON.stringify(updated, null, 2)}\n`);
             return fmt(updated);
@@ -197,6 +197,7 @@ const Setting = {
                         { key: 'cashier_offer_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'cashier_offer_enabled', false, false) },
                         { key: 'cashier_offer_label', fn: () => databases.createStringAttribute(databaseId, COLLECTIONS.settings, 'cashier_offer_label', 100, false, '') },
                         { key: 'cashier_offer_discount', fn: () => databases.createFloatAttribute(databaseId, COLLECTIONS.settings, 'cashier_offer_discount', false, 0) },
+                        { key: 'cashier_qr_upload_enabled', fn: () => databases.createBooleanAttribute(databaseId, COLLECTIONS.settings, 'cashier_qr_upload_enabled', false, true) },
                     ];
 
                     const toCreate = repairSpec.filter(s => !attrNames.includes(s.key));

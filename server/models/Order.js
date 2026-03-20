@@ -155,7 +155,6 @@ const Order = {
     },
 
     async create(data) {
-        console.log('[DEBUG] Executing Order.create() with data:', JSON.stringify(data, null, 2));
 
         // 1. Format and validate Enum Values
         let rawType = String(data.orderType || '').toLowerCase().replace('_', '-');
@@ -272,7 +271,7 @@ const Order = {
         
         if (Object.keys(data).length === 0) return this.findById(id);
         
-        console.log(`[Order.updateById] Updating ID=${id} in ${COLLECTIONS.orders}:`, JSON.stringify(data, null, 2));
+        // logger.debug(`[Order.updateById] Updating ID=${id}...`);
         try {
             await databases.updateDocument(databaseId, COLLECTIONS.orders, id, data);
             return this.findById(id);
@@ -432,9 +431,6 @@ const Order = {
         updates.kot_status = 'Open';
         if (['ready', 'preparing', 'accepted'].includes(currentStatus)) {
             updates.order_status = 'pending';
-            console.log(`[Order.addItems] Resetting Order=${orderId} to PENDING because new items added to ${currentStatus} order`);
-        } else {
-            console.log(`[Order.addItems] Reopening KOT for Order=${orderId} (was ${currentStatus})`);
         }
 
         const updatedOrderDoc = await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, updates);

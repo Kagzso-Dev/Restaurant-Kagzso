@@ -90,8 +90,6 @@ const getQrSettings = async (req, res) => {
 // Body (Multipart/form-data): type, qr (file)
 const uploadQr = async (req, res) => {
     try {
-        console.log("Body:", req.body);
-        console.log("File:", req.file);
 
         const type = req.body?.type;
         const file = req.file;
@@ -105,6 +103,18 @@ const uploadQr = async (req, res) => {
         if (!['standard', 'secondary'].includes(type)) {
             return res.status(400).json({ message: 'type must be standard or secondary' });
         }
+
+        // Cashier-specific guards
+        if (req.role === 'cashier') {
+            if (type !== 'secondary') {
+                return res.status(403).json({ message: 'Cashiers can only update the Secondary QR' });
+            }
+            const currentSettings = await Setting.get();
+            if (!currentSettings.cashierQrUploadEnabled) {
+                return res.status(403).json({ message: 'QR upload has been disabled by admin' });
+            }
+        }
+
         if (!file) {
             return res.status(400).json({ message: 'QR image file is required' });
         }

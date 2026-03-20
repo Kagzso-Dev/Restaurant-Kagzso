@@ -10,6 +10,7 @@
  */
 
 const { databases, databaseId, COLLECTIONS, Query } = require('../config/appwrite');
+const logger = require('./logger');
 
 /**
  * Fetch all orders for a given UTC day (handles Appwrite pagination).
@@ -99,7 +100,7 @@ async function refreshDailyAnalytics(date = null) {
             });
         }
 
-        console.log(`[dailyAnalytics] Refreshed ${isoDate} — orders: ${total_orders}, revenue: ${revenue}`);
+        logger.debug(`[dailyAnalytics] Refreshed ${isoDate} — orders: ${total_orders}, revenue: ${revenue}`);
     } catch (err) {
         console.error('[dailyAnalytics] refreshDailyAnalytics failed:', err.message);
     }
@@ -114,7 +115,7 @@ async function refreshDailyAnalytics(date = null) {
  */
 async function backfillDailyAnalytics(forceAll = false) {
     try {
-        console.log(`[dailyAnalytics] Starting backfill (forceAll=${forceAll})…`);
+        logger.debug(`[dailyAnalytics] Starting backfill (forceAll=${forceAll})…`);
 
         // Get existing analytics dates to skip
         const existingDates = new Set();
@@ -151,7 +152,7 @@ async function backfillDailyAnalytics(forceAll = false) {
         }
 
         if (!orderDates.size) {
-            console.log('[dailyAnalytics] No orders found — backfill skipped.');
+            logger.debug('[dailyAnalytics] No orders found — backfill skipped.');
             return { processed: 0, skipped: 0 };
         }
 
@@ -167,7 +168,7 @@ async function backfillDailyAnalytics(forceAll = false) {
             processed++;
         }
 
-        console.log(`[dailyAnalytics] Backfill complete — processed: ${processed}, skipped: ${skipped}`);
+        logger.debug(`[dailyAnalytics] Backfill complete — processed: ${processed}, skipped: ${skipped}`);
         return { processed, skipped };
     } catch (err) {
         console.error('[dailyAnalytics] backfillDailyAnalytics failed:', err.message);

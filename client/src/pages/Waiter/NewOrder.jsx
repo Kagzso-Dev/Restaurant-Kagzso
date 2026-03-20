@@ -71,7 +71,6 @@ const NewOrder = () => {
 
                 // 2. If existing order context, fetch it
                 if (orderId) {
-                    console.log("NewOrder: Loading existing order context:", orderId);
                     try {
                         const res = await api.get(`/api/orders/${orderId}`, {
                             headers: { Authorization: `Bearer ${user.token}` }

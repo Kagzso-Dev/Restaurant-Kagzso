@@ -176,6 +176,7 @@ const Settings = () => {
         cashierOfferEnabled: false,
         cashierOfferLabel: '',
         cashierOfferDiscount: 0,
+        cashierQrUploadEnabled: true,
     });
     const [passwordData, setPasswordData] = useState({ role: 'admin', newPassword: '', confirmPassword: '' });
     const [qrUrls, setQrUrls] = useState({ standardQrUrl: null, secondaryQrUrl: null });
@@ -212,13 +213,20 @@ const Settings = () => {
                 cashierOfferEnabled: settings.cashierOfferEnabled === true,
                 cashierOfferLabel: settings.cashierOfferLabel || '',
                 cashierOfferDiscount: settings.cashierOfferDiscount || 0,
+                cashierQrUploadEnabled: settings.cashierQrUploadEnabled !== false,
             });
         }
     }, [settings]);
 
+    // Sync QR URLs from context settings (updates via socket when cashier uploads)
     useEffect(() => {
-        api.get('/api/settings/qr').then(res => setQrUrls(res.data)).catch(() => {});
-    }, []);
+        if (settings) {
+            setQrUrls({
+                standardQrUrl:  settings.standardQrUrl  || null,
+                secondaryQrUrl: settings.secondaryQrUrl || null,
+            });
+        }
+    }, [settings]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -369,6 +377,7 @@ const Settings = () => {
                         <QrCard label="Secondary QR" type="secondary" currentUrl={qrUrls.secondaryQrUrl} token={user?.token}
                             onUploaded={res => setQrUrls(p => ({ ...p, secondaryQrUrl: res.secondaryQrUrl }))} isSecondary={true} />
                     </div>
+
                 </div>
             </Card>
 

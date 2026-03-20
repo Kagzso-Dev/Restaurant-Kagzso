@@ -23,9 +23,13 @@ const useElapsed = (createdAt) => {
         const calc = () => {
             const diff = Math.floor((Date.now() - new Date(createdAt)) / 1000);
             if (diff < 60) { setElapsed(`${diff}s`); return; }
-            const m = Math.floor(diff / 60), s = diff % 60;
-            if (m < 60) { setElapsed(`${m}m ${s}s`); return; }
-            setElapsed(`${Math.floor(m / 60)}h ${m % 60}m`);
+            const minutes = Math.floor(diff / 60);
+            if (minutes < 60) { setElapsed(`${minutes}m ${diff % 60}s`); return; }
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) { setElapsed(`${hours}h ${minutes % 60}m`); return; }
+            const days = Math.floor(hours / 24);
+            if (days < 7) { setElapsed(`${days}d ${hours % 24}h`); return; }
+            setElapsed(`${Math.floor(days / 7)}w ago`);
         };
         calc();
         const id = setInterval(calc, 1000);
@@ -93,14 +97,14 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                 </div>
                 </div>
 
-                <div className={`flex items-center justify-between mt-1 text-[9px] text-inherit opacity-60 ${isCompact ? 'flex-col items-start gap-0.5' : ''}`}>
-                    <span className="flex items-center gap-1 truncate max-w-full font-bold">
-                        {order.orderType === 'dine-in'
-                            ? <><Utensils size={isMini ? 8 : 10} /> {isMini ? '' : 'T'}{order.tableId?.number || order.tableId || '?'}</>
-                            : <><ChefHat size={isMini ? 8 : 10} /> {isMini ? '' : 'TK'}{order.tokenNumber}</>
-                        }
-                    </span>
-                    <span className={`flex items-center gap-1 font-mono ${urgency ? 'text-red-400 font-bold' : ''} ${isMini ? 'hidden sm:flex' : ''}`}>
+                <div className={`flex flex-wrap items-center gap-2.5 mt-2.5 text-[9px] text-inherit ${isCompact ? 'flex-col items-start gap-1' : ''}`}>
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--theme-bg-hover)] rounded-lg border border-current/20 shadow-sm">
+                        <span className="opacity-60"><Utensils size={isMini ? 8 : 10} /></span>
+                        <span className="font-black uppercase tracking-tight">
+                            {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
+                        </span>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 font-mono tracking-tighter ${urgency ? 'text-red-400 font-bold bg-red-400/10 px-1.5 py-0.5 rounded-md' : 'opacity-40'} ${isMini ? 'hidden sm:flex' : ''}`}>
                         <Clock size={isMini ? 8 : 10} />
                         {elapsed}
                     </span>
@@ -439,7 +443,7 @@ const KitchenDashboard = () => {
                                     : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-white/5'}
                             `}
                         >
-                            {t}
+                            {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
                         </button>
                     ))}
                 </div>

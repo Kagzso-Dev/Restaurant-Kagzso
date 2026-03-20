@@ -32,8 +32,11 @@ const consoleFormat = isProd
         baseFormat,
         format.colorize(),
         format.printf(({ timestamp, level, message, metadata }) => {
-            const meta = Object.keys(metadata).length
-                ? ` ${JSON.stringify(metadata)}`
+            const hasMeta = Object.keys(metadata).length > 0;
+            // Only show metadata for errors or if explicitly set to debug
+            const showMeta = (level.includes('error') || process.env.LOG_LEVEL === 'debug');
+            const meta = (hasMeta && showMeta)
+                ? `\n${JSON.stringify(metadata, null, 2)}`
                 : '';
             return `${timestamp} ${level}: ${message}${meta}`;
         }),
@@ -42,7 +45,7 @@ const consoleFormat = isProd
 // ── Logger Instance ──────────────────────────────────────────────────────────
 const logger = createLogger({
     level: process.env.LOG_LEVEL || (isProd ? 'info' : 'debug'),
-    defaultMeta: { service: 'kagzso-pos' },
+    // defaultMeta: { service: 'kagzso-pos' },
     transports: [
         new transports.Console({
             format: consoleFormat,
@@ -50,7 +53,7 @@ const logger = createLogger({
             handleRejections: true,
         }),
     ],
-    exitOnError: false, // Do not exit on handled exceptions
+    exitOnError: false, 
 });
 
 // ── File transports (production only — avoids cluttering dev) ────────────────
@@ -111,7 +114,7 @@ logger.requestLogger = (req, res, next) => {
             // Flag slow requests
             logger.warn('Slow request', logData);
         } else {
-            logger.info('Request completed', logData);
+            logger.debug('Request completed', logData);
         }
     });
 

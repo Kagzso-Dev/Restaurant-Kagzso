@@ -67,8 +67,11 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
     // Digital payment state
     const [paidAmount, setPaidAmount] = useState('');
 
-    // QR state
-    const [qrUrls, setQrUrls] = useState({ standard: null, secondary: null });
+    // QR state — seeded from settings (kept in sync via socket through AuthContext)
+    const [qrUrls, setQrUrls] = useState({
+        standard:  settings?.standardQrUrl  || null,
+        secondary: settings?.secondaryQrUrl || null,
+    });
     const [selectedQrType, setSelectedQrType] = useState('standard');
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -150,16 +153,16 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
         }
     }, [step]);
 
-    /* ── Fetch QR URLs when QR method is chosen ──────────────────── */
+    /* ── Sync QR URLs from settings (socket-updated via AuthContext) ── */
     useEffect(() => {
-        if (method?.id !== 'qr') return;
-        api.get('/api/settings/qr')
-            .then(res => setQrUrls({
-                standard:  res.data.standardQrUrl  || null,
-                secondary: res.data.secondaryQrUrl || null,
-            }))
-            .catch(() => {});
-    }, [method, api, selectedFile]);
+        if (!selectedFile) {
+            // Only sync when no local file preview is active
+            setQrUrls({
+                standard:  settings?.standardQrUrl  || null,
+                secondary: settings?.secondaryQrUrl || null,
+            });
+        }
+    }, [settings, selectedFile]);
 
     /* ── Handle QR File Upload ───────────────────────────────────── */
     const handleFile = (file) => {
@@ -184,8 +187,8 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
             await api.post('/api/settings/qr', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setLocalMsg({ ok: true, text: 'System QR Updated!' });
-            setSelectedFile(null);
+            setLocalMsg({ ok: true, text: 'QR Updated — visible to all!' });
+            setSelectedFile(null); // triggers sync from settings (socket will update settings)
             setTimeout(() => setLocalMsg(null), 3000);
         } catch (err) {
             setLocalMsg({ ok: false, text: 'Upload failed' });
@@ -524,8 +527,8 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
                                             ))}
                                         </div>
 
-                                        {/* Action Icons (Visible ONLY for Secondary QR) */}
-                                        {selectedQrType === 'secondary' && (
+                                        {/* Action Icons (Visible ONLY for Secondary QR, if admin allows upload) */}
+                                        {selectedQrType === 'secondary' && settings?.cashierQrUploadEnabled !== false && (
                                             <div className="flex items-center gap-1.5 px-1.5 py-1.5 bg-[var(--theme-bg-hover)] border border-[var(--theme-border)] rounded-xl animate-fade-in">
                                                 <label htmlFor="modal-qr-upload" title="Upload QR" className="p-2 bg-violet-600/10 hover:bg-violet-600/20 text-violet-400 rounded-lg cursor-pointer transition-colors active:scale-95">
                                                     <Upload size={16} />

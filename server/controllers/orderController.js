@@ -40,7 +40,7 @@ const getOrders = async (req, res) => {
             Order.count(filter),
         ]);
 
-        console.log(`[getOrders] MySQL returned ${orders.length} orders (total: ${total}) for role=${req.role}, filter=${JSON.stringify(filter)}`);
+        // logger.debug(`[getOrders] MySQL returned ${orders.length} orders...`);
 
         res.json({
             orders,
@@ -63,7 +63,6 @@ const getOrders = async (req, res) => {
 // @access  Private (Waiter, Cashier, Admin)
 const createOrder = async (req, res) => {
     const { orderType, tableId, customerInfo, items, totalAmount, tax, discount, finalAmount } = req.body;
-    console.log('[DEBUG] Received order payload on API /api/orders:', JSON.stringify(req.body, null, 2));
 
     if (!items || items.length === 0) {
         console.warn('[DEBUG] Rejecting order: No items provided.');
@@ -148,11 +147,6 @@ const updateOrderStatus = async (req, res) => {
         if (status === 'ready' && !order.readyAt) updates.readyAt = new Date().toISOString();
         if (status === 'completed' && !order.completedAt) updates.completedAt = new Date().toISOString();
 
-        console.log(`[updateOrderStatus] Processing update for ID=${req.params.id}:`, {
-            role: req.role,
-            status,
-            updates
-        });
 
         const updatedOrder = await Order.updateById(req.params.id, updates);
 
@@ -161,10 +155,8 @@ const updateOrderStatus = async (req, res) => {
             const itemStatus = status.toUpperCase();
             const activeItems = (order.items || []).filter(i => i.status !== 'CANCELLED');
             
-            console.log(`[updateOrderStatus] Syncing ${activeItems.length} items to ${itemStatus} for Order=${order._id}`);
             
             await Promise.all(activeItems.map(item => {
-                console.log(`  -> Syncing Item ID=${item._id} to ${itemStatus}`);
                 return Order.updateItemStatus(order._id, item._id, itemStatus);
             }));
         }
@@ -516,8 +508,6 @@ const searchOrders = async (req, res) => {
 // @route   PUT /api/orders/:id/add-items
 // @access  Private (Waiter, Admin, Cashier)
 const addOrderItems = async (req, res) => {
-    console.log('[DEBUG] addOrderItems REQ BODY:', JSON.stringify(req.body, null, 2));
-    console.log('[DEBUG] addOrderItems ORDER ID:', req.params.id);
     
     const { items, totalAmount, tax, finalAmount } = req.body;
     const { id } = req.params;

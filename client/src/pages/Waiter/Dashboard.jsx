@@ -30,38 +30,46 @@ const OrderCard = memo(({ order, formatPrice, onCancel, viewType = 'normal' }) =
     return (
         <div className={`
             ${tColor} ${isReady ? 'animate-pulse' : ''}
-            rounded-xl border-l-[4px] sm:border-l-[6px] shadow-sm transition-all duration-200 flex flex-col group token-tap
-            ${isList ? 'p-2 flex-row items-center border-l-6' : (isMini ? 'p-2 border-l-[4px]' : (isCompact ? 'p-2.5 sm:p-3 border-l-[6px]' : 'p-3 sm:p-4'))}
+            rounded-xl border-l-[6px] sm:border-l-[8px] shadow-sm transition-all duration-200 flex transition-all
+            ${isList ? 'p-3 items-center border-l-8' : (isMini ? 'p-2 border-l-[4px]' : (isCompact ? 'p-2.5 sm:p-3 border-l-[6px]' : 'p-3 sm:p-4'))}
             ${order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
 (order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
  (order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
   (order.orderStatus === 'ready' ? 'border-l-[var(--status-ready)]' :
    'border-l-red-500')))}
-            hover:shadow-md active:scale-95
+            hover:shadow-md active:scale-95 group token-tap
         `}>
-            <div className={`flex-1 flex ${isList ? 'flex-row items-center justify-between w-full' : 'flex-col'}`}>
-                <div className={`flex justify-between items-start gap-1 ${isList ? 'w-48 shrink-0 mb-0' : (isMini ? 'mb-1' : 'mb-2')}`}>
-                    <div className="min-w-0 text-left">
-                        <h3 className={`font-black text-inherit tracking-tighter ${isMini ? 'text-[10px]' : (isCompact ? 'text-xs' : 'text-sm')}`}>{order.orderNumber}</h3>
-                        <p className={`text-inherit opacity-60 uppercase font-black mt-0 ${isMini ? 'text-[7px]' : 'text-[9px]'}`}>
-                            {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
-                        </p>
+            <div className={`flex flex-1 ${isList ? 'flex-row items-center justify-between gap-4 w-full' : 'flex-col'}`}>
+                <div className={`flex items-center gap-3 ${isList ? 'flex-1' : 'justify-between items-start mb-2'}`}>
+                    <div className="flex flex-col text-left">
+                        <h3 className={`font-black text-inherit tracking-tighter ${isMini ? 'text-[10px]' : (isList ? 'text-sm' : 'text-xs')}`}>{order.orderNumber}</h3>
+                         <div className={`mt-1 flex items-center gap-1.5`}>
+                            <span className={`inline-flex items-center justify-center min-w-[28px] h-6 font-black text-inherit px-2 bg-[var(--theme-bg-hover)] rounded-lg border border-current/20 shadow-sm ${isMini || isList ? 'text-[8px]' : 'text-[10px]'}`}>
+                                {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
+                            </span>
+                            {!isList && (
+                                <span className={`text-[8px] font-black uppercase opacity-60 tracking-wider`}>
+                                    {order.orderType}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {!isMini && !isCompact && (
+                {!isMini && !isCompact && !isList && (
                     <p className={`text-inherit opacity-85 line-clamp-1 flex-1 text-left font-medium ${isList ? 'px-4' : 'text-[11px] mb-2'}`}>
                         {order.items?.map(i => `${i.quantity} ${i.name}`).join(', ') || 'No items'}
                     </p>
                 )}
 
-                <div className={`flex justify-between items-center ${isList ? 'w-64 gap-6 shrink-0' : (isMini ? 'mt-1 pt-1 border-t border-white/5' : 'border-t border-white/10 mt-2 pt-2')}`}>
+                <div className={`flex items-center gap-4 ${isList ? 'shrink-0' : (isMini ? 'mt-1 pt-1 border-t border-white/5' : 'border-t border-white/10 mt-2 pt-2')}`}>
                     <div className={`flex items-center gap-1 text-inherit opacity-50 font-bold uppercase ${isMini ? 'text-[6px]' : 'text-[8px]'}`}>
                         <Clock size={isMini ? 8 : 10} />
                         {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className={`font-black text-inherit ${isMini ? 'text-[10px]' : 'text-xs'}`}>{formatPrice(order.finalAmount)}</span>
+                    <div className="flex items-center gap-3">
+                        <span className={`font-black text-inherit ${isMini ? 'text-[10px]' : 'text-xs text-right'}`}>{formatPrice(order.finalAmount)}</span>
+                        {isList && <StatusBadge status={order.orderStatus} />}
                     </div>
                 </div>
             </div>
@@ -107,6 +115,7 @@ const WaiterDashboard = () => {
     const [tables, setTables] = useState([]);
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'cancelled'
     const [statusFilter, setStatusFilter] = useState(null); // null | 'pending' | 'preparing' | 'ready'
+    const [filterType, setFilterType] = useState('all'); // 'all' | 'dine-in' | 'takeaway'
     const [showTables, setShowTables] = useState(false);
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState(false);
@@ -252,15 +261,13 @@ const WaiterDashboard = () => {
         history:  historyOrders.length,
     };
 
-    const filteredOrders = activeTab === 'active'
-        ? activeOrders.filter(o => {
-            if (statusFilter === 'pending')   return o.orderStatus === 'pending';
-            if (statusFilter === 'accepted')  return o.orderStatus === 'accepted';
-            if (statusFilter === 'preparing') return o.orderStatus === 'preparing';
-            if (statusFilter === 'ready')     return o.orderStatus === 'ready';
-            return true;
-        })
-        : historyOrders;
+    const filteredOrders = (activeTab === 'active' ? activeOrders : historyOrders)
+        .filter(o => filterType === 'all' || o.orderType === filterType)
+        .filter(o => {
+            if (activeTab !== 'active') return true;
+            if (!statusFilter) return true;
+            return o.orderStatus === statusFilter;
+        });
 
     return (
         <div className="space-y-5 animate-fade-in pb-10 text-left">
@@ -376,6 +383,25 @@ const WaiterDashboard = () => {
                             <Grid size={14} />
                             <span>Token Mode</span>
                         </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-fit">
+                        {['all', 'dine-in', 'takeaway'].map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`
+                                    px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                                    ${filterType === t 
+                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' 
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                                `}
+                            >
+                                {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
+                            </button>
+                        ))}
                     </div>
                 </div>
 

@@ -90,7 +90,6 @@ const _runUpdate = async () => {
                     takeaway_orders: stats.takeaway_orders
                 }
             );
-            console.log(`[Analytics] Updated daily records for ${startOfDay.toDateString()}`);
         } else {
             // Create new
             await databases.createDocument(
@@ -99,7 +98,6 @@ const _runUpdate = async () => {
                 'unique()',
                 stats
             );
-            console.log(`[Analytics] Created new daily records for ${startOfDay.toDateString()}`);
         }
     } catch (error) {
         console.error('[Analytics] Failed to update daily analytics:', error.message);

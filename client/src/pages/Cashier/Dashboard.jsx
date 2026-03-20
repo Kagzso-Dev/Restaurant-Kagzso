@@ -44,7 +44,7 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
             className={`
                 w-full text-left transition-all duration-200 group token-tap rounded-2xl
                 ${tColor}
-                ${isList ? 'p-3 flex items-center justify-between border-l-4' : (isCompact ? 'p-3 border-l-[6px]' : 'p-5 border-l-[10px]')}
+                ${isList ? 'p-3.5 border-l-8' : (isCompact ? 'p-3 border-l-[6px]' : 'p-5 border-l-[10px]')}
                 ${order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
                   order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
                   order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
@@ -53,17 +53,45 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
                 ${selected ? 'ring-2 ring-orange-500 shadow-2xl scale-[1.02]' : 'hover:scale-[1.01] shadow-lg'}
             `}
         >
-            <div className={`flex flex-col flex-1 ${isList ? 'flex-row items-center justify-between gap-4' : ''}`}>
-                <div className={`flex justify-between items-start ${isList ? 'w-32 shrink-0 mb-0' : 'mb-2'}`}>
-                    <h3 className={`font-extrabold text-inherit tracking-tight truncate pr-2 ${isCompact ? 'text-xs' : 'text-base'}`}>{order.orderNumber}</h3>
-                    {!isList && <StatusBadge status={order.orderStatus} />}
+            <div className={`flex flex-1 ${isList ? 'flex-row items-center justify-between gap-4' : 'flex-col'}`}>
+                <div className={`flex items-center gap-3 ${isList ? 'flex-1' : 'justify-between mb-2'}`}>
+                    <div className="flex flex-col">
+                        <h3 className={`font-extrabold text-inherit tracking-tight truncate pr-2 ${isCompact ? 'text-[10px]' : (isList ? 'text-sm' : 'text-base')}`}>
+                            {order.orderNumber}
+                        </h3>
+                        {isList && (
+                            <div className="flex items-center gap-1.5 text-[9px] text-inherit opacity-60 font-bold mt-0.5">
+                                <Clock size={10} />
+                                {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className={`flex justify-between items-end ${isList ? 'flex-1' : 'mt-1'}`}>
-                    <p className={`text-inherit opacity-70 uppercase font-black tracking-widest ${isCompact ? 'text-[8px]' : 'text-[10px]'}`}>
-                        {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
-                    </p>
-                    <p className={`font-black text-inherit ${isCompact ? 'text-sm' : 'text-base'}`}>{formatPrice(order.finalAmount)}</p>
+
+                <div className={`flex items-center gap-4 ${isList ? 'shrink-0' : 'justify-between mt-1 items-end'}`}>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
+                            <span className={`inline-flex items-center justify-center min-w-[32px] h-7 font-black text-inherit px-2.5 bg-black/10 rounded-lg border border-current/20 shadow-sm ${isCompact || isList ? 'text-[9px]' : 'text-[11px]'}`}>
+                                {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
+                            </span>
+                            {!isList && (
+                                <span className={`text-[8px] font-black uppercase opacity-60 tracking-wider`}>
+                                    {order.orderType}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                        <p className={`font-black text-inherit text-right whitespace-nowrap ${isCompact ? 'text-xs' : (isList ? 'text-sm' : 'text-base')}`}>
+                            {formatPrice(order.finalAmount)}
+                        </p>
+                        <div className={`${isList ? 'block' : 'hidden'}`}>
+                            <StatusBadge status={order.orderStatus} />
+                        </div>
+                    </div>
                 </div>
+
                 {!isCompact && !isList && (
                     <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
                         <div className="flex items-center gap-1.5 text-[9px] text-inherit opacity-60 font-bold uppercase">
@@ -71,14 +99,10 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
                             {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                         <div className="flex gap-1.5">
+                            <StatusBadge status={order.orderStatus} />
                             {order.paymentStatus === 'payment_pending' && (
                                 <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20 font-black tracking-tighter uppercase">
                                     PAYING
-                                </span>
-                            )}
-                            {order.orderStatus === 'ready' && order.paymentStatus !== 'payment_pending' && (
-                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--status-ready-bg)] text-[var(--status-ready)] border border-[var(--status-ready-border)] font-black tracking-tighter uppercase animate-pulse">
-                                    READY
                                 </span>
                             )}
                         </div>

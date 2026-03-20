@@ -7,6 +7,24 @@ import { useNavigate } from 'react-router-dom';
 import { printBill } from './BillPrint';
 import StatusBadge from './StatusBadge';
 
+const formatTimeAgo = (minutes) => {
+    if (minutes === null || minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+        const remainingMins = minutes % 60;
+        return `${hours}h${remainingMins > 0 ? ` ${remainingMins}m` : ''} ago`;
+    }
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    const weeks = Math.floor(days / 7);
+    if (days < 30) return `${weeks}w ago`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}mo ago`;
+    const years = Math.floor(months / 12);
+    return `${years}y ago`;
+};
+
 const OrderDetailsModal = ({
     order,
     isOpen,
@@ -17,6 +35,7 @@ const OrderDetailsModal = ({
     onCancelOrder,
     userRole,
     settings = {},
+    variant = 'overlay', // 'overlay' | 'panel'
 }) => {
     const navigate = useNavigate();
     const [isRendered, setIsRendered] = useState(false);
@@ -75,17 +94,8 @@ const OrderDetailsModal = ({
         </div>
     );
 
-    return (
-        /* ── Overlay ──────────────────────────────────────────────────────── */
-        <div
-            className={`fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:p-4 transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-
-            {/* ── Modal Card ───────────────────────────────────────────────── */}
-            <div
-                className={`relative z-10 w-full ${userRole === 'waiter' ? 'sm:max-w-lg md:max-w-xl lg:max-w-2xl' : 'sm:max-w-md'} bg-[var(--theme-bg-card)] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] border border-[var(--theme-border)] transition-all duration-300 ${isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'}`}
-            >
+    const innerCard = (
+        <>
                 {/* HEADER */}
                 <div className="px-5 py-4 sm:py-5 flex items-start justify-between border-b border-[var(--theme-border)] shrink-0 gap-4">
                     <div className="flex flex-col gap-1">
@@ -132,8 +142,8 @@ const OrderDetailsModal = ({
 
                     {/* TOP SECTION: INFO cards (Responsive Grid) */}
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                        {/* Info Block - 8 cols on desktop, full width on tablets/mobile */}
-                        <div className="sm:col-span-12 lg:col-span-8 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-5 sm:p-6 shadow-inner relative overflow-hidden">
+                        {/* Info Block - 7 cols from sm+ */}
+                        <div className="sm:col-span-7 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-5 sm:p-6 shadow-inner relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500/40" />
                             <div className="flex items-center justify-between mb-6">
                                 <div>
@@ -146,9 +156,9 @@ const OrderDetailsModal = ({
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+                            <div className="flex flex-wrap gap-x-10 gap-y-6">
                                 {/* Service Block */}
-                                <div className="flex flex-col gap-1.5">
+                                <div className="flex flex-col gap-1.5 min-w-[100px]">
                                     <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">Service</span>
                                     <div className="flex items-center gap-2">
                                         <div className={`p-1.5 rounded-lg border ${order.orderType === 'dine-in' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-orange-500/10 border-orange-500/20 text-orange-400'}`}>
@@ -196,8 +206,8 @@ const OrderDetailsModal = ({
                             </div>
                         </div>
 
-                        {/* Financial Block - Full width on mobile/tablet, 4 cols on Desktop */}
-                        <div className={`sm:col-span-12 lg:col-span-4 relative overflow-hidden rounded-2xl p-5 sm:p-6 flex flex-col gap-3 shadow-xl ${
+                        {/* Financial Block - 5 cols from sm+ */}
+                        <div className={`sm:col-span-5 relative overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-xl ${
                             isPaid
                                 ? 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 border border-emerald-500/20 shadow-emerald-500/20'
                                 : userRole === 'waiter'
@@ -222,7 +232,7 @@ const OrderDetailsModal = ({
 
                             {/* Final Amount */}
                             <div className="relative z-10">
-                                <p className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tighter drop-shadow-md whitespace-nowrap">
+                                <p className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tighter drop-shadow-md break-all">
                                     {formatPrice(order.finalAmount)}
                                 </p>
                             </div>
@@ -262,8 +272,6 @@ const OrderDetailsModal = ({
                             {!isPaid && !isCancelled && !isCompleted && userRole === 'waiter' && (
                                 <button
                                     onClick={() => {
-                                        console.log("Clicked ADD NEW");
-                                        console.log("Order ID:", order?._id);
                                         if (!order?._id) {
                                             alert("Order ID not found. Please refresh and try again.");
                                             return;
@@ -328,7 +336,7 @@ const OrderDetailsModal = ({
                                                     <span className="text-[10px] text-[var(--theme-text-muted)] font-bold opacity-40">@ {formatPrice(item.price)}</span>
                                                     {addedAgo !== null && addedAgo >= 1 && !cancelled && (
                                                         <span className="text-[9px] text-blue-400 font-bold italic flex items-center gap-1">
-                                                            <Clock size={10} /> {addedAgo}m ago
+                                                            <Clock size={10} /> {formatTimeAgo(addedAgo)}
                                                         </span>
                                                     )}
                                                 </div>
@@ -385,31 +393,51 @@ const OrderDetailsModal = ({
                     {!isPaid && !isCancelled && onProcessPayment ? (
                         <button
                             onClick={() => onProcessPayment(order)}
-                            className="col-span-1 py-3.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-orange-500/30 flex items-center justify-center gap-2 text-xs uppercase tracking-widest active:scale-95"
+                            className="col-span-1 py-3.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-orange-500/30 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider active:scale-95"
                         >
-                            <Wallet size={16} strokeWidth={3} /> Complete Payment
+                            <Wallet size={18} strokeWidth={3} className="shrink-0" />
+                            <span className="leading-tight text-center">Complete Payment</span>
                         </button>
                     ) : (
                         <button
                             onClick={onClose}
-                            className="col-span-1 py-3.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] font-black rounded-2xl transition-all border border-[var(--theme-border)] flex items-center justify-center gap-2 text-xs uppercase tracking-widest active:scale-95"
+                            className="col-span-1 py-3.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] font-black rounded-2xl transition-all border border-[var(--theme-border)] flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider active:scale-95"
                         >
-                            Return to Hub
+                            <span className="leading-tight text-center">Return to Hub</span>
                         </button>
                     )}
                     {userRole !== 'waiter' && (
                         <button
                             disabled={!isPaid || isCancelled}
                             onClick={() => printBill(order, formatPrice, settings)}
-                            className={`col-span-1 py-3.5 font-black rounded-2xl transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest active:scale-95 ${isPaid && !isCancelled
+                            className={`col-span-1 py-3.5 font-black rounded-2xl transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider active:scale-95 ${isPaid && !isCancelled
                                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-500/30'
                                 : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed opacity-40'
                             }`}
                         >
-                            <Printer size={16} strokeWidth={3} /> {isPaid ? 'Print KOT/Invoice' : 'Payment Required'}
+                            <Printer size={18} strokeWidth={3} className="shrink-0" />
+                            <span className="leading-tight text-center">
+                                {isPaid ? 'Print KOT/Invoice' : 'Payment Required'}
+                            </span>
                         </button>
                     )}
                 </div>
+        </>
+    );
+
+    if (variant === 'panel') {
+        return (
+            <div className="flex flex-col h-full w-full bg-[var(--theme-bg-card)]">
+                {innerCard}
+            </div>
+        );
+    }
+
+    return (
+        <div className={`fixed inset-0 z-[200] flex justify-end transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={onClose} />
+            <div className={`relative z-10 w-full sm:w-[500px] md:w-[600px] lg:w-[650px] bg-[var(--theme-bg-card)] shadow-[-20px_0_50px_rgba(0,0,0,0.2)] flex flex-col h-full border-l border-[var(--theme-border)] transition-transform duration-300 ease-out sm:rounded-l-[2rem] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                {innerCard}
             </div>
         </div>
     );

@@ -128,9 +128,9 @@
 
 /* ─── Theme: Black Glass (Glassmorphism) ─────────────────────────────────── */
 [data-theme="glass"] {
-  --theme-bg-deep:        #000000;
-  --theme-bg-dark:        #050508;
-  --theme-bg-card:        rgba(255, 255, 255, 0.05);
+  --theme-bg-deep:        rgba(0,0,0,0);
+  --theme-bg-dark:        rgba(0,0,0,0);
+  --theme-bg-card:        rgba(255, 255, 255, 0.04);
   --theme-bg-card2:       rgba(255, 255, 255, 0.08);
   --theme-bg-muted:       rgba(255, 255, 255, 0.03);
   --theme-bg-hover:       rgba(255, 255, 255, 0.07);
@@ -138,11 +138,11 @@
   --theme-text-muted:     #8899bb;
   --theme-text-subtle:    #556080;
   --theme-text-inverse:   #000000;
-  --theme-border:         rgba(255, 255, 255, 0.10);
-  --theme-border-solid:   rgba(255, 255, 255, 0.08);
+  --theme-border:         rgba(255, 255, 255, 0.08);
+  --theme-border-solid:   rgba(255, 255, 255, 0.06);
   --theme-input-bg:       rgba(255, 255, 255, 0.06);
-  --theme-sidebar-bg:     rgba(0, 0, 0, 0.60);
-  --theme-topbar-bg:      rgba(0, 0, 0, 0.55);
+  --theme-sidebar-bg:     rgba(0, 0, 0, 0.45);
+  --theme-topbar-bg:      rgba(0, 0, 0, 0.40);
   --theme-shadow:         rgba(0, 0, 0, 0.7);
   --theme-overlay:        rgba(0, 0, 0, 0.75);
   --theme-skeleton-a:     rgba(255, 255, 255, 0.04);
@@ -164,24 +164,31 @@
 
 /* Glass cards — backdrop blur + translucent fill */
 .theme-glass .card,
-.theme-glass .glass-panel {
-  background: rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
+.theme-glass .glass-panel,
+.theme-glass .bg-\[var\(--theme-bg-card\)\],
+.theme-glass .bg-\[var\(--theme-bg-deep\)\],
+.theme-glass .bg-\[var\(--theme-input-bg\)\] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 
 /* Sidebar glass */
+.theme-glass aside,
 .theme-glass .shadow-sidebar {
-  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.8);
+  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.8) !important;
+  background: var(--theme-sidebar-bg) !important;
+  backdrop-filter: blur(35px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(200%) !important;
 }
 
 /* Topbar glass */
 .theme-glass header {
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(35px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(200%) !important;
+  background: var(--theme-topbar-bg) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 

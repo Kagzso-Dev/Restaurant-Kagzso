@@ -17,6 +17,6 @@ router.use(protect);
 router.put('/', authorize('admin'), updateSettings);
 router.post('/change-password', authorize('admin'), changePassword);
 router.get('/qr', getQrSettings);
-router.post('/qr', authorize('admin'), upload.single('qr'), uploadQr);
+router.post('/qr', authorize('admin', 'cashier'), upload.single('qr'), uploadQr);
 
 module.exports = router;

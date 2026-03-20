@@ -215,7 +215,7 @@ async function ensureAttributes(collId, attributes) {
     for (const attr of attributes) {
         if (existingKeys.includes(attr.key)) continue;
 
-        logger.info(`[SchemaSync] Creating attribute: ${collId}.${attr.key} (${attr.type})`);
+        logger.debug(`[SchemaSync] Creating attribute: ${collId}.${attr.key} (${attr.type})`);
         
         try {
             switch (attr.type) {

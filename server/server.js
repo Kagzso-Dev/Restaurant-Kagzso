@@ -424,16 +424,8 @@ const startServer = async () => {
 
         const PORT = parseInt(process.env.PORT) || 5005;
         server.listen(PORT, '0.0.0.0', () => {
-            logger.info('Server started', {
-                port:     PORT,
-                env:      process.env.NODE_ENV || 'development',
-                pid:      process.pid,
-                origins:  allowedOrigins,
-                frontend: hasFrontend ? CLIENT_DIST : 'not built',
-            });
-            logger.info('Socket.IO ready for multi-device connections');
-            logger.info(`Health check: http://localhost:${PORT}/health`);
-            if (hasFrontend) logger.info(`UI available at: http://localhost:${PORT}`);
+            logger.info(`Server started on port ${PORT} (PID: ${process.pid})`);
+            logger.info(`Ready: http://localhost:${PORT}`);
         });
 
         // Run the FIRST auto-release check now that DB is confirmed ready.
