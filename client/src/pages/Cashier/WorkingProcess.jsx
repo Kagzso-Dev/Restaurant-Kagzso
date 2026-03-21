@@ -2,12 +2,16 @@ import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
 import logoImg from '../../assets/logo.png';
-import { Printer, ChefHat } from 'lucide-react';
+import { Printer, ChefHat, List, Grid } from 'lucide-react';
 
 const WorkingProcess = () => {
     const [orders, setOrders] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const { user, socket, formatPrice, settings } = useContext(AuthContext);
+
+    const [filterType, setFilterType] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(null);
+    const [isGridView, setIsGridView] = useState(false);
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -52,9 +56,21 @@ const WorkingProcess = () => {
         };
     }, [user, socket, selectedOrder]);
 
+    const counts = {
+        pending: orders.filter(o => o.orderStatus === 'pending').length,
+        accepted: orders.filter(o => o.orderStatus === 'accepted').length,
+        preparing: orders.filter(o => o.orderStatus === 'preparing').length,
+        ready: orders.filter(o => o.orderStatus === 'ready').length,
+    };
+
+    const displayOrders = orders.filter(o => {
+        const matchesType = filterType === 'all' || o.orderType === filterType;
+        const matchesStatus = !statusFilter || o.orderStatus === statusFilter;
+        return matchesType && matchesStatus;
+    });
+
     const printKOT = () => {
         if (!selectedOrder) return;
-
         const statusColors = {
             pending:   '#f59e0b',
             accepted:  '#3b82f6',
@@ -154,37 +170,98 @@ const WorkingProcess = () => {
 
     return (
         <div className="flex flex-col h-full space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-6 rounded-xl shadow-lg border border-[var(--theme-border)]">
-                <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-[var(--theme-bg-deep)] rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 border border-[var(--theme-border)] p-1.5">
-                        <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
-                    </div>
-                    <div className="min-w-0">
-                        <h2 className="text-xl sm:text-2xl font-bold text-[var(--theme-text-main)] tracking-wide leading-none truncate">{settings.restaurantName}</h2>
-                        <p className="text-xs text-orange-400 font-bold uppercase tracking-widest mt-1">Working Process Detail</p>
-                    </div>
+            {/* ── Tabs & Counters ─────────────────────────────────────── */}
+            <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
+                <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
+                    {['all', 'dine-in', 'takeaway'].map(t => (
+                        <button
+                            key={t}
+                            onClick={() => setFilterType(t)}
+                            className={`
+                                flex-1 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                                ${filterType === t 
+                                    ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' 
+                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                            `}
+                        >
+                            {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
+                        </button>
+                    ))}
                 </div>
-                <div className="flex items-center space-x-4 flex-shrink-0">
-                    <div className="text-right hidden md:block">
-                        <p className="text-[var(--theme-text-main)] font-bold">{user.username}</p>
-                        <p className="text-xs text-green-400 font-mono">Connected</p>
-                    </div>
-                    <div className="hidden md:flex w-10 h-10 rounded-full bg-[var(--theme-bg-hover)] items-center justify-center text-[var(--theme-text-muted)]">
-                        {user.username.charAt(0).toUpperCase()}
-                    </div>
+
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                    {[
+                        { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Pending',  activeText: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',   hover: 'hover:border-[var(--status-pending-border)]' },
+                        { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'Accepted', activeText: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',  hover: 'hover:border-[var(--status-accepted-border)]' },
+                        { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]',  label: 'Cooking',  activeText: 'text-[var(--status-preparing)]', activeBg: 'bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]', hover: 'hover:border-[var(--status-preparing-border)]' },
+                        { key: 'ready',     count: counts.ready,     dot: 'bg-[var(--status-ready)]',      label: 'Ready',    activeText: 'text-[var(--status-ready)]',     activeBg: 'bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]',     hover: 'hover:border-[var(--status-ready-border)]' },
+                    ].map(({ key, count, dot, label, activeText, activeBg, hover }) => (
+                        <button
+                            key={key}
+                            onClick={() => setStatusFilter(f => f === key ? null : key)}
+                            className={`rounded-xl p-2 sm:p-3 flex flex-col items-center justify-center transition-all border active:scale-95 ${statusFilter === key ? activeBg : `bg-[var(--theme-bg-card)] border-[var(--theme-border)] ${hover}`}`}
+                        >
+                            <p className={`text-lg sm:text-2xl font-black tabular-nums ${statusFilter === key ? activeText : 'text-[var(--theme-text-main)]'}`}>{count}</p>
+                            <div className="flex items-center gap-1 mt-1">
+                                <span className={`w-1 h-1 rounded-full ${dot}`} />
+                                <p className={`text-[8px] sm:text-[10px] uppercase font-bold tracking-tighter sm:tracking-wider ${statusFilter === key ? activeText : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                            </div>
+                        </button>
+                    ))}
                 </div>
+
+
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8 flex-1 overflow-hidden h-auto lg:h-[calc(100vh-260px)] min-h-[500px]">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8 flex-1 overflow-hidden h-auto lg:h-[calc(100vh-320px)] min-h-[500px]">
                 {/* Left: Active Orders List */}
                 <div className="lg:col-span-1 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] overflow-hidden flex flex-col">
-                    <div className="px-6 py-4 border-b border-[var(--theme-border)] bg-[var(--theme-bg-hover)] flex justify-between items-center">
-                        <h2 className="text-lg font-bold text-[var(--theme-text-main)]">Active Orders</h2>
-                        <span className="bg-orange-600/20 text-orange-400 text-xs px-2 py-1 rounded-full font-bold">{orders.length}</span>
+                    <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-bg-hover)] flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-[var(--theme-text-main)]">Active Orders</h2>
+                            <span className="bg-orange-600/20 text-orange-400 text-xs px-2 py-1 rounded-full font-bold">{displayOrders.length}</span>
+                        </div>
+                        {/* Grid / List toggle */}
+                        <button
+                            onClick={() => setIsGridView(v => !v)}
+                            className={`flex items-center gap-1.5 pl-1.5 pr-3 h-8 rounded-full border transition-all duration-300 active:scale-95 ${
+                                isGridView
+                                    ? 'bg-blue-500/10 border-blue-500/25'
+                                    : 'bg-orange-500/10 border-orange-500/25'
+                            }`}
+                        >
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-sm ${isGridView ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'}`}>
+                                {isGridView ? <Grid size={10} strokeWidth={2.5} /> : <List size={10} strokeWidth={2.5} />}
+                            </div>
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${isGridView ? 'text-blue-600' : 'text-orange-500'}`}>
+                                {isGridView ? 'Grid' : 'List'}
+                            </span>
+                        </button>
                     </div>
-                    <div className="overflow-y-auto flex-1 p-4 space-y-3 custom-scrollbar">
-                        {orders.map(order => (
+                    <div className={`overflow-y-auto flex-1 p-4 custom-scrollbar ${isGridView ? 'grid grid-cols-2 gap-2 content-start' : 'space-y-3'}`}>
+                        {displayOrders.map(order => {
+                            const tokenLabel = order.orderType === 'dine-in'
+                                ? `DI T${order.tableId?.number || order.tableId || '?'}`
+                                : `TA ${String(order.tokenNumber || 0).padStart(3, '0')}`;
+                            return isGridView ? (
+                                <button
+                                    key={order._id}
+                                    onClick={() => setSelectedOrder(order)}
+                                    className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center p-2 transition-all active:scale-90 ${
+                                        selectedOrder?._id === order._id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+                                    } ${getStatusColor(order.orderStatus)}`}
+                                >
+                                    <span className="text-[8px] uppercase font-black opacity-40 tracking-widest leading-none mb-1">
+                                        {order.orderType === 'dine-in' ? 'Dine In' : 'Takeaway'}
+                                    </span>
+                                    <span className="text-base font-black leading-tight tracking-tight text-center">
+                                        {tokenLabel}
+                                    </span>
+                                    <span className={`mt-2 text-[7px] font-black uppercase px-2 py-0.5 rounded border border-current/30 bg-white/5`}>
+                                        {order.orderStatus}
+                                    </span>
+                                </button>
+                            ) : (
                             <div
                                 key={order._id}
                                 onClick={() => setSelectedOrder(order)}
@@ -200,13 +277,12 @@ const WorkingProcess = () => {
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-end">
-                                    <p className="text-xs text-[var(--theme-text-muted)]">
-                                        {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || order.tableId || '?'}` : `Token ${order.tokenNumber}`}
-                                    </p>
+                                    <p className="text-xs text-[var(--theme-text-muted)]">{tokenLabel}</p>
                                     <p className="text-sm font-semibold text-[var(--theme-text-muted)]">{new Date(order.createdAt).toLocaleTimeString()}</p>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                         {orders.length === 0 && (
                             <div className="flex flex-col items-center justify-center h-48 text-gray-500">
                                 <p>No active kitchen orders</p>

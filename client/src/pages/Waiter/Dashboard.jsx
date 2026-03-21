@@ -1,8 +1,8 @@
-import { useState, useEffect, useContext, useCallback, memo, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo, useCallback, memo } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api';
-import { Utensils, Package, Grid, ShoppingBag, Clock, XCircle, History, ClipboardList, WifiOff } from 'lucide-react';
+import { Utensils, Package, Grid, List, ShoppingBag, Clock, XCircle, History, ClipboardList, WifiOff } from 'lucide-react';
 import TableGrid from '../../components/TableGrid';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
@@ -45,7 +45,9 @@ const OrderCard = memo(({ order, formatPrice, onCancel, viewType = 'normal' }) =
                         <h3 className={`font-black text-inherit tracking-tighter ${isMini ? 'text-[10px]' : (isList ? 'text-sm' : 'text-xs')}`}>{order.orderNumber}</h3>
                          <div className={`mt-1 flex items-center gap-1.5`}>
                             <span className={`inline-flex items-center justify-center min-w-[28px] h-6 font-black text-inherit px-2 bg-[var(--theme-bg-hover)] rounded-lg border border-current/20 shadow-sm ${isMini || isList ? 'text-[8px]' : 'text-[10px]'}`}>
-                                {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
+                                {order.orderType === 'dine-in'
+                                    ? `DI T${order.tableId?.number || order.tableId || '?'}`
+                                    : `TA ${String(order.tokenNumber || 0).padStart(3, '0')}`}
                             </span>
                             {!isList && (
                                 <span className={`text-[8px] font-black uppercase opacity-60 tracking-wider`}>
@@ -92,15 +94,17 @@ const TokenSquare = memo(({ order, onClick }) => {
             onClick={onClick}
             className={`
                 aspect-square rounded-3xl border-2 flex flex-col items-center justify-center p-3 transition-all active:scale-90 shadow-sm hover:shadow-md group relative overflow-hidden
-                ${sColor} ${isReady ? 'animate-pulse ring-2 ring-emerald-500 ring-offset-2 bg-emerald-500/20' : ''}
+                ${sColor} ${isReady ? 'animate-pulse' : ''}
             `}
         >
             <div className="absolute top-0 right-0 w-12 h-12 bg-current opacity-[0.03] -mr-4 -mt-4 rounded-full" />
             <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-1 tracking-widest">
-                {order.orderType === 'dine-in' ? 'Table' : 'Token'}
+                {order.orderType === 'dine-in' ? 'Dine In' : 'Takeaway'}
             </span>
-            <span className="text-2xl sm:text-3xl font-black leading-none group-hover:scale-110 transition-transform">
-                {order.orderType === 'dine-in' ? (order.tableId?.number || order.tableId || '?') : (order.tokenNumber || '?')}
+            <span className="text-lg sm:text-2xl font-black leading-none group-hover:scale-110 transition-transform tracking-tight">
+                {order.orderType === 'dine-in'
+                    ? `DI T${order.tableId?.number || order.tableId || '?'}`
+                    : `TA ${String(order.tokenNumber || 0).padStart(3, '0')}`}
             </span>
             <div className={`mt-3 text-[8px] font-black uppercase tracking-tighter px-2.5 py-1 rounded-lg border border-current/30 bg-white/5`}>
                 {order.orderStatus}
@@ -113,7 +117,8 @@ const TokenSquare = memo(({ order, onClick }) => {
 const WaiterDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [tables, setTables] = useState([]);
-    const [activeTab, setActiveTab] = useState('active'); // 'active' or 'cancelled'
+    const location = useLocation();
+    const activeTab = location.pathname.includes('/history') ? 'history' : 'active';
     const [statusFilter, setStatusFilter] = useState(null); // null | 'pending' | 'preparing' | 'ready'
     const [filterType, setFilterType] = useState('all'); // 'all' | 'dine-in' | 'takeaway'
     const [showTables, setShowTables] = useState(false);
@@ -249,9 +254,10 @@ const WaiterDashboard = () => {
         }
     };
 
-    // Active = not paid yet AND not cancelled; History = paid OR cancelled
+    // Active = not paid yet AND not cancelled; History = paid (completed)
     const activeOrders  = orders.filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled');
-    const historyOrders = orders.filter(o => o.paymentStatus === 'paid' || o.orderStatus === 'cancelled');
+    const historyOrders = orders.filter(o => o.paymentStatus === 'paid')
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const counts = {
         pending:  activeOrders.filter(o => o.orderStatus === 'pending').length,
@@ -294,17 +300,48 @@ const WaiterDashboard = () => {
 
             {/* ── Header ─────────────────────────────────────────────── */}
             <div className="flex flex-col lg:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl border border-[var(--theme-border)] shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange-500/20 flex-shrink-0">
-                        <Utensils className="text-orange-500" size={20} />
+                <div className="flex flex-1 items-center gap-3 lg:gap-6 min-w-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 flex-shrink-0">
+                        <Utensils className="text-orange-500" size={22} />
                     </div>
-                    <div>
-                        <h1 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] tracking-tight">Waiter Console</h1>
-                        <p className="text-[9px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest mt-0.5">Live Service Monitoring</p>
+
+                    <div className="flex items-center gap-3 lg:gap-5 flex-1 min-w-0 pr-4 sm:pr-6 border-r border-[var(--theme-border)]">
+                        <div className="min-w-0">
+                            <h1 className="text-sm sm:text-lg font-bold text-[var(--theme-text-main)] tracking-tight truncate leading-tight">Waiter Console</h1>
+                            <p className="text-[9px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest mt-0.5 hidden sm:block">Monitoring</p>
+                        </div>
                     </div>
+
+                    {/* ── SLEEK TOGGLE SWITCH ────────────────────────────── */}
+                    <button
+                        onClick={() => setIsProductionMode(!isProductionMode)}
+                        className={`relative flex items-center gap-2 pl-1.5 pr-4 h-9 rounded-full border transition-all duration-300 shadow-sm active:scale-95 ${
+                            isProductionMode
+                                ? 'bg-blue-500/10 border-blue-500/25'
+                                : 'bg-orange-500/10 border-orange-500/25'
+                        }`}
+                    >
+                        {/* sliding thumb */}
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${
+                            isProductionMode ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'
+                        }`}>
+                            {isProductionMode ? <Grid size={12} strokeWidth={2.5} /> : <List size={12} strokeWidth={2.5} />}
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
+                            isProductionMode ? 'text-blue-600' : 'text-orange-500'
+                        }`}>
+                            {isProductionMode ? 'Token' : 'List'}
+                        </span>
+                    </button>
+
+
+
                 </div>
+
+
                 {/* Action Buttons */}
-                <div className="flex flex-row flex-wrap justify-end gap-2">
+                <div className="flex flex-row lg:flex-nowrap flex-wrap justify-end gap-2 shrink-0">
+
                     {settings?.tableMapEnabled !== false && (
                         <button
                             onClick={() => setShowTables(t => !t)}
@@ -341,72 +378,27 @@ const WaiterDashboard = () => {
 
             {/* ── Tabs & Counters ─────────────────────────────────────── */}
             <div className="flex flex-col gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-1.5 p-1.5 bg-[var(--theme-bg-dark)] rounded-2xl w-full sm:w-fit border border-[var(--theme-border)]">
+                {/* ALL / DINE IN / TAKEAWAY filter */}
+                <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
+                    {['all', 'dine-in', 'takeaway'].map(t => (
                         <button
-                            onClick={() => { setActiveTab('active'); setStatusFilter(null); }}
-                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-[var(--theme-bg-card)] text-blue-500 shadow-sm border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                            key={t}
+                            onClick={() => setFilterType(t)}
+                            className={`
+                                flex-1 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                                ${filterType === t
+                                    ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
+                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                            `}
                         >
-                            <ShoppingBag size={13} />
-                            Active ({counts.pending + counts.accepted + counts.preparing + counts.ready})
+                            {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
                         </button>
-                        <button
-                            onClick={() => { setActiveTab('cancelled'); setStatusFilter(null); }}
-                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${activeTab === 'cancelled' ? 'bg-[var(--theme-bg-card)] text-red-500 shadow-sm border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
-                        >
-                            <History size={13} />
-                            History ({counts.history})
-                        </button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => { setActiveTab('active'); setStatusFilter(null); }}
-                            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-95 border ${
-                                activeTab === 'active' && statusFilter === null
-                                    ? 'bg-orange-500/10 border-orange-500/35 text-orange-600'
-                                    : 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/30'
-                            }`}
-                        >
-                            <ClipboardList size={14} />
-                            <span>List View</span>
-                        </button>
-
-                        <button
-                            onClick={() => setIsProductionMode(!isProductionMode)}
-                            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-95 border ${
-                                isProductionMode
-                                    ? 'bg-blue-500/15 border-blue-500/35 text-blue-600 shadow-glow-blue'
-                                    : 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-blue-500 hover:border-blue-500/30'
-                            }`}
-                        >
-                            <Grid size={14} />
-                            <span>Token Mode</span>
-                        </button>
-                    </div>
+                    ))}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-fit">
-                        {['all', 'dine-in', 'takeaway'].map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setFilterType(t)}
-                                className={`
-                                    px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                    ${filterType === t 
-                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' 
-                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
-                                `}
-                            >
-                                {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
-                            </button>
-                        ))}
-                    </div>
-                </div>
 
                 {activeTab === 'active' && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-4 gap-2">
                         {[
                             { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Pending',  activeText: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',   hover: 'hover:border-[var(--status-pending-border)]' },
                             { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'Accepted', activeText: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',  hover: 'hover:border-[var(--status-accepted-border)]' },
@@ -416,17 +408,18 @@ const WaiterDashboard = () => {
                             <button
                                 key={key}
                                 onClick={() => setStatusFilter(f => f === key ? null : key)}
-                                className={`rounded-2xl p-4 flex flex-col items-center transition-all border active:scale-95 ${statusFilter === key ? activeBg : `bg-[var(--theme-bg-card)] border-[var(--theme-border)] ${hover}`}`}
+                                className={`rounded-xl p-2 sm:p-3 flex flex-col items-center justify-center transition-all border active:scale-95 ${statusFilter === key ? activeBg : `bg-[var(--theme-bg-card)] border-[var(--theme-border)] ${hover}`}`}
                             >
-                                <p className={`text-2xl sm:text-3xl font-black tabular-nums ${statusFilter === key ? activeText : 'text-[var(--theme-text-main)]'}`}>{count}</p>
-                                <div className="flex items-center gap-1.5 mt-1.5">
-                                    <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
-                                    <p className={`text-[10px] uppercase font-bold tracking-wider ${statusFilter === key ? activeText : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                                <p className={`text-lg sm:text-2xl font-black tabular-nums ${statusFilter === key ? activeText : 'text-[var(--theme-text-main)]'}`}>{count}</p>
+                                <div className="flex items-center gap-1 mt-1">
+                                    <span className={`w-1 h-1 rounded-full ${dot}`} />
+                                    <p className={`text-[8px] sm:text-[10px] uppercase font-bold tracking-tighter sm:tracking-wider ${statusFilter === key ? activeText : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
                                 </div>
                             </button>
                         ))}
                     </div>
                 )}
+
             </div>
 
             {/* ── Table Map (collapsible) ──────────────────────────── */}
@@ -441,6 +434,8 @@ const WaiterDashboard = () => {
                     />
                 </div>
             )}
+
+
 
             {/* ── Orders Grid ─────────────────────────────────────── */}
             {loading ? (

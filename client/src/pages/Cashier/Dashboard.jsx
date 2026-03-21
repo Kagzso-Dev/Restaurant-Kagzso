@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext, useCallback, memo } from 'react';
-import logoImg from '../../assets/logo.png';
 import { AuthContext } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api';
+import logoImg from '../../assets/logo.png';
 import PaymentModal from '../../components/PaymentModal';
 import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
@@ -201,8 +201,11 @@ const CashierDashboard = () => {
     const [showInvoice, setShowInvoice] = useState(false); // mobile panel toggle
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [filterType, setFilterType] = useState('all'); // 'all' | 'dine-in' | 'takeaway'
     const { user, socket, socketConnected, formatPrice, settings } = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation();
+    const isHistoryMode = location.pathname.includes('/history');
 
     /* ── Fetch Orders ────────────────────────────────────────────────── */
     const fetchOrders = useCallback(async () => {
@@ -210,14 +213,20 @@ const CashierDashboard = () => {
             const res = await api.get('/api/orders', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
-            const unpaid = (res.data.orders || []).filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled');
-            setOrders(unpaid);
+            const allOrders = res.data.orders || [];
+            if (isHistoryMode) {
+                // Show completed/cancelled for History
+                setOrders(allOrders.filter(o => o.paymentStatus === 'paid' || o.orderStatus === 'cancelled'));
+            } else {
+                // Show unpaid/non-cancelled for POS
+                setOrders(allOrders.filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled'));
+            }
         } catch (err) {
             console.error('Error fetching orders', err);
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, isHistoryMode]);
 
     // ── Sync selected order when list updates ────────────
     useEffect(() => {
@@ -240,26 +249,36 @@ const CashierDashboard = () => {
         if (socket) {
             // Real-time updates: no polling needed
             const onNewOrder = (order) => {
-                // Add new unpaid and non-cancelled orders to the list
-                if (order.paymentStatus !== 'paid' && order.orderStatus !== 'cancelled') {
-                    setOrders(prev => {
-                        if (prev.find(o => o._id === order._id)) return prev;
-                        return [order, ...prev];
-                    });
+                const alreadyExists = prev => prev.find(o => o._id === order._id);
+                if (isHistoryMode) {
+                    if ((order.paymentStatus === 'paid' || order.orderStatus === 'cancelled')) {
+                         setOrders(prev => alreadyExists(prev) ? prev : [order, ...prev]);
+                    }
+                } else if (order.paymentStatus !== 'paid' && order.orderStatus !== 'cancelled') {
+                    setOrders(prev => alreadyExists(prev) ? prev : [order, ...prev]);
                 }
             };
 
             const onOrderUpdate = (order) => {
                 setOrders(prev => {
-                    // Remove paid or cancelled orders from the pending list
-                    if (order.paymentStatus === 'paid' || order.orderStatus === 'cancelled') {
-                        return prev.filter(o => o._id !== order._id);
-                    }
-                    // Update existing order
                     const exists = prev.find(o => o._id === order._id);
-                    if (exists) return prev.map(o => o._id === order._id ? order : o);
-                    // Add if not present and unpaid
-                    return [order, ...prev];
+                    if (isHistoryMode) {
+                        // In history, if it's now paid/cancelled, ensure it's in list. If it was there but now open? (Rare but for consistency)
+                        if (order.paymentStatus === 'paid' || order.orderStatus === 'cancelled') {
+                            return exists ? prev.map(o => o._id === order._id ? order : o) : [order, ...prev];
+                        } else {
+                            return prev.filter(o => o._id !== order._id);
+                        }
+                    } else {
+                        // In POS, if it's now paid or cancelled, remove it.
+                        if (order.paymentStatus === 'paid' || order.orderStatus === 'cancelled') {
+                            return prev.filter(o => o._id !== order._id);
+                        }
+                        // Update existing order
+                        if (exists) return prev.map(o => o._id === order._id ? order : o);
+                        // Add if not present and unpaid
+                        return [order, ...prev];
+                    }
                 });
                 // Keep selected order in sync
                 setSelectedOrder(sel => sel?._id === order._id ? order : sel);
@@ -323,40 +342,7 @@ const CashierDashboard = () => {
             {/* Print styles injected via CSS global, not inline */}
 
             {/* ── Header ──────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card)] rounded-2xl p-4 sm:p-5 border border-[var(--theme-border)]">
-                <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-[var(--theme-bg-deep)] rounded-xl flex items-center justify-center shadow-glow-orange flex-shrink-0 border border-[var(--theme-border)] p-1.5">
-                        <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
-                    </div>
-                    <div>
-                        <h1 className="text-lg font-bold text-[var(--theme-text-main)] leading-tight">{settings?.restaurantName} POS</h1>
-                        <p className="text-xs text-[var(--theme-text-subtle)] uppercase font-bold tracking-widest">Cashier Terminal</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => navigate('/cashier/kitchen-view')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] rounded-xl text-sm font-medium transition-colors min-h-[44px] border border-[var(--theme-border)]"
-                    >
-                        <ChefHat size={16} />
-                        <span className="hidden sm:inline">Kitchen View</span>
-                    </button>
-                    <button
-                        onClick={fetchOrders}
-                        className="p-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center border border-[var(--theme-border)]"
-                    >
-                        <RefreshCw size={16} />
-                    </button>
-                    <div className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${socketConnected
-                        ? 'bg-green-500/10 border-green-500/20 text-green-400'
-                        : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
-                        }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full inline-block mr-1.5 ${socketConnected ? 'bg-green-500 animate-pulse' : 'bg-yellow-400'
-                            }`} />
-                        {socketConnected ? 'Connected' : 'Reconnecting...'}
-                    </div>
-                </div>
-            </div>
+
 
             {/* ── POS Layout ────────────────────────────────────── */}
             <div className="relative">
@@ -387,33 +373,58 @@ const CashierDashboard = () => {
                     `}>
                         <div className="px-4 py-3 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
                             <div>
-                                <h2 className="text-base font-bold text-[var(--theme-text-main)]">Pending Orders</h2>
-                                <p className="text-xs text-[var(--theme-text-subtle)]">{orders.length} awaiting payment</p>
+                                <h2 className="text-base font-bold text-[var(--theme-text-main)]">
+                                    {isHistoryMode ? 'Order History' : 'Pending Orders'}
+                                </h2>
+                                <p className="text-xs text-[var(--theme-text-subtle)]">
+                                    {isHistoryMode ? `${orders.length} past transactions` : `${orders.length} awaiting payment`}
+                                </p>
                             </div>
                             <span className="bg-orange-500/20 text-orange-400 text-xs px-2.5 py-1 rounded-full font-bold border border-orange-500/20">
-                                {orders.length}
+                                {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
                             </span>
+                        </div>
+
+                        {/* ALL / DINE IN / TAKEAWAY filter */}
+                        <div className="px-3 pt-3 flex-shrink-0">
+                            <div className="flex items-center gap-1 p-1 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] w-full">
+                                {['all', 'dine-in', 'takeaway'].map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setFilterType(t)}
+                                        className={`flex-1 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                                            filterType === t
+                                                ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
+                                                : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                                        }`}
+                                    >
+                                        {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5 custom-scrollbar">
                             {loading ? (
                                 Array(4).fill(0).map((_, i) => <div key={i} className="skeleton h-20 rounded-xl" />)
-                            ) : orders.length === 0 ? (
+                            ) : orders.filter(o => filterType === 'all' || o.orderType === filterType).length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-40 text-[var(--theme-text-subtle)]">
                                     <ShoppingBag size={40} className="mb-2 opacity-30" />
-                                    <p className="text-sm font-medium">No pending orders</p>
+                                    <p className="text-sm font-medium">No orders</p>
                                 </div>
                             ) : (
-                                orders.map(order => (
-                                    <OrderItem
-                                        key={order._id}
-                                        order={order}
-                                        selected={selectedOrder?._id === order._id}
-                                        onClick={() => handleSelect(order)}
-                                        formatPrice={formatPrice}
-                                        viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'compact'}
-                                    />
-                                ))
+                                orders
+                                    .filter(o => filterType === 'all' || o.orderType === filterType)
+                                    .map(order => (
+                                        <OrderItem
+                                            key={order._id}
+                                            order={order}
+                                            selected={selectedOrder?._id === order._id}
+                                            onClick={() => handleSelect(order)}
+                                            formatPrice={formatPrice}
+                                            viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'compact'}
+                                        />
+                                    ))
                             )}
                         </div>
                     </div>

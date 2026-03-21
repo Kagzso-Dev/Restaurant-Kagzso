@@ -30,7 +30,7 @@ export default {
                 },
             },
             fontFamily: {
-                sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                sans: ['Roboto', 'ui-sans-serif', 'system-ui'],
             },
             screens: {
                 'xs': '375px',

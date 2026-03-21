@@ -81,7 +81,7 @@ const OrderDetailsModal = ({
     /* ── Loading skeleton ─────────────────────────────────────────── */
     if (!order) return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
             <div className="relative z-10 w-full max-w-sm bg-[var(--theme-bg-card)] rounded-2xl p-5 shadow-2xl space-y-4">
                 <div className="skeleton h-8 w-1/2 rounded-xl" />
                 <div className="grid grid-cols-2 gap-3">
@@ -138,81 +138,52 @@ const OrderDetailsModal = ({
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 space-y-4 sm:space-y-6">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5 space-y-3 sm:space-y-4">
 
                     {/* TOP SECTION: INFO cards (Responsive Grid) */}
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                         {/* Info Block - 7 cols from sm+ */}
                         <div className="sm:col-span-7 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-2xl p-5 sm:p-6 shadow-inner relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500/40" />
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <p className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em]">Live Tracking</p>
-                                    <h4 className="text-[11px] font-bold text-[var(--theme-text-subtle)] mt-0.5">Real-time status monitor</h4>
-                                </div>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-wider border border-blue-500/20">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                                    Active
-                                </div>
-                            </div>
+                            <div className="flex flex-wrap items-center justify-between gap-2 py-1 px-1">
 
-                            <div className="flex flex-wrap gap-x-10 gap-y-6">
-                                {/* Service Block */}
-                                <div className="flex flex-col gap-1.5 min-w-[100px]">
-                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">Service</span>
-                                    <div className="flex items-center gap-2">
-                                        <div className={`p-1.5 rounded-lg border ${order.orderType === 'dine-in' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-orange-500/10 border-orange-500/20 text-orange-400'}`}>
-                                            {order.orderType === 'dine-in' ? <Utensils size={14} /> : <Package size={14} />}
-                                        </div>
-                                        <span className={`text-[11px] font-black uppercase tracking-tight ${order.orderType === 'dine-in' ? 'text-blue-400' : 'text-orange-400'}`}>
-                                            {order.orderType}
-                                        </span>
+                                {/* Service */}
+                                <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                                    <span className="text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Service</span>
+                                    <div className={`p-1.5 rounded-lg border ${order.orderType === 'dine-in' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-orange-500/10 border-orange-500/20 text-orange-400'}`}>
+                                        {order.orderType === 'dine-in' ? <Utensils size={14} /> : <Package size={14} />}
                                     </div>
                                 </div>
 
-                                {/* Identity Block */}
-                                <div className="flex flex-col gap-1.5">
-                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">
-                                        {order.orderType === 'dine-in' ? 'Table ID' : 'Token ID'}
+                                {/* Identity */}
+                                <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                                    <span className="text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">
+                                        {order.orderType === 'dine-in' ? 'Table' : 'Token'}
                                     </span>
-                                    <div>
-                                        <span className="inline-flex items-center justify-center min-w-[36px] h-8 font-black text-[var(--theme-text-main)] px-3 bg-[var(--theme-bg-hover)] rounded-xl border-2 border-[var(--theme-border)] shadow-sm text-sm">
-                                            {order.orderType === 'dine-in' ? (order.tableId?.number || order.tableId || '?') : (order.tokenNumber || '?')}
-                                        </span>
-                                    </div>
+                                    <span className="font-black text-[var(--theme-text-main)] text-sm">{order.orderType === 'dine-in' ? (order.tableId?.number || order.tableId || '?') : (order.tokenNumber || '?')}</span>
                                 </div>
 
-                                {/* Payment Block */}
-                                <div className="flex flex-col gap-1.5">
-                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">Payment</span>
-                                    <div>
-                                        <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase px-3 py-1 rounded-full border ${isPaid
-                                            ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20'
-                                            : 'bg-rose-600/10 text-rose-500 border-rose-500/20'
-                                        }`}>
-                                            <div className={`w-1.5 h-1.5 rounded-full ${isPaid ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                            {isPaid ? 'Settled' : 'Unpaid'}
-                                        </span>
-                                    </div>
+                                {/* Payment */}
+                                <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                                    <span className="text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Payment</span>
+                                    <div className={`w-2 h-2 rounded-full ${isPaid ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'}`} />
+                                    <span className={`text-[8px] font-black uppercase ${isPaid ? 'text-emerald-400' : 'text-rose-500'}`}>{isPaid ? 'Paid' : 'Unpaid'}</span>
                                 </div>
 
-                                {/* Status Block */}
-                                <div className="flex flex-col gap-1.5">
-                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest opacity-60">Kitchen</span>
-                                    <div className="flex items-center">
-                                        <StatusBadge status={order.orderStatus} size="sm" />
-                                    </div>
+                                {/* Status */}
+                                <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                                    <span className="text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Kitchen</span>
+                                    <StatusBadge status={order.orderStatus} size="sm" />
                                 </div>
                             </div>
+
+
                         </div>
 
                         {/* Financial Block - 5 cols from sm+ */}
                         <div className={`sm:col-span-5 relative overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-xl ${
                             isPaid
-                                ? 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 border border-emerald-500/20 shadow-emerald-500/20'
-                                : userRole === 'waiter'
-                                    ? 'bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 border border-blue-500/20 shadow-blue-500/20'
-                                    : 'bg-gradient-to-br from-orange-500 via-orange-600 to-amber-700 border border-orange-500/20 shadow-orange-500/20'
+                                ? 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 border border-emerald-500/20 shadow-emerald-500/20 text-white'
+                                : 'bg-slate-100 border border-slate-200 shadow-slate-200/50 text-slate-800'
                         }`}>
                             <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/10 rounded-full blur-2xl" />
                             <div className="absolute bottom-0 left-0 w-20 h-20 bg-black/10 rounded-full blur-2xl" />
@@ -220,11 +191,11 @@ const OrderDetailsModal = ({
 
                             {/* Header */}
                             <div className="relative z-10 flex items-center justify-between">
-                                <p className="text-[9px] font-black text-white/60 uppercase tracking-[0.2em]">Order Total</p>
+                                <p className={`text-[9px] font-black uppercase tracking-[0.2em] ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>Order Total</p>
                                 <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
                                     isPaid
                                         ? 'bg-white/20 border-white/30 text-white'
-                                        : 'bg-white/10 border-white/20 text-white/70'
+                                        : 'bg-slate-200 border-slate-300 text-slate-600'
                                 }`}>
                                     {isPaid ? '✓ Paid' : 'Unpaid'}
                                 </span>
@@ -232,21 +203,21 @@ const OrderDetailsModal = ({
 
                             {/* Final Amount */}
                             <div className="relative z-10">
-                                <p className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tighter drop-shadow-md break-all">
+                                <p className={`text-3xl sm:text-4xl font-black leading-none tracking-tighter drop-shadow-md break-all ${isPaid ? 'text-white' : 'text-slate-900'}`}>
                                     {formatPrice(order.finalAmount)}
                                 </p>
                             </div>
 
                             {/* Breakdown */}
-                            <div className="relative z-10 border-t border-white/15 pt-3 space-y-1.5">
-                                <div className="flex justify-between text-[9px] font-bold text-white/60 uppercase tracking-widest">
+                            <div className={`relative z-10 pt-3 space-y-1.5 border-t ${isPaid ? 'border-white/15' : 'border-slate-200'}`}>
+                                <div className={`flex justify-between text-[9px] font-bold uppercase tracking-widest ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>
                                     <span>Subtotal</span>
-                                    <span>{formatPrice(order.totalAmount)}</span>
+                                    <span className={isPaid ? '' : 'text-slate-700'}>{formatPrice(order.totalAmount)}</span>
                                 </div>
                                 {order.tax > 0 && (
-                                    <div className="flex justify-between text-[9px] font-bold text-white/60 uppercase tracking-widest">
+                                    <div className={`flex justify-between text-[9px] font-bold uppercase tracking-widest ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>
                                         <span>Tax</span>
-                                        <span>+ {formatPrice(order.tax)}</span>
+                                        <span className={isPaid ? '' : 'text-slate-700'}>+ {formatPrice(order.tax)}</span>
                                     </div>
                                 )}
                                 {order.discount > 0 && (
@@ -255,7 +226,7 @@ const OrderDetailsModal = ({
                                         <span>- {formatPrice(order.discount)}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between text-[9px] font-black text-white/40 uppercase tracking-widest pt-1 border-t border-white/10">
+                                <div className={`flex justify-between text-[9px] font-black uppercase tracking-widest pt-1 border-t ${isPaid ? 'border-white/10 text-white/40' : 'border-slate-200 text-slate-400'}`}>
                                     <span>{order.items?.filter(i => i.status !== 'CANCELLED').length || order.items?.length} items</span>
                                     {order.paymentMethod && <span>{order.paymentMethod}</span>}
                                 </div>
@@ -363,31 +334,7 @@ const OrderDetailsModal = ({
                             })}
                         </div>
                     </div>
-
-                    {/* STATUS BANNER */}
-                    {!isCancelled && (
-                        <div className="flex items-center gap-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl shadow-inner">
-                            <div 
-                                className="w-10 h-10 flex items-center justify-center rounded-xl transition-colors shadow-sm"
-                                style={{ 
-                                    backgroundColor: order.orderStatus?.toLowerCase() === 'completed' ? 'rgba(16, 185, 129, 0.2)' : `var(--status-${order.orderStatus?.toLowerCase()}-bg)`,
-                                    color: order.orderStatus?.toLowerCase() === 'completed' ? '#10b981' : `var(--status-${order.orderStatus?.toLowerCase()})`
-                                }}
-                            >
-                                {isCompleted ? <CheckCircle2 size={20} strokeWidth={3} /> : <ChefHat size={20} strokeWidth={3} />}
-                            </div>
-                            <div>
-                                <p className="text-xs font-black text-[var(--theme-text-main)]">
-                                    {isCompleted ? 'Order successfully served' : 'Cooking in progress...'}
-                                </p>
-                                <p className="text-[10px] text-[var(--theme-text-muted)] uppercase tracking-[0.15em] font-black mt-0.5 opacity-60">
-                                    Ref: {order._id.slice(-8).toUpperCase()}
-                                </p>
-                            </div>
-                        </div>
-                    )}
                 </div>
-
                 {/* FOOTER ACTIONS */}
                 <div className={`px-5 py-4 border-t border-[var(--theme-border)] grid gap-3 shrink-0 ${userRole === 'waiter' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                     {!isPaid && !isCancelled && onProcessPayment ? (
@@ -435,7 +382,7 @@ const OrderDetailsModal = ({
 
     return (
         <div className={`fixed inset-0 z-[200] flex justify-end transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
             <div className={`relative z-10 w-full sm:w-[500px] md:w-[600px] lg:w-[650px] bg-[var(--theme-bg-card)] shadow-[-20px_0_50px_rgba(0,0,0,0.2)] flex flex-col h-full border-l border-[var(--theme-border)] transition-transform duration-300 ease-out sm:rounded-l-[2rem] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 {innerCard}
             </div>

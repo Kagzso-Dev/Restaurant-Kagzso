@@ -27,12 +27,6 @@ export const THEMES = [
         icon: '☀️',
         description: 'Clean white, easy on eyes',
     },
-    {
-        id: 'glass',
-        label: 'Black Glass',
-        icon: '🪟',
-        description: 'Glassmorphism premium dark',
-    },
 ];
 
 const STORAGE_KEY = 'kagzso_theme';

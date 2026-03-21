@@ -88,6 +88,7 @@ function App() {
                 <Route path="/cashier" element={<CashierDashboard />} />
                 <Route path="/cashier/working-process" element={<WorkingProcess />} />
                 <Route path="/cashier/kitchen-view" element={<KitchenDashboard />} />
+                <Route path="/cashier/history" element={<CashierDashboard />} />
               </Route>
 
               {/* Waiter Routes */}
@@ -98,6 +99,7 @@ function App() {
                 <Route path="/take-away" element={<TakeAway />} />
                 <Route path="/waiter/working-process" element={<WorkingProcess />} />
                 <Route path="/waiter/kitchen-view" element={<KitchenDashboard />} />
+                <Route path="/waiter/history" element={<WaiterDashboard />} />
               </Route>
 
             </Route>

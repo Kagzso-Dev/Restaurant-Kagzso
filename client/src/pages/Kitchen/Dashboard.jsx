@@ -232,6 +232,7 @@ const KitchenDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'cancelled'
     const [filterType, setFilterType] = useState('all'); // 'all', 'dine-in', 'takeaway'
+    const [statusFilter, setStatusFilter] = useState(null);
     const [lastRefresh, setLastRefresh] = useState(new Date());
     const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, item: null });
     const [detailsModal, setDetailsModal] = useState({ isOpen: false, order: null });
@@ -353,59 +354,16 @@ const KitchenDashboard = () => {
         : activeTab === 'cancelled'
             ? orders.filter(o => o.orderStatus === 'cancelled')
             : orders.filter(o => o.orderStatus === 'completed')
-    ).filter(o => filterType === 'all' ? true : o.orderType === filterType);
+    ).filter(o => {
+        const matchesType = filterType === 'all' || o.orderType === filterType;
+        const matchesStatus = !statusFilter || o.orderStatus === statusFilter;
+        return matchesType && matchesStatus;
+    });
 
     return (
         <div className="space-y-5 animate-fade-in pb-10 text-left">
 
-            {/* ── Header ─────────────────────────────────────────────── */}
-            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] rounded-2xl p-4 sm:p-5 border border-[var(--theme-border)]">
-                <div className="flex items-center justify-between w-full sm:w-auto gap-3">
-                    <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 bg-[var(--theme-bg-deep)] rounded-xl flex items-center justify-center shadow-glow-orange flex-shrink-0 border border-[var(--theme-border)] p-1.5">
-                            <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg md:text-xl font-bold text-[var(--theme-text-main)]">
-                                Kitchen TV
-                                <span className="text-[var(--theme-text-muted)] font-normal ml-2 text-sm md:text-base">Control Center</span>
-                            </h1>
-                            <p className="text-xs text-[var(--theme-text-muted)]">
-                                Watching {orders.filter(o => ACTIVE_STATUSES.includes(o.orderStatus) && o.kotStatus !== 'Closed').length} live tickets
-                            </p>
-                        </div>
-                    </div>
-                    
-                    {/* Refresh Button on Mobile (Top Right of Card) */}
-                    <button
-                        onClick={fetchOrders}
-                        className="sm:hidden p-2 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] rounded-xl transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-                        title="Refresh"
-                    >
-                        <RefreshCw size={17} />
-                    </button>
-                </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-                    <div className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${socketConnected
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
-                        }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full inline-block mr-1.5 ${socketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-400'
-                            }`} />
-                        {socketConnected ? 'Live' : 'Reconnecting...'}
-                    </div>
-
-                    {/* Refresh Button on Desktop (Keep in action row) */}
-                    <button
-                        onClick={fetchOrders}
-                        className="hidden sm:flex p-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] rounded-xl transition-colors min-h-[44px] min-w-[44px] items-center justify-center"
-                        title="Refresh"
-                    >
-                        <RefreshCw size={17} />
-                    </button>
-                </div>
-            </div>
 
             {/* ── Tabs & Stats ────────────────────────────────────────── */}
             <div className="flex flex-col gap-4">
@@ -414,7 +372,7 @@ const KitchenDashboard = () => {
                         onClick={() => setActiveTab('active')}
                         className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'active' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
                     >
-                        Active KOTs ({counts.pending + counts.accepted + counts.preparing + counts.ready})
+                        Active ({counts.pending + counts.accepted + counts.preparing + counts.ready})
                     </button>
                     <button
                         onClick={() => setActiveTab('cancelled')}
@@ -430,40 +388,47 @@ const KitchenDashboard = () => {
                     </button>
                 </div>
 
-                {/* ── Order Type Filter ──────────────────────────────────── */}
-                <div className="flex gap-1.5 p-1 bg-[var(--theme-bg-hover)] rounded-xl border border-[var(--theme-border)] w-fit">
-                    {['all', 'dine-in', 'takeaway'].map(t => (
-                        <button
-                            key={t}
-                            onClick={() => setFilterType(t)}
-                            className={`
-                                px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all
-                                ${filterType === t 
-                                    ? 'bg-[var(--theme-bg-card)] text-[var(--theme-text-main)] shadow-sm ring-1 ring-white/10' 
-                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-white/5'}
-                            `}
-                        >
-                            {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
-                        </button>
-                    ))}
+                {/* ── Header ─────────────────────────────────────────────── */}
+                <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
+                    <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
+                        {['all', 'dine-in', 'takeaway'].map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`
+                                    flex-1 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                                    ${filterType === t 
+                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' 
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                                `}
+                            >
+                                {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                        {[
+                            { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Pending',  activeText: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',   hover: 'hover:border-[var(--status-pending-border)]' },
+                            { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'Accepted', activeText: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',  hover: 'hover:border-[var(--status-accepted-border)]' },
+                            { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]',  label: 'Cooking',  activeText: 'text-[var(--status-preparing)]', activeBg: 'bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]', hover: 'hover:border-[var(--status-preparing-border)]' },
+                            { key: 'ready',     count: counts.ready,     dot: 'bg-[var(--status-ready)]',      label: 'Ready',    activeText: 'text-[var(--status-ready)]',     activeBg: 'bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]',     hover: 'hover:border-[var(--status-ready-border)]' },
+                        ].map(({ key, count, dot, label, activeText, activeBg, hover }) => (
+                            <button
+                                key={key}
+                                onClick={() => setStatusFilter(f => f === key ? null : key)}
+                                className={`rounded-xl p-2 sm:p-3 flex flex-col items-center justify-center transition-all border active:scale-95 ${statusFilter === key ? activeBg : `bg-[var(--theme-bg-card)] border-[var(--theme-border)] ${hover}`}`}
+                            >
+                                <p className={`text-lg sm:text-2xl font-black tabular-nums ${statusFilter === key ? activeText : 'text-[var(--theme-text-main)]'}`}>{count}</p>
+                                <div className="flex items-center gap-1 mt-1">
+                                    <span className={`w-1 h-1 rounded-full ${dot}`} />
+                                    <p className={`text-[8px] sm:text-[10px] uppercase font-bold tracking-tighter sm:tracking-wider ${statusFilter === key ? activeText : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                {activeTab === 'active' && (
-                    <div className="flex flex-wrap gap-2 text-[10px] sm:text-xs text-left">
-                        <span className="px-3 py-1.5 bg-[var(--status-pending-bg)] text-[var(--status-pending)] rounded-lg font-bold border border-[var(--status-pending-border)]">
-                            {counts.pending} New
-                        </span>
-                        <span className="px-3 py-1.5 bg-[var(--status-accepted-bg)] text-[var(--status-accepted)] rounded-lg font-bold border border-[var(--status-accepted-border)]">
-                            {counts.accepted} Accepted
-                        </span>
-                        <span className="px-3 py-1.5 bg-[var(--status-preparing-bg)] text-[var(--status-preparing)] rounded-lg font-bold border border-[var(--status-preparing-border)]">
-                            {counts.preparing} Cooking
-                        </span>
-                        <span className="px-3 py-1.5 bg-[var(--status-ready-bg)] text-[var(--status-ready)] rounded-lg font-bold border border-[var(--status-ready-border)]">
-                            {counts.ready} Ready
-                        </span>
-                    </div>
-                )}
             </div>
 
             {/* ── KOT Grid ────────────────────────────────────────────── */}

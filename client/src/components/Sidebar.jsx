@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
     LogOut, LayoutDashboard, Monitor, Utensils, ChefHat,
     Layers, Coffee, Grid, Settings, ClipboardList, ChevronLeft,
-    ChevronRight, X, TrendingUp, Bell
+    ChevronRight, X, TrendingUp, Bell, History
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -190,6 +190,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                                 <NavItem to="/cashier" icon={Monitor} label="Cashier Point" color="text-green-400" />
                                 <NavItem to="/cashier/working-process" icon={ClipboardList} label="Working Process" color="text-blue-400" />
                                 <NavItem to="/cashier/kitchen-view" icon={ChefHat} label="Kitchen View" color="text-orange-400" />
+                                <NavItem to="/cashier/history" icon={History} label="Order History" color="text-purple-400" />
                             </>
                         )}
 
@@ -198,6 +199,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                                 <NavItem to="/waiter" icon={Utensils} label="Waiter Mode" color="text-pink-400" />
                                 <NavItem to="/waiter/working-process" icon={ClipboardList} label="Working Process" color="text-blue-400" />
                                 <NavItem to="/waiter/kitchen-view" icon={ChefHat} label="Kitchen View" color="text-orange-400" />
+                                <NavItem to="/waiter/history" icon={History} label="Order History" color="text-purple-400" />
                             </>
                         )}
                     </>
