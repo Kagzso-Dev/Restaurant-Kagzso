@@ -44,7 +44,7 @@ const consoleFormat = isProd
 
 // ── Logger Instance ──────────────────────────────────────────────────────────
 const logger = createLogger({
-    level: process.env.LOG_LEVEL || (isProd ? 'info' : 'debug'),
+    level: process.env.LOG_LEVEL || 'info',
     // defaultMeta: { service: 'kagzso-pos' },
     transports: [
         new transports.Console({

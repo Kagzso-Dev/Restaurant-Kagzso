@@ -17,13 +17,6 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 // All order routes require valid JWT
 router.use(protect);
 
-// ── Request Logger (Route Specific) ──────────────────────────────────
-router.use((req, res, next) => {
-    if (req.url.includes('orders')) {
-        console.log(`[API HIT] ORDER ROUTE: ${req.method} ${req.url}`);
-    }
-    next();
-});
 
 // ── Search (must be BEFORE /:id to avoid "search" being treated as an ID) ───
 router.get('/orders/search', authorize('admin', 'cashier', 'waiter'), searchOrders);
