@@ -294,6 +294,8 @@ const KitchenDashboard = () => {
                 socket.off('itemUpdated', onUpdateOrder);
             };
         }
+        window.addEventListener('pos-refresh', fetchOrders);
+        return () => window.removeEventListener('pos-refresh', fetchOrders);
     }, [user, socket, fetchOrders]);
 
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
 import { Search, Eye, ShoppingBag, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
@@ -217,6 +218,21 @@ const AdminOrders = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const datePickerRef = useRef(null);
     const { user, formatPrice, socket } = useContext(AuthContext);
+    const location = useLocation();
+
+    // ── External URL auto-sync (Open order from Search) ──────────────────────
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const orderId = params.get('id');
+        if (orderId && orders.length > 0) {
+            const found = orders.find(o => o._id === orderId);
+            if (found) {
+                // To be safe, if we arrive with an ID, we switch to a broader list or just show the order
+                setDateRange('year'); 
+                setSelectedOrder(found);
+            }
+        }
+    }, [location.search, orders]);
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -343,17 +359,7 @@ const AdminOrders = () => {
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-3">
-                    {/* Search */}
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--theme-text-muted)] group-focus-within:text-orange-500 transition-colors" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search Order #..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-12 pr-4 py-3 bg-[var(--theme-bg-deep)] border border-[var(--theme-border)] rounded-2xl text-[var(--theme-text-main)] focus:outline-none focus:ring-2 focus:ring-orange-500/50 w-full md:w-52 transition-all"
-                        />
-                    </div>
+
 
                     {/* Quick date range buttons */}
                     <div className="flex items-center gap-1 bg-[var(--theme-bg-deep)] p-1.5 rounded-2xl border border-[var(--theme-border)]">

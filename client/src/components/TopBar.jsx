@@ -2,7 +2,7 @@ import { useContext, useState, useEffect, useRef, useCallback, useMemo, memo } f
 
 import { AuthContext } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
-import { Search, Menu, X, Loader2, ShoppingBag } from 'lucide-react';
+import { Search, Menu, X, Loader2, ShoppingBag, RefreshCw } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../api';
 import useDebounce from '../hooks/useDebounce';
@@ -28,6 +28,7 @@ const TopBar = memo(({ onMenuClick }) => {
     const [results, setResults] = useState([]);
     const [searching, setSearching] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
     const searchRef = useRef(null);
     const debouncedQuery = useDebounce(query, 400);
 
@@ -74,10 +75,10 @@ const TopBar = memo(({ onMenuClick }) => {
     };
 
     const handleResultClick = (order) => {
-        // Navigate admin to order history; others see it inline
         setShowDropdown(false);
         setQuery('');
-        navigate(`/${user.role}/orders`);
+        // Navigate with order ID to auto-open details
+        navigate(`/${user.role}/orders?id=${order._id || order.id}`);
     };
 
     // ── Page title helper (memoised — only recomputes on route change) ─────────
@@ -98,8 +99,8 @@ const TopBar = memo(({ onMenuClick }) => {
 
     const isKitchenView = location.pathname.includes('kitchen');
 
-    // Only show search for admin/cashier/waiter — not kitchen
-    const showSearch = !isKitchenView && ['admin', 'cashier', 'waiter'].includes(user?.role);
+    // Global search disabled per user request
+    const showSearch = false;
 
     // ── Status badge colour helper (stable reference — no deps) ───────────────
     const statusColor = useCallback((status) => {
@@ -249,6 +250,26 @@ const TopBar = memo(({ onMenuClick }) => {
                             </div>
                         )}
                     </div>
+                )}
+
+                {/* Refresh button — waiter / kitchen / cashier only */}
+                {['waiter', 'kitchen', 'cashier'].includes(user?.role) && (
+                    <button
+                        onClick={() => {
+                            if (refreshing) return;
+                            setRefreshing(true);
+                            window.dispatchEvent(new CustomEvent('pos-refresh'));
+                            setTimeout(() => setRefreshing(false), 1000);
+                        }}
+                        className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all active:scale-95 ${
+                            refreshing
+                                ? 'border-orange-500/40 bg-orange-500/10 text-orange-500'
+                                : 'border-[var(--theme-border)] bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/30'
+                        }`}
+                        title="Refresh"
+                    >
+                        <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
+                    </button>
                 )}
 
                 {/* Notifications Bell */}

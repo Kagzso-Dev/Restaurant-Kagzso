@@ -221,6 +221,8 @@ const WaiterDashboard = () => {
                 socket.off('itemUpdated', onUpdate);
             };
         }
+        window.addEventListener('pos-refresh', fetchOrders);
+        return () => window.removeEventListener('pos-refresh', fetchOrders);
     }, [user, socket, fetchOrders, selectedOrder]);
 
     // Handle auto-opening an order from query params (e.g., after adding items)

@@ -296,6 +296,8 @@ const CashierDashboard = () => {
                 socket.off('orderCancelled', onOrderUpdate);
             };
         }
+        window.addEventListener('pos-refresh', fetchOrders);
+        return () => window.removeEventListener('pos-refresh', fetchOrders);
     }, [user, socket, fetchOrders]);
 
     /* ── Select Order ────────────────────────────────────────────────── */
@@ -380,9 +382,18 @@ const CashierDashboard = () => {
                                     {isHistoryMode ? `${orders.length} past transactions` : `${orders.length} awaiting payment`}
                                 </p>
                             </div>
-                            <span className="bg-orange-500/20 text-orange-400 text-xs px-2.5 py-1 rounded-full font-bold border border-orange-500/20">
-                                {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
-                            </span>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={fetchOrders}
+                                    className="p-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl transition-all active:scale-95 border border-[var(--theme-border)] shadow-sm"
+                                    title="Refresh Orders"
+                                >
+                                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                                </button>
+                                <span className="bg-orange-500/20 text-orange-400 text-xs px-2.5 py-1 rounded-full font-bold border border-orange-500/20">
+                                    {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
+                                </span>
+                            </div>
                         </div>
 
                         {/* ALL / DINE IN / TAKEAWAY filter */}
