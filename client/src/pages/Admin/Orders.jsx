@@ -480,7 +480,7 @@ const AdminOrders = () => {
                                                 <span className="inline-flex items-center justify-center min-w-[32px] h-7 font-black text-inherit px-2.5 bg-black/5 rounded-lg border border-current/10 shadow-sm text-[10px]">
                                                     {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber || '?'}`}
                                                 </span>
-                                                <span className="text-[10px] font-black uppercase opacity-60 tracking-wider">
+                                                <span className="text-[10px] font-black uppercase opacity-60 tracking-wider whitespace-nowrap">
                                                     {order.orderType}
                                                 </span>
                                             </div>
