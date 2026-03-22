@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import {
     LayoutDashboard, Utensils, ChefHat, Monitor,
-    ClipboardList, Settings, Package
+    ClipboardList, Settings, Package, Grid
 } from 'lucide-react';
 
 /**
@@ -34,6 +34,7 @@ const BottomNav = memo(() => {
         if (user.role === 'cashier') return [
             { to: '/cashier', icon: Monitor, label: 'POS' },
             { to: '/cashier/working-process', icon: ClipboardList, label: 'Orders' },
+            { to: '/waiter', icon: Grid, label: 'Tokens' },
             { to: '/cashier/kitchen-view', icon: ChefHat, label: 'Kitchen' },
         ];
         if (user.role === 'waiter') return [

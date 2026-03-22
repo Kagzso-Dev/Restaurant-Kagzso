@@ -58,10 +58,10 @@ const Login = () => {
                     <div className="flex items-center gap-3 mb-2">
                         <div className="relative">
                             <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl bg-white/10 p-1 shadow-md">
-                                <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
+                                <img src={logoImg} alt="KAGZSO" className="w-full h-full object-contain" />
                             </div>
                         </div>
-                        <h1 className="text-xl sm:text-3xl font-black text-[var(--theme-text-main)] tracking-widest uppercase">{settings.restaurantName || 'KAGSZO'}</h1>
+                        <h1 className="text-xl sm:text-3xl font-black text-[var(--theme-text-main)] tracking-widest uppercase">KAGZSO</h1>
                     </div>
                     <p className="text-[10px] sm:text-sm text-[var(--theme-text-muted)] font-medium tracking-wider uppercase">Smart POS & Kitchen Management</p>
                     <div className="mt-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--theme-bg-muted)] border border-[var(--theme-border)]">
@@ -139,7 +139,7 @@ const Login = () => {
 
             {/* Footer */}
             <div className="py-6 text-center text-[10px] sm:text-xs text-[var(--theme-text-subtle)] z-10 w-full px-4">
-                &copy; {new Date().getFullYear()} {settings.restaurantName} Management System. All rights reserved.
+                &copy; {new Date().getFullYear()} Kagzso Management System. All rights reserved.
             </div>
 
             {/* Custom Toast Mockup (Top Right) */}

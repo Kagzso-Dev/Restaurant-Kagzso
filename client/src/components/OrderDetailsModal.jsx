@@ -63,18 +63,17 @@ const OrderDetailsModal = ({
         if (!onCancelItem || isCompleted || isCancelled || isReady) return false;
 
         const s = item.status?.toUpperCase();
+        if (s === 'CANCELLED' || s === 'READY' || s === 'COMPLETED' || s === 'SERVED' || s === 'PAID') return false;
 
-        // Items already cancelled — no button
-        if (s === 'CANCELLED') return false;
+        // Kitchen can cancel anything that isn't ready
+        if (userRole === 'kitchen') return true;
 
-        // Items already done in kitchen — permanently locked, never cancellable
-        // even if new items were added and order status changed
-        if (['READY', 'COMPLETED', 'PREPARING'].includes(s) && userRole === 'waiter') return false;
-        if (['READY', 'COMPLETED'].includes(s)) return false;
-
+        // Admin/Cashier have full control
+        if (userRole === 'admin' || userRole === 'cashier') return true;
+        
+        // Waiter can only cancel if it hasn't reached the kitchen yet (PENDING)
         if (userRole === 'waiter') return s === 'PENDING';
-        if (userRole === 'kitchen') return s === 'PENDING';
-        if (userRole === 'admin' || userRole === 'cashier') return s === 'PENDING';
+
         return false;
     };
 
@@ -103,12 +102,12 @@ const OrderDetailsModal = ({
                             <h2 className="text-xl font-black text-[var(--theme-text-main)] tracking-tighter uppercase">{order.orderNumber}</h2>
                             <StatusBadge status={order.orderStatus} size="sm" />
                             {order.orderType === 'takeaway' && order.tokenNumber && (
-                                <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm shadow-orange-500/20">
+                                <span className="bg-orange-500 text-white text-[12px] font-black px-2 py-0.5 rounded-md shadow-sm shadow-orange-500/20">
                                     TOKEN #{order.tokenNumber}
                                 </span>
                             )}
                         </div>
-                        <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest flex items-center gap-2">
+                        <p className="text-[12px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest flex items-center gap-2">
                             <Clock size={12} className="text-blue-400" /> {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             <span className="opacity-30">•</span>
                             <span className="flex items-center gap-1">
@@ -148,7 +147,7 @@ const OrderDetailsModal = ({
 
                                 {/* Service */}
                                 <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                                    <span className="text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Service</span>
+                                    <span className="text-[12px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Service</span>
                                     <div className={`p-1.5 rounded-lg border ${order.orderType === 'dine-in' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-orange-500/10 border-orange-500/20 text-orange-400'}`}>
                                         {order.orderType === 'dine-in' ? <Utensils size={14} /> : <Package size={14} />}
                                     </div>
@@ -156,22 +155,26 @@ const OrderDetailsModal = ({
 
                                 {/* Identity */}
                                 <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                                    <span className="text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">
+                                    <span className="text-[12px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">
                                         {order.orderType === 'dine-in' ? 'Table' : 'Token'}
                                     </span>
-                                    <span className="font-black text-[var(--theme-text-main)] text-sm">{order.orderType === 'dine-in' ? (order.tableId?.number || order.tableId || '?') : (order.tokenNumber || '?')}</span>
+                                    <span className="font-black text-[var(--theme-text-main)] text-base">
+                                        {order.orderType === 'dine-in'
+                                            ? `Table ${order.tableId?.number || order.tableId || '?'}`
+                                            : `Token ${order.tokenNumber || '?'}`}
+                                    </span>
                                 </div>
 
                                 {/* Payment */}
                                 <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                                    <span className="text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Payment</span>
+                                    <span className="text-[12px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Payment</span>
                                     <div className={`w-2 h-2 rounded-full ${isPaid ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'}`} />
-                                    <span className={`text-[8px] font-black uppercase ${isPaid ? 'text-emerald-400' : 'text-rose-500'}`}>{isPaid ? 'Paid' : 'Unpaid'}</span>
+                                    <span className={`text-[12px] font-black uppercase ${isPaid ? 'text-emerald-400' : 'text-rose-500'}`}>{isPaid ? 'Paid' : 'Unpaid'}</span>
                                 </div>
 
                                 {/* Status */}
                                 <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                                    <span className="text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Kitchen</span>
+                                    <span className="text-[12px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider opacity-60">Kitchen</span>
                                     <StatusBadge status={order.orderStatus} size="sm" />
                                 </div>
                             </div>
@@ -191,8 +194,8 @@ const OrderDetailsModal = ({
 
                             {/* Header */}
                             <div className="relative z-10 flex items-center justify-between">
-                                <p className={`text-[9px] font-black uppercase tracking-[0.2em] ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>Order Total</p>
-                                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                                <p className={`text-[12px] font-black uppercase tracking-[0.2em] ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>Order Total</p>
+                                <span className={`text-[12px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
                                     isPaid
                                         ? 'bg-white/20 border-white/30 text-white'
                                         : 'bg-slate-200 border-slate-300 text-slate-600'
@@ -210,23 +213,23 @@ const OrderDetailsModal = ({
 
                             {/* Breakdown */}
                             <div className={`relative z-10 pt-3 space-y-1.5 border-t ${isPaid ? 'border-white/15' : 'border-slate-200'}`}>
-                                <div className={`flex justify-between text-[9px] font-bold uppercase tracking-widest ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>
+                                <div className={`flex justify-between text-[12px] font-bold uppercase tracking-widest ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>
                                     <span>Subtotal</span>
                                     <span className={isPaid ? '' : 'text-slate-700'}>{formatPrice(order.totalAmount)}</span>
                                 </div>
                                 {order.tax > 0 && (
-                                    <div className={`flex justify-between text-[9px] font-bold uppercase tracking-widest ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>
+                                    <div className={`flex justify-between text-[12px] font-bold uppercase tracking-widest ${isPaid ? 'text-white/60' : 'text-slate-500'}`}>
                                         <span>Tax</span>
                                         <span className={isPaid ? '' : 'text-slate-700'}>+ {formatPrice(order.tax)}</span>
                                     </div>
                                 )}
                                 {order.discount > 0 && (
-                                    <div className="flex justify-between text-[9px] font-bold text-emerald-300 uppercase tracking-widest">
+                                    <div className="flex justify-between text-[12px] font-bold text-emerald-300 uppercase tracking-widest">
                                         <span>Discount</span>
                                         <span>- {formatPrice(order.discount)}</span>
                                     </div>
                                 )}
-                                <div className={`flex justify-between text-[9px] font-black uppercase tracking-widest pt-1 border-t ${isPaid ? 'border-white/10 text-white/40' : 'border-slate-200 text-slate-400'}`}>
+                                <div className={`flex justify-between text-[12px] font-black uppercase tracking-widest pt-1 border-t ${isPaid ? 'border-white/10 text-white/40' : 'border-slate-200 text-slate-400'}`}>
                                     <span>{order.items?.filter(i => i.status !== 'CANCELLED').length || order.items?.length} items</span>
                                     {order.paymentMethod && <span>{order.paymentMethod}</span>}
                                 </div>
@@ -237,7 +240,7 @@ const OrderDetailsModal = ({
                     {/* ITEM LIST */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between pb-2 border-b-2 border-[var(--theme-border)]">
-                            <h3 className="text-xs font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em] flex items-center gap-2">
+                            <h3 className="text-sm font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em] flex items-center gap-2">
                                 <Utensils size={14} className="text-orange-500" /> Bill Items ({order.items?.length})
                             </h3>
                             {!isPaid && !isCancelled && !isCompleted && userRole === 'waiter' && (
@@ -250,7 +253,7 @@ const OrderDetailsModal = ({
                                         onClose();
                                         navigate(`/waiter/new-order?orderId=${order._id}`);
                                     }}
-                                    className="h-8 px-3 bg-orange-600 hover:bg-orange-500 text-white rounded-lg shadow-lg shadow-orange-600/20 transition-all flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider active:scale-95"
+                                    className="h-8 px-3 bg-orange-600 hover:bg-orange-500 text-white rounded-lg shadow-lg shadow-orange-600/20 transition-all flex items-center gap-1.5 text-[12px] font-black uppercase tracking-wider active:scale-95"
                                 >
                                     <Plus size={14} strokeWidth={4} /> Add New
                                 </button>
@@ -280,16 +283,16 @@ const OrderDetailsModal = ({
                                                 isNewItem ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'bg-[var(--theme-bg-deep)] border-[var(--theme-border)] text-[var(--theme-text-main)]'
                                             }`}>
                                                 <span className="text-sm sm:text-base font-black leading-none">{item.quantity}</span>
-                                                <span className="text-[7px] font-black opacity-40 uppercase tracking-tighter">Qty</span>
+                                                <span className="text-[12px] font-black opacity-40 uppercase tracking-tighter">Qty</span>
                                             </div>
                                             
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <p className={`text-sm font-black tracking-tight truncate ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}`}>
+                                                    <p className={`text-base font-black tracking-tight truncate ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}`}>
                                                         {item.name}
                                                     </p>
                                                     {isNewItem && !cancelled && (
-                                                        <span className="bg-orange-500/10 text-orange-500 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest animate-pulse">New</span>
+                                                        <span className="bg-orange-500/10 text-orange-500 text-[12px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest animate-pulse">New</span>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
@@ -304,9 +307,9 @@ const OrderDetailsModal = ({
                                                         }
                                                         size="xs"
                                                     />
-                                                    <span className="text-[10px] text-[var(--theme-text-muted)] font-bold opacity-40">@ {formatPrice(item.price)}</span>
+                                                    <span className="text-[12px] text-[var(--theme-text-muted)] font-bold opacity-40">@ {formatPrice(item.price)}</span>
                                                     {addedAgo !== null && addedAgo >= 1 && !cancelled && (
-                                                        <span className="text-[9px] text-blue-400 font-bold italic flex items-center gap-1">
+                                                        <span className="text-[12px] text-blue-400 font-bold italic flex items-center gap-1">
                                                             <Clock size={10} /> {formatTimeAgo(addedAgo)}
                                                         </span>
                                                     )}
@@ -316,18 +319,36 @@ const OrderDetailsModal = ({
 
                                         <div className="flex items-center gap-3 pl-4">
                                             <div className="text-right">
-                                                <p className={`text-sm sm:text-base font-black tabular-nums ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-blue-400'}`}>
+                                                <p className={`text-base sm:text-lg font-black tabular-nums ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-blue-400'}`}>
                                                     {formatPrice(item.price * item.quantity)}
                                                 </p>
                                             </div>
-                                            {canCancelItem(item) && (
-                                                <button
-                                                    onClick={() => onCancelItem(order, item)}
-                                                    className="w-8 h-8 flex items-center justify-center bg-rose-500/10 text-rose-400 rounded-lg hover:bg-rose-500 hover:text-white transition-all active:scale-90"
-                                                >
-                                                    <X size={14} strokeWidth={3} />
-                                                </button>
-                                            )}
+                                            {(() => {
+                                                const s = item.status?.toUpperCase();
+                                                const cookLocked = s === 'READY' && !cancelled;
+                                                if (canCancelItem(item)) {
+                                                    return (
+                                                        <button
+                                                            onClick={() => onCancelItem(order, item)}
+                                                            className="w-8 h-8 flex items-center justify-center bg-rose-500/10 text-rose-400 rounded-lg hover:bg-rose-500 hover:text-white transition-all active:scale-90"
+                                                        >
+                                                            <X size={14} strokeWidth={3} />
+                                                        </button>
+                                                    );
+                                                }
+                                                if (cookLocked) {
+                                                    return (
+                                                        <button
+                                                            disabled
+                                                            title="Cannot cancel — already being cooked"
+                                                            className="w-8 h-8 flex items-center justify-center bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] rounded-lg opacity-30 cursor-not-allowed border border-[var(--theme-border)]"
+                                                        >
+                                                            <X size={14} strokeWidth={3} />
+                                                        </button>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
                                         </div>
                                     </div>
                                 );
@@ -340,7 +361,7 @@ const OrderDetailsModal = ({
                     {!isPaid && !isCancelled && onProcessPayment ? (
                         <button
                             onClick={() => onProcessPayment(order)}
-                            className="col-span-1 py-3.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-orange-500/30 flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider active:scale-95"
+                            className="col-span-1 py-3.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-orange-500/30 flex items-center justify-center gap-2 text-[12px] uppercase tracking-wider active:scale-95"
                         >
                             <Wallet size={18} strokeWidth={3} className="shrink-0" />
                             <span className="leading-tight text-center">Complete Payment</span>
@@ -348,23 +369,28 @@ const OrderDetailsModal = ({
                     ) : (
                         <button
                             onClick={onClose}
-                            className="col-span-1 py-3.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] font-black rounded-2xl transition-all border border-[var(--theme-border)] flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider active:scale-95"
+                            className="col-span-1 py-3.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] font-black rounded-2xl transition-all border border-[var(--theme-border)] flex items-center justify-center gap-2 text-[12px] uppercase tracking-wider active:scale-95"
                         >
                             <span className="leading-tight text-center">Return to Hub</span>
                         </button>
                     )}
                     {userRole !== 'waiter' && (
                         <button
-                            disabled={!isPaid || isCancelled}
-                            onClick={() => printBill(order, formatPrice, settings)}
-                            className={`col-span-1 py-3.5 font-black rounded-2xl transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider active:scale-95 ${isPaid && !isCancelled
-                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed opacity-40'
+                            disabled={isCancelled}
+                            onClick={() => isPaid ? printBill(order, formatPrice, settings) : onProcessPayment?.(order)}
+                            className={`col-span-1 py-3.5 font-black rounded-2xl transition-all flex items-center justify-center gap-2 text-[12px] uppercase tracking-wider active:scale-95 ${isCancelled
+                                ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed opacity-40'
+                                : isPaid
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-500/30'
+                                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/30'
                             }`}
                         >
-                            <Printer size={18} strokeWidth={3} className="shrink-0" />
+                            {isPaid
+                                ? <Printer size={18} strokeWidth={3} className="shrink-0" />
+                                : <Wallet size={18} strokeWidth={3} className="shrink-0" />
+                            }
                             <span className="leading-tight text-center">
-                                {isPaid ? 'Print KOT/Invoice' : 'Payment Required'}
+                                {isPaid ? 'Print KOT/Invoice' : 'Process Payment'}
                             </span>
                         </button>
                     )}
@@ -392,7 +418,7 @@ const OrderDetailsModal = ({
 
 const InfoRow = ({ label, children }) => (
     <div className="flex items-center justify-between">
-        <div className="text-[11px] font-black text-[var(--theme-text-muted)] flex items-center gap-2 uppercase tracking-wide opacity-80">
+        <div className="text-[12px] font-black text-[var(--theme-text-muted)] flex items-center gap-2 uppercase tracking-wide opacity-80">
             {label}
         </div>
         <div>{children}</div>

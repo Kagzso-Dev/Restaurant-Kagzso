@@ -56,11 +56,13 @@ const WorkingProcess = () => {
         };
     }, [user, socket, selectedOrder]);
 
+    const currentTypeOrders = orders.filter(o => filterType === 'all' || o.orderType === filterType);
+
     const counts = {
-        pending: orders.filter(o => o.orderStatus === 'pending').length,
-        accepted: orders.filter(o => o.orderStatus === 'accepted').length,
-        preparing: orders.filter(o => o.orderStatus === 'preparing').length,
-        ready: orders.filter(o => o.orderStatus === 'ready').length,
+        pending: currentTypeOrders.filter(o => o.orderStatus === 'pending').length,
+        accepted: currentTypeOrders.filter(o => o.orderStatus === 'accepted').length,
+        preparing: currentTypeOrders.filter(o => o.orderStatus === 'preparing').length,
+        ready: currentTypeOrders.filter(o => o.orderStatus === 'ready').length,
     };
 
     const displayOrders = orders.filter(o => {
@@ -68,6 +70,13 @@ const WorkingProcess = () => {
         const matchesStatus = !statusFilter || o.orderStatus === statusFilter;
         return matchesType && matchesStatus;
     });
+
+    // Clear selected order if it's no longer in the filtered list
+    useEffect(() => {
+        if (selectedOrder && !displayOrders.find(o => o._id === selectedOrder._id)) {
+            setSelectedOrder(null);
+        }
+    }, [filterType, statusFilter, displayOrders, selectedOrder]);
 
     const printKOT = () => {
         if (!selectedOrder) return;
@@ -238,23 +247,23 @@ const WorkingProcess = () => {
                             </span>
                         </button>
                     </div>
-                    <div className={`overflow-y-auto flex-1 p-4 custom-scrollbar ${isGridView ? 'grid grid-cols-2 gap-2 content-start' : 'space-y-3'}`}>
+                    <div className={`overflow-y-auto flex-1 p-4 custom-scrollbar ${isGridView ? 'grid grid-cols-3 gap-2 content-start' : 'space-y-3'}`}>
                         {displayOrders.map(order => {
                             const tokenLabel = order.orderType === 'dine-in'
-                                ? `DI T${order.tableId?.number || order.tableId || '?'}`
-                                : `TA ${String(order.tokenNumber || 0).padStart(3, '0')}`;
+                                ? `Table ${order.tableId?.number || order.tableId || '?'}`
+                                : `Token ${order.tokenNumber || '?'}`;
                             return isGridView ? (
                                 <button
                                     key={order._id}
                                     onClick={() => setSelectedOrder(order)}
                                     className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center p-2 transition-all active:scale-90 ${
                                         selectedOrder?._id === order._id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
-                                    } ${getStatusColor(order.orderStatus)}`}
+                                    } ${order.orderStatus === 'ready' ? 'animate-pulse' : ''} ${getStatusColor(order.orderStatus)}`}
                                 >
-                                    <span className="text-[8px] uppercase font-black opacity-40 tracking-widest leading-none mb-1">
+                                    <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-1 tracking-widest">
                                         {order.orderType === 'dine-in' ? 'Dine In' : 'Takeaway'}
                                     </span>
-                                    <span className="text-base font-black leading-tight tracking-tight text-center">
+                                    <span className="text-lg font-black leading-tight tracking-tight text-center">
                                         {tokenLabel}
                                     </span>
                                     <span className={`mt-2 text-[7px] font-black uppercase px-2 py-0.5 rounded border border-current/30 bg-white/5`}>
@@ -277,7 +286,7 @@ const WorkingProcess = () => {
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-end">
-                                    <p className="text-xs text-[var(--theme-text-muted)]">{tokenLabel}</p>
+                                    <p className="text-sm font-black text-[var(--theme-text-main)] group-hover:text-blue-500 transition-colors uppercase tracking-tight">{tokenLabel}</p>
                                     <p className="text-sm font-semibold text-[var(--theme-text-muted)]">{new Date(order.createdAt).toLocaleTimeString()}</p>
                                 </div>
                             </div>
@@ -314,9 +323,9 @@ const WorkingProcess = () => {
                                             <p><span className="font-bold">Order:</span> {selectedOrder.orderNumber}</p>
                                             <p><span className="font-bold">Time:</span> {new Date(selectedOrder.createdAt).toLocaleTimeString()}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p><span className="font-bold text-lg">{selectedOrder.orderType === 'dine-in' ? `TBL ${selectedOrder.tableId?.number || selectedOrder.tableId || '?'}` : `TOK ${selectedOrder.tokenNumber}`}</span></p>
-                                        </div>
+                                            <div className="text-right">
+                                                <p><span className="font-bold text-lg">{selectedOrder.orderType === 'dine-in' ? `Table ${selectedOrder.tableId?.number || selectedOrder.tableId || '?'}` : `Token ${selectedOrder.tokenNumber || '?'}`}</span></p>
+                                            </div>
                                     </div>
 
                                     {/* Items */}

@@ -269,7 +269,7 @@ const AdminDashboard = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[var(--theme-bg-card2)] rounded-2xl p-5 border border-[var(--theme-border)]">
                 <div>
                     <h1 className="text-xl md:text-2xl font-bold text-[var(--theme-text-main)] leading-tight">
-                        {settings?.restaurantName}
+                        KAGZSO
                         <span className="text-[var(--theme-text-muted)] font-normal ml-2 text-base md:text-xl">Analytics</span>
                     </h1>
 

@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import logoImg from '../assets/logo.png';
 
 const Logo = ({ size = 'md', showText = true }) => {
@@ -16,7 +18,7 @@ const Logo = ({ size = 'md', showText = true }) => {
             </div>
             {showText && (
                 <div className="text-center mt-3">
-                    <h1 className="text-2xl font-black text-[var(--theme-text-main)] tracking-widest uppercase">{settings.restaurantName || 'KAGSZO'}</h1>
+                    <h1 className="text-2xl font-black text-[var(--theme-text-main)] tracking-widest uppercase">KAGZSO</h1>
                     <p className="text-xs text-[var(--theme-text-muted)] font-bold uppercase tracking-widest">Management POS System</p>
                 </div>
             )}

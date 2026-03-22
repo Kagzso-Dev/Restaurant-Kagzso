@@ -154,16 +154,19 @@ const TableGrid = ({
 
     return (
         <div>
-            {/* Status Legend — powered by the canonical STATUS_CONFIG */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div className="flex flex-wrap gap-4">
+            {/* Status Tabs (Like Floor selection in mockup) */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-[var(--theme-bg-dark)] p-2 rounded-2xl border border-[var(--theme-border)]">
+                <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-1 mr-2">
                     {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
                         const count = tables.filter((t) => t.status === key).length;
                         return (
-                            <div key={key} className="flex items-center space-x-2 text-xs">
-                                <span className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} />
-                                <span className="text-[var(--theme-text-muted)] font-medium">{cfg.label}</span>
-                                <span className={`${cfg.text} font-bold`}>({count})</span>
+                            <div 
+                                key={key} 
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-tight transition-all shrink-0 ${cfg.bg} ${cfg.border} ${cfg.text}`}
+                            >
+                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                                <span className="opacity-80">{cfg.label}</span>
+                                <span className="opacity-40">{count}</span>
                             </div>
                         );
                     })}
@@ -189,7 +192,7 @@ const TableGrid = ({
 
             {/* Table Grid */}
             <div className={viewType === 'grid' 
-                ? "grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+                ? "grid grid-cols-3 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-4"
                 : "flex flex-col gap-3"
             }>
                 {tables.map((table) => {

@@ -112,7 +112,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                 {!collapsed && (
                     <div className="flex-1 min-w-0">
                         <h1 className="text-sm font-black tracking-widest text-[var(--theme-text-main)] truncate leading-tight uppercase">
-                            {settings?.restaurantName || 'KAGSZO'}
+                            KAGZSO
                         </h1>
                         <p className="text-[9px] text-[var(--theme-text-subtle)] font-bold uppercase tracking-widest mt-0.5">
                             Management POS
@@ -188,6 +188,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                         {user.role === 'cashier' && (
                             <>
                                 <NavItem to="/cashier" icon={Monitor} label="Cashier Point" color="text-green-400" />
+                                <NavItem to="/waiter" icon={Grid} label="Token View" color="text-yellow-400" />
                                 <NavItem to="/cashier/working-process" icon={ClipboardList} label="Working Process" color="text-blue-400" />
                                 <NavItem to="/cashier/kitchen-view" icon={ChefHat} label="Kitchen View" color="text-orange-400" />
                                 <NavItem to="/cashier/history" icon={History} label="Order History" color="text-purple-400" />

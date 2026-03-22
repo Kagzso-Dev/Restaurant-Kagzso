@@ -10,7 +10,7 @@ import { printBill } from '../../components/BillPrint';
 import {
     Printer, Banknote, ChefHat, CheckCircle,
     ShoppingBag, RefreshCw, ArrowLeft, X,
-    CreditCard, QrCode, Smartphone, Clock, AlertTriangle
+    CreditCard, QrCode, Smartphone, Clock, AlertTriangle, Grid, List
 } from 'lucide-react';
 
 /* ── Order status badge ──────────────────────────────────────────────────── */
@@ -119,13 +119,13 @@ const Receipt = ({ order, formatPrice, settings }) => (
         {/* Watermark */}
         <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
             <span className="text-[100px] font-black uppercase rotate-45">
-                {settings?.restaurantName?.substring(0, 2).toUpperCase()}
+                KA
             </span>
         </div>
 
         {/* Header */}
         <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4 relative z-10">
-            <h1 className="text-2xl font-extrabold tracking-tight">{settings?.restaurantName}</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight">KAGZSO</h1>
             <p className="text-xs font-black text-black uppercase tracking-widest mt-0.5">Tax Invoice</p>
             <p className="text-[10px] text-gray-400 mt-1">{settings?.address || 'Restaurant Address'}</p>
             {settings?.gstNumber && <p className="text-[10px] text-gray-400">GSTIN: {settings.gstNumber}</p>}
@@ -187,8 +187,8 @@ const Receipt = ({ order, formatPrice, settings }) => (
 
         {/* Footer */}
         <div className="text-center text-[9px] text-gray-400 border-t border-gray-200 pt-3 relative z-10">
-            <p className="font-bold uppercase mb-1">Thank you for choosing {settings?.restaurantName}</p>
-            <p>Powered by {settings?.restaurantName} Management System</p>
+            <p className="font-bold uppercase mb-1">Thank you for choosing KAGZSO</p>
+            <p>Powered by Kagzso Management System</p>
         </div>
     </div>
 );
@@ -202,6 +202,7 @@ const CashierDashboard = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [filterType, setFilterType] = useState('all'); // 'all' | 'dine-in' | 'takeaway'
+    const [isCardView, setIsCardView] = useState(() => localStorage.getItem('cashierCardView') !== 'false');
     const { user, socket, socketConnected, formatPrice, settings } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
@@ -382,7 +383,18 @@ const CashierDashboard = () => {
                                     {isHistoryMode ? `${orders.length} past transactions` : `${orders.length} awaiting payment`}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => { const v = !isCardView; setIsCardView(v); localStorage.setItem('cashierCardView', v); }}
+                                    className={`relative flex items-center gap-1.5 pl-1.5 pr-3 h-9 rounded-full border transition-all duration-300 shadow-sm active:scale-95 ${isCardView ? 'bg-blue-500/10 border-blue-500/25' : 'bg-orange-500/10 border-orange-500/25'}`}
+                                >
+                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${isCardView ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'}`}>
+                                        {isCardView ? <Grid size={11} strokeWidth={2.5} /> : <List size={11} strokeWidth={2.5} />}
+                                    </div>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest ${isCardView ? 'text-blue-600' : 'text-orange-500'}`}>
+                                        {isCardView ? 'Card' : 'List'}
+                                    </span>
+                                </button>
                                 <button
                                     onClick={fetchOrders}
                                     className="p-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl transition-all active:scale-95 border border-[var(--theme-border)] shadow-sm"
@@ -433,7 +445,7 @@ const CashierDashboard = () => {
                                             selected={selectedOrder?._id === order._id}
                                             onClick={() => handleSelect(order)}
                                             formatPrice={formatPrice}
-                                            viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'compact'}
+                                            viewType={!isCardView ? 'list' : settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'compact'}
                                         />
                                     ))
                             )}

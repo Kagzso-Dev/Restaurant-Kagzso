@@ -142,36 +142,34 @@ html {
   overflow-x: hidden;
   max-width: 100vw;
   scroll-behavior: smooth;
-  /* ── Use dynamic viewport height (handles mobile browser chrome) */
   height: 100%;
-  /* ── Prevent elastic/bounce scroll on iOS outside scrollable areas */
   overscroll-behavior: none;
-  /* ── Optimization: Prevent layout shifts on theme change ─────── */
   background-color: var(--theme-bg-dark);
   color: var(--theme-text-main);
-  /* ── Smooth theme transitions ─────────────────────────────────── */
   transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
-  /* ── Font smoothing for all platforms ──────────────────────────── */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* ── Fluid base font: 13px on 320px → 15px on 640px → 16px on 1024px+ */
+  font-size: clamp(13px, 0.5vw + 11.5px, 16px);
 }
 
 body {
   height: 100%;
+  width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
   overscroll-behavior: none;
   font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
-  font-size: 15px;
-  -webkit-font-smoothing: antialiased;
-  background-color: var(--theme-bg-dark);
-  color: var(--theme-text-main);
-  min-height: 100vh;    /* static fallback */
-  min-height: 100svh;   /* small viewport — safe when Android address bar is visible */
-  min-height: 100dvh;   /* dynamic — wins in modern browsers */
+  /* Inherits fluid font-size from html via clamp() */
+  font-size: inherit;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--theme-bg-dark);
+  color: var(--theme-text-main);
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
 }
 
@@ -191,15 +189,25 @@ body {
 button,
 [role="button"],
 a {
-  min-height: 44px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  /* Do NOT set global min-height — it breaks icon buttons inside flex layouts.
+     Apply .touch-target on navigation items and CTA buttons instead. */
 }
 
-/* Tighten tap targets that are decorative or inline */
+/* Touch target class — apply to nav items, primary CTAs, form buttons */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Legacy btn-xs — preserved for compat */
 button.btn-xs {
-  min-height: 32px;
+  min-height: unset;
 }
 
 /* ─── Premium Utilities ─────────────────────────────────────────────────── */
@@ -1027,7 +1035,193 @@ a:not([class]) {
 /* ─── Android dynamic viewport: prevent content shift on scroll ─────────── */
 @media (max-width: 1024px) {
   .h-dynamic-screen {
-    /* Lock to small viewport on mobile to avoid jump when address bar hides */
     min-height: 100svh;
   }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE-FIRST RESPONSIVE SYSTEM
+   Auto-adapts to ALL screen sizes — no device-specific hacks
+   8px grid · fluid typography · flex/grid based layout
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Fluid spacing tokens (8px grid, scales with viewport) ─────────────── */
+:root {
+  --sp-1:  clamp(4px,  1vw,  8px);
+  --sp-2:  clamp(8px,  2vw, 16px);
+  --sp-3:  clamp(12px, 3vw, 24px);
+  --sp-4:  clamp(16px, 4vw, 32px);
+  --sp-6:  clamp(20px, 5vw, 48px);
+  --sp-8:  clamp(24px, 6vw, 64px);
+  /* Content padding — used by main layout wrapper */
+  --content-px: clamp(12px, 4vw, 24px);
+}
+
+/* ─── Fluid container — replaces fixed max-width with fluid padding ──────── */
+.fluid-container {
+  width: 100%;
+  max-width: min(100%, 1600px);
+  padding-inline: var(--content-px);
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+/* ─── Fluid card — flexible, never overflows ─────────────────────────────── */
+.fluid-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: clamp(12px, 3vw, 20px);
+  border-radius: clamp(12px, 2vw, 20px);
+}
+
+/* ─── Responsive auto-grid — fills available space without media queries ─── */
+.auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: clamp(8px, 2vw, 16px);
+}
+
+.auto-grid-sm {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+  gap: clamp(6px, 1.5vw, 12px);
+}
+
+/* ─── Flex row that wraps cleanly on all screens ─────────────────────────── */
+.flex-wrap-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(6px, 2vw, 12px);
+}
+
+/* ─── Fluid typography helpers ────────────────────────────────────────────── */
+.text-fluid-xs   { font-size: clamp(10px, 1.8vw, 12px); }
+.text-fluid-sm   { font-size: clamp(11px, 2vw,  13px); }
+.text-fluid-base { font-size: clamp(13px, 2.5vw, 15px); }
+.text-fluid-lg   { font-size: clamp(15px, 3vw,  18px); }
+.text-fluid-xl   { font-size: clamp(18px, 4vw,  24px); }
+.text-fluid-2xl  { font-size: clamp(22px, 5vw,  32px); }
+
+/* ─── Overflow safety net ──────────────────────────────────────────────────── */
+.overflow-safe {
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* ─── Flex children: never break layout ─────────────────────────────────── */
+.flex-min-0 {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ─── High-DPI / Retina media query support ──────────────────────────────── */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Sharper borders on high-DPI — use 0.5px equivalent via box-shadow */
+  .border-hdpi {
+    border-width: 0;
+    box-shadow: inset 0 0 0 0.5px var(--theme-border);
+  }
+
+  /* Ensure text renders crisply on OLED / high-density panels */
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* ─── Very small screens (320px – 374px) — enhanced override ────────────── */
+@media (max-width: 374px) {
+  :root {
+    --content-px: 10px;
+    --sp-2: 6px;
+    --sp-3: 10px;
+    --sp-4: 12px;
+  }
+
+  /* Prevent any element from exceeding viewport */
+  * { max-width: 100vw; }
+
+  /* Tighten grid gaps */
+  .grid { gap: 6px !important; }
+
+  /* Force wrapping in all flex rows */
+  .flex-wrap-force { flex-wrap: wrap !important; }
+
+  /* Reduce card padding on tiny screens */
+  .p-4 { padding: 10px !important; }
+  .p-5 { padding: 12px !important; }
+  .px-5 { padding-inline: 10px !important; }
+  .px-4 { padding-inline: 8px !important; }
+}
+
+/* ─── Small screens (375px – 639px) ─────────────────────────────────────── */
+@media (min-width: 375px) and (max-width: 639px) {
+  :root {
+    --content-px: 12px;
+  }
+
+  /* 2-column grids get comfortable gap */
+  .grid-cols-2 { gap: 8px; }
+  .grid-cols-4 { gap: 6px; }
+}
+
+/* ─── Medium screens (640px – 767px) ────────────────────────────────────── */
+@media (min-width: 640px) and (max-width: 767px) {
+  :root {
+    --content-px: 16px;
+  }
+}
+
+/* ─── Prevent long words/URLs from breaking flex layouts ─────────────────── */
+p, span, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* ─── Prevent images from exceeding card bounds on any screen ───────────── */
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* ─── Stat counter cards — never overflow on narrow screens ─────────────── */
+.stat-card {
+  min-width: 0;
+  flex: 1 1 0;
+  overflow: hidden;
+}
+
+/* ─── Bottom action bars — safe on all phones ────────────────────────────── */
+.bottom-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: clamp(8px, 2vw, 16px) clamp(12px, 4vw, 24px);
+  padding-bottom: max(clamp(8px, 2vw, 16px), env(safe-area-inset-bottom));
+  z-index: 50;
+  box-sizing: border-box;
+}
+
+/* ─── Modal: full-screen on very small devices, sheet on medium ──────────── */
+@media (max-width: 479px) {
+  .modal-shell {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 20px 20px 0 0 !important;
+    margin: 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+  }
+}
+
+/* ─── Landscape phone adjustments ─────────────────────────────────────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hide-landscape { display: none !important; }
+  .h-dynamic-screen { height: 100dvh; }
+  .content-scroll-pad { padding-bottom: 0.5rem; }
 }

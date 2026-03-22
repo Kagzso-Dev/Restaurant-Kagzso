@@ -60,7 +60,7 @@ const CashierRoute = () => (
 );
 
 const WaiterRoute = () => (
-    <RoleRoute allowedRoles={['waiter', 'admin']} />
+    <RoleRoute allowedRoles={['waiter', 'cashier', 'admin']} />
 );
 
 export { AdminRoute, KitchenRoute, CashierRoute, WaiterRoute };

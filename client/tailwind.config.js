@@ -33,6 +33,7 @@ export default {
                 sans: ['Roboto', 'ui-sans-serif', 'system-ui'],
             },
             screens: {
+                '2xs': '320px',
                 'xs': '375px',
                 'sm': '640px',
                 'md': '768px',

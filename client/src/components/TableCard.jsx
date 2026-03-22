@@ -117,8 +117,8 @@ const TableCard = ({ table, onClick, clickable = false, actions, variant = 'grid
             onClick={clickable ? onClick : undefined}
             onKeyDown={clickable ? (e) => e.key === 'Enter' && onClick?.() : undefined}
             className={[
-                'relative bg-[var(--theme-bg-card)] rounded-2xl border overflow-hidden',
-                'flex flex-col',
+                'relative bg-[var(--theme-bg-card)] rounded-[1.5rem] sm:rounded-[2rem] border-2 overflow-hidden aspect-square',
+                'flex flex-col items-center justify-between',
                 'transition-all duration-200 group',
                 config.border,
                 clickable
@@ -126,39 +126,37 @@ const TableCard = ({ table, onClick, clickable = false, actions, variant = 'grid
                     : 'cursor-default',
             ].join(' ')}
         >
-            {/* Top status colour bar */}
-            <div className={`h-1 w-full ${config.topBar} flex-shrink-0`} />
-
             {/* Action icons (shown on hover) */}
             {actions && (
-                <div className="absolute top-3 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-150 z-10">
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-150 z-10">
                     {actions}
                 </div>
             )}
 
-            {/* Body */}
-            <div className="flex flex-col items-center justify-center flex-1 px-3 py-4 gap-1">
-                <span className="text-[9px] text-[var(--theme-text-muted)] uppercase tracking-widest font-bold">
+            {/* Header: Table label */}
+            <div className="pt-3 sm:pt-4">
+                <span className="text-[7px] sm:text-[9px] text-[var(--theme-text-muted)] uppercase tracking-[0.2em] font-black opacity-60">
                     Table
                 </span>
-                <span className={`text-4xl sm:text-5xl font-black leading-none ${config.text}`}>
+            </div>
+
+            {/* Body: Large Number */}
+            <div className="flex-1 flex items-center justify-center -mt-1">
+                <span className={`text-2xl sm:text-4xl font-black leading-none ${config.text} tracking-tight`}>
                     {table.number}
                 </span>
             </div>
 
-            {/* Footer */}
-            <div className="px-3 pb-3">
-                <div className="flex items-center justify-between border-t border-[var(--theme-border)] pt-2.5">
-                    <span className="flex items-center gap-1 text-[var(--theme-text-muted)] text-[10px] font-semibold">
-                        <Users size={11} />
-                        {table.capacity}
+            {/* Footer: Capacity + Status (Compact) */}
+            <div className="w-full px-2 pb-3 flex flex-col items-center gap-1">
+                <div className="h-px w-8 bg-[var(--theme-border)] opacity-30 mb-1" />
+                <div className="flex flex-col items-center gap-0.5">
+                    <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-tight text-center ${config.text}`}>
+                        {config.label}
                     </span>
-                    <div className="flex items-center gap-1">
-                        <span className={`w-1.5 h-1.5 rounded-full ${config.dot} ${table.status === 'reserved' ? 'animate-pulse' : ''}`} />
-                        <span className={`text-[9px] font-bold uppercase tracking-wide ${config.text}`}>
-                            {config.label}
-                        </span>
-                    </div>
+                    <span className="flex items-center gap-1 text-[7px] text-[var(--theme-text-muted)] font-bold opacity-40">
+                        <Users size={8} /> {table.capacity}
+                    </span>
                 </div>
             </div>
         </div>

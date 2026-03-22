@@ -116,7 +116,10 @@ const Layout = () => {
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-y-auto overflow-x-hidden pt-safe">
-                    <div className="w-full px-3 sm:px-4 md:px-6 animate-fade-in max-w-[1600px] mx-auto overflow-x-hidden content-scroll-pad">
+                    <div
+                        className="w-full animate-fade-in max-w-[1600px] mx-auto overflow-x-hidden content-scroll-pad"
+                        style={{ paddingInline: 'var(--content-px)' }}
+                    >
                         <Outlet />
                     </div>
                 </main>

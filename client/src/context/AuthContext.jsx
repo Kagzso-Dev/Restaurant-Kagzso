@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     const [socketConnected, setSocketConnected] = useState(false);
     const [serverStatus, setServerStatus] = useState('online');
     const [settings, setSettings] = useState({
-        restaurantName: 'KAGSZO',
+        restaurantName: 'KAGZSO',
         address: '',
         currency: 'INR',
         currencySymbol: '₹',
@@ -175,7 +175,7 @@ export const AuthProvider = ({ children }) => {
         setSocket(null);
         setSocketConnected(false);
         setSettings({
-            restaurantName: 'KAGSZO',
+            restaurantName: 'KAGZSO',
             currency: 'INR',
             currencySymbol: '₹',
             taxRate: 5,

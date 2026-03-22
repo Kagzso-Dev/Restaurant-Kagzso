@@ -358,7 +358,23 @@ const AdminOrders = () => {
                     </p>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex flex-col md:flex-row gap-3 flex-1">
+                    {/* Search bar */}
+                    <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search Order ID..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full bg-[var(--theme-bg-deep)] text-[var(--theme-text-main)] rounded-2xl pl-10 pr-4 py-2.5 border border-[var(--theme-border)] focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none text-sm font-medium"
+                        />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
 
 
                     {/* Quick date range buttons */}
@@ -404,15 +420,27 @@ const AdminOrders = () => {
                             </button>
                         )}
 
-                        {/* Dropdown calendar panel */}
+                        {/* Centered Modal-style Date Picker Overlay */}
                         {showDatePicker && (
-                            <div className="absolute right-0 top-full mt-2 z-50 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] rounded-2xl shadow-2xl p-4 animate-fade-in">
-                                <CalendarRangePicker
-                                    fromDate={fromDate}
-                                    toDate={toDate}
-                                    onApply={applyDateRange}
-                                    onClear={clearCustomDate}
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                                <div 
+                                    className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" 
+                                    onClick={() => setShowDatePicker(false)} 
                                 />
+                                <div className="relative z-10 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] rounded-3xl shadow-2xl p-6 animate-slide-up sm:animate-fade-in max-w-[340px] w-full mx-auto">
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-[var(--theme-border)]">
+                                        <h3 className="text-sm font-black text-[var(--theme-text-main)] uppercase tracking-widest">Select Date Range</h3>
+                                        <button onClick={() => setShowDatePicker(false)} className="p-1 rounded-lg hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)]">
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                    <CalendarRangePicker
+                                        fromDate={fromDate}
+                                        toDate={toDate}
+                                        onApply={applyDateRange}
+                                        onClear={clearCustomDate}
+                                    />
+                                </div>
                             </div>
                         )}
                     </div>

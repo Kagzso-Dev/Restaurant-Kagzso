@@ -2,7 +2,7 @@ import { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
 import logoImg from '../../assets/logo.png';
-import { ChefHat, Clock, RefreshCw, CheckCheck, Utensils, XCircle, Plus } from 'lucide-react';
+import { ChefHat, Clock, RefreshCw, CheckCheck, Utensils, XCircle, Grid, List } from 'lucide-react';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
@@ -58,8 +58,8 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
 
     return (
         <div className={`
-            relative rounded-xl overflow-hidden border-l-4 transition-all duration-300
-            flex flex-col shadow-sm sm:hover:scale-[1.01] sm:hover:shadow-lg
+            relative rounded-2xl overflow-hidden border-l-[5px] transition-all duration-300
+            flex flex-col shadow-md sm:hover:shadow-xl
             ${tColor}
             ${hasNewItems ? `ring-2 ring-[var(--status-pending)] shadow-[0_0_20px_var(--status-pending-bg)] animate-pulse` : ''}
             ${hasNewItems ? 'border-l-[var(--status-pending)]' : (
@@ -70,54 +70,63 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                 'border-l-[var(--theme-border)]'
             )}
             ${isReady && !hasNewItems ? 'animate-pulse' : ''}
-            ${urgency ? 'ring-2 ring-red-500/30' : ''}
+            ${urgency ? 'ring-2 ring-red-500/40' : ''}
             ${isList ? 'flex-row items-center h-16 sm:h-20 px-3' : ''}
             animate-fade-in
         `}>
             {/* Ticket Header */}
-            <div className={`border-black/5 text-left ${isList ? 'border-none w-40 shrink-0 py-0 pr-3' : (isMini ? 'p-1.5 border-b' : 'p-2.5 border-b')}`}>
-                <div className="flex items-center justify-between gap-1.5">
-                    <div className="min-w-0">
-                        <p className={`text-[8px] text-inherit opacity-70 uppercase tracking-widest font-semibold ${isCompact ? 'hidden' : ''}`}>Order</p>
-                        <h3 className={`${isMini ? 'text-[10px]' : (isCompact ? 'text-[11px]' : 'text-sm')} font-black text-inherit leading-none tracking-tighter whitespace-nowrap`}>{order.orderNumber}</h3>
+            <div className={`text-left ${isList ? 'border-none w-44 shrink-0 py-0 pr-3' : (isMini ? 'p-2 border-b border-black/8' : 'p-3 border-b border-black/8')}`}>
+                <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex items-center gap-2">
+                        <h3 className={`${isMini ? 'text-[11px]' : (isCompact ? 'text-xs' : 'text-sm')} font-black text-gray-900 leading-none tracking-tight whitespace-nowrap`}>
+                            {order.orderNumber}
+                        </h3>
+                        {!isList && !isCompact && (
+                            <span className="text-[9px] font-bold text-gray-500 opacity-60 uppercase tracking-widest hidden sm:inline">
+                                {order.orderType === 'dine-in' ? 'Dine In' : 'Takeaway'}
+                            </span>
+                        )}
                     </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                    {!isList && <StatusBadge status={order.orderStatus} size={isMini ? 'xs' : 'sm'} />}
-                    
-                    {/* Overall Order Cancel Button - Hidden if ready (unless admin), or finished */}
-                    {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (order.orderStatus !== 'ready' || userRole === 'admin') && (userRole === 'kitchen' || userRole === 'admin') && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onCancel(order); }}
-                            className="p-1 hover:bg-red-500/10 rounded-lg text-red-500 transition-all ml-0.5"
-                            title="Cancel entire order"
-                        >
-                            <XCircle size={isMini ? 12 : 16} />
-                        </button>
-                    )}
-                </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {!isList && <StatusBadge status={order.orderStatus} size={isMini ? 'xs' : 'sm'} />}
+                        {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (order.orderStatus !== 'ready' || userRole === 'admin') && (userRole === 'kitchen' || userRole === 'admin') && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onCancel(order); }}
+                                className="p-1 hover:bg-red-500/10 rounded-lg text-red-500 transition-all"
+                                title="Cancel entire order"
+                            >
+                                <XCircle size={isMini ? 12 : 15} />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                <div className={`flex flex-wrap items-center gap-2.5 mt-2.5 text-[9px] text-inherit ${isCompact ? 'flex-col items-start gap-1' : ''}`}>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--theme-bg-hover)] rounded-lg border border-current/20 shadow-sm">
-                        <span className="opacity-60"><Utensils size={isMini ? 8 : 10} /></span>
-                        <span className="font-black uppercase tracking-tight">
+                <div className={`flex flex-wrap items-center gap-2 mt-2 ${isCompact ? 'flex-col items-start gap-1' : ''}`}>
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-white/40 rounded-lg border border-black/10 shadow-sm">
+                        <span className="text-gray-600"><Utensils size={isMini ? 9 : 11} /></span>
+                        <span className={`font-black text-gray-900 uppercase tracking-tight ${isMini ? 'text-[9px]' : 'text-[10px]'}`}>
                             {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
                         </span>
                     </div>
-                    <span className={`inline-flex items-center gap-1 font-mono tracking-tighter ${urgency ? 'text-red-400 font-bold bg-red-400/10 px-1.5 py-0.5 rounded-md' : 'opacity-40'} ${isMini ? 'hidden sm:flex' : ''}`}>
+                    <span className={`inline-flex items-center gap-1 font-mono tracking-tight ${isMini ? 'text-[8px]' : 'text-[10px]'} ${urgency ? 'text-red-600 font-bold bg-red-100 px-1.5 py-0.5 rounded-md' : 'text-gray-500 opacity-60'} ${isMini ? 'hidden sm:flex' : ''}`}>
                         <Clock size={isMini ? 8 : 10} />
                         {elapsed}
                     </span>
+                    {/* Tap hint — inline, no overlap */}
+                    {!isList && !isCompact && (
+                        <span className="sm:hidden text-[8px] font-bold text-gray-400 opacity-50 uppercase tracking-wider ml-auto flex items-center gap-0.5">
+                            tap · details
+                        </span>
+                    )}
                 </div>
             </div>
 
             {/* Items List */}
-            <div className={`flex-1 overflow-y-auto custom-scrollbar ${isList ? 'p-0 px-3 h-full flex flex-wrap items-center gap-2' : (isMini ? 'p-1.5 space-y-1 max-h-[120px]' : 'p-2.5 space-y-1.5 max-h-[180px]')}`}>
+            <div className={`flex-1 overflow-y-auto custom-scrollbar ${isList ? 'p-0 px-3 h-full flex flex-wrap items-center gap-2' : (isMini ? 'p-2 space-y-1 max-h-[120px]' : 'p-3 space-y-2 max-h-[200px]')}`}>
                 {order.items.map(item => {
                     const status = item.status?.toUpperCase() || 'PENDING';
                     const isCancelled = status === 'CANCELLED';
                     const isItemReady = status === 'READY';
-                    // Item is "new add" if it's PENDING and was added 30s+ after the order was created
                     const isNewAdd = status === 'PENDING' &&
                         (new Date(item.createdAt) - new Date(order.createdAt)) > 30000;
 
@@ -126,7 +135,6 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                         status === 'ACCEPTED'  ? 'PREPARING' :
                         status === 'PREPARING' ? 'READY'     : 'PENDING';
 
-                    // Cancel is only allowed for PENDING items — locked items (READY/PREPARING) stay untouched
                     const canCancelThisItem =
                         !isCancelled && status === 'PENDING' &&
                         (userRole === 'kitchen' || userRole === 'admin');
@@ -135,48 +143,40 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                         <div key={item._id} className={`${isList ? 'inline-flex items-center' : 'flex flex-col gap-0.5'} group`}>
                             <div className="flex items-center justify-between gap-1.5 w-full">
                                 <div
-                                    className={`flex items-start gap-1.5 min-w-0 flex-1 cursor-pointer hover:opacity-80 transition-opacity ${isCancelled ? 'cursor-not-allowed opacity-50' : ''}`}
+                                    className={`flex items-start gap-2 min-w-0 flex-1 cursor-pointer hover:opacity-80 transition-opacity ${isCancelled ? 'cursor-not-allowed opacity-50' : ''}`}
                                     onClick={() => !isCancelled && status !== 'READY' && onUpdateItemStatus(order._id, item._id, nextStatus)}
                                 >
                                     <div className={`
-                                        rounded-md flex-shrink-0
-                                        flex items-center justify-center font-bold transition-all
-                                        ${isMini ? 'w-3.5 h-3.5 text-[7px]' : (isCompact ? 'w-4 h-4 text-[8px]' : 'w-5 h-5 text-[10px]')}
+                                        rounded-md flex-shrink-0 flex items-center justify-center font-bold transition-all
+                                        ${isMini ? 'w-4 h-4 text-[8px]' : (isCompact ? 'w-5 h-5 text-[9px]' : 'w-6 h-6 text-[11px]')}
                                         ${status === 'READY'     ? 'bg-[var(--status-ready)] text-white shadow-sm' :
                                           status === 'PREPARING' ? 'bg-[var(--status-preparing)] text-white shadow-sm' :
                                           status === 'ACCEPTED'  ? 'bg-[var(--status-accepted)] text-white shadow-sm' :
-                                          isCancelled ? 'bg-red-500/20 text-red-400' :
+                                          isCancelled ? 'bg-red-500/20 text-red-500' :
                                           isNewAdd ? 'bg-orange-500 text-white shadow-sm animate-pulse' :
-                                          'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)]'}
+                                          'bg-white/50 text-gray-700 border border-black/10'}
                                     `}>
                                         {item.quantity}
                                     </div>
                                     <div className="min-w-0 text-left">
                                         <div className="flex items-center gap-1 flex-wrap">
-                                            <p className={`font-semibold leading-tight transition-colors ${isMini ? 'text-[9px]' : (isCompact ? 'text-[10px]' : 'text-xs')} ${
-                                                isItemReady  ? 'text-[var(--status-ready)] opacity-100' :
-                                                isCancelled  ? 'text-red-500/50 line-through italic' :
-                                                'text-inherit'
+                                            <p className={`font-bold leading-tight transition-colors ${isMini ? 'text-[10px]' : (isCompact ? 'text-[11px]' : 'text-xs')} ${
+                                                isItemReady ? 'text-[var(--status-ready)]' :
+                                                isCancelled ? 'text-red-400 line-through italic' :
+                                                'text-gray-900'
                                             }`}>
                                                 {item.name}
                                             </p>
-                                            {/* NEW badge — only on freshly added items, hidden in mini view */}
                                             {isNewAdd && !isMini && (
-                                                <span className="bg-orange-500 text-white text-[7px] font-black px-1 py-px rounded uppercase tracking-widest leading-none">
-                                                    NEW
-                                                </span>
+                                                <span className="bg-orange-500 text-white text-[7px] font-black px-1.5 py-px rounded uppercase tracking-widest leading-none">NEW</span>
                                             )}
-                                            {/* DONE badge — item already finished, locked */}
                                             {isItemReady && !isMini && (
-                                                <span className="bg-[var(--status-ready-bg)] text-[var(--status-ready)] text-[7px] font-black px-1 py-px rounded uppercase tracking-widest leading-none">
-                                                    Done
-                                                </span>
+                                                <span className="bg-[var(--status-ready-bg)] text-[var(--status-ready)] text-[7px] font-black px-1.5 py-px rounded uppercase tracking-widest leading-none">Done</span>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Cancel only for PENDING items — READY/PREPARING items are permanently locked */}
                                 {canCancelThisItem && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onCancelItem(order, item); }}
@@ -192,19 +192,14 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                 })}
             </div>
 
-            {/* Click Indicator for Mobile */}
-            <div className="absolute top-2 right-2 sm:hidden text-[7px] font-black uppercase text-[var(--theme-text-muted)] opacity-30 flex items-center gap-1">
-                Tap for Details <Plus size={8} />
-            </div>
-
             {/* Action Buttons */}
             {(userRole === 'kitchen' || userRole === 'admin') && (
-                <div className={`border-l border-[var(--theme-border)] shrink-0 ${isList ? 'h-full border-t-0 p-2 w-28 flex flex-col justify-center' : (isMini ? 'p-1.5 border-t flex gap-1' : 'p-2.5 border-t flex gap-2 text-left')}`}>
+                <div className={`shrink-0 ${isList ? 'h-full border-l border-black/10 p-2 w-28 flex flex-col justify-center' : (isMini ? 'p-2 border-t border-black/8 flex gap-1' : 'p-3 border-t border-black/8 flex gap-2')}`}>
                     {order.orderStatus === 'pending' && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, 'accepted'); }}
                             style={{ backgroundColor: 'var(--status-accepted)' }}
-                            className={`w-full py-2 sm:py-1.5 text-white text-[10px] sm:text-[9px] font-black rounded-lg sm:rounded shadow-md transition-all active:scale-95 brightness-90 hover:brightness-100 ${isList ? 'h-8' : ''}`}
+                            className={`w-full py-2 text-white text-[11px] font-black rounded-xl shadow-md transition-all active:scale-95 hover:brightness-110 ${isList ? 'h-8' : ''}`}
                         >
                             Accept
                         </button>
@@ -212,10 +207,8 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                     {(order.orderStatus === 'accepted' || order.orderStatus === 'preparing') && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, order.orderStatus === 'accepted' ? 'preparing' : 'ready'); }}
-                            style={{ 
-                                backgroundColor: order.orderStatus === 'accepted' ? 'var(--status-preparing)' : 'var(--status-ready)' 
-                            }}
-                            className={`w-full py-2 sm:py-1.5 text-white text-[10px] sm:text-[9px] font-black rounded-lg sm:rounded shadow-md transition-all active:scale-95 brightness-90 hover:brightness-100 ${isList ? 'h-8' : ''}`}
+                            style={{ backgroundColor: order.orderStatus === 'accepted' ? 'var(--status-preparing)' : 'var(--status-ready)' }}
+                            className={`w-full py-2 text-white text-[11px] font-black rounded-xl shadow-md transition-all active:scale-95 hover:brightness-110 ${isList ? 'h-8' : ''}`}
                         >
                             {order.orderStatus === 'accepted' ? (isMini ? 'Go' : 'Start') : 'Ready ✓'}
                         </button>
@@ -236,6 +229,7 @@ const KitchenDashboard = () => {
     const [lastRefresh, setLastRefresh] = useState(new Date());
     const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, item: null });
     const [detailsModal, setDetailsModal] = useState({ isOpen: false, order: null });
+    const [isCardView, setIsCardView] = useState(() => localStorage.getItem('kitchenCardView') !== 'false');
     const { user, socket, socketConnected, settings } = useContext(AuthContext);
 
     const fetchOrders = useCallback(async () => {
@@ -392,21 +386,34 @@ const KitchenDashboard = () => {
 
                 {/* ── Header ─────────────────────────────────────────────── */}
                 <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
-                    <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
-                        {['all', 'dine-in', 'takeaway'].map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setFilterType(t)}
-                                className={`
-                                    flex-1 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                    ${filterType === t 
-                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' 
-                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
-                                `}
-                            >
-                                {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
-                            </button>
-                        ))}
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] flex-1">
+                            {['all', 'dine-in', 'takeaway'].map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => setFilterType(t)}
+                                    className={`
+                                        flex-1 px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all
+                                        ${filterType === t
+                                            ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
+                                            : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                                    `}
+                                >
+                                    {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            onClick={() => { const v = !isCardView; setIsCardView(v); localStorage.setItem('kitchenCardView', v); }}
+                            className={`relative flex items-center gap-2 pl-1.5 pr-4 h-10 rounded-full border transition-all duration-300 shadow-sm active:scale-95 shrink-0 ${isCardView ? 'bg-blue-500/10 border-blue-500/25' : 'bg-orange-500/10 border-orange-500/25'}`}
+                        >
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${isCardView ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'}`}>
+                                {isCardView ? <Grid size={12} strokeWidth={2.5} /> : <List size={12} strokeWidth={2.5} />}
+                            </div>
+                            <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isCardView ? 'text-blue-600' : 'text-orange-500'}`}>
+                                {isCardView ? 'Card' : 'List'}
+                            </span>
+                        </button>
                     </div>
 
                     <div className="grid grid-cols-4 gap-2">
@@ -421,10 +428,10 @@ const KitchenDashboard = () => {
                                 onClick={() => setStatusFilter(f => f === key ? null : key)}
                                 className={`rounded-xl p-2 sm:p-3 flex flex-col items-center justify-center transition-all border active:scale-95 ${statusFilter === key ? activeBg : `bg-[var(--theme-bg-card)] border-[var(--theme-border)] ${hover}`}`}
                             >
-                                <p className={`text-lg sm:text-2xl font-black tabular-nums ${statusFilter === key ? activeText : 'text-[var(--theme-text-main)]'}`}>{count}</p>
+                                <p className={`text-xl sm:text-3xl font-black tabular-nums ${statusFilter === key ? activeText : 'text-[var(--theme-text-main)]'}`}>{count}</p>
                                 <div className="flex items-center gap-1 mt-1">
                                     <span className={`w-1 h-1 rounded-full ${dot}`} />
-                                    <p className={`text-[8px] sm:text-[10px] uppercase font-bold tracking-tighter sm:tracking-wider ${statusFilter === key ? activeText : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                                    <p className={`text-[9px] sm:text-[11px] uppercase font-bold tracking-tighter sm:tracking-wider ${statusFilter === key ? activeText : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
                                 </div>
                             </button>
                         ))}
@@ -462,15 +469,15 @@ const KitchenDashboard = () => {
                 </div>
             ) : (
                 <div className={`grid gap-2 sm:gap-4 ${
+                    !isCardView ? 'grid-cols-1' :
                     settings.dashboardView === 'one' ? 'grid-cols-1' :
                     settings.dashboardView === 'two' ? 'grid-cols-1 sm:grid-cols-2' :
                     'grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
                 }`}>
                     {displayOrders.map(order => (
-                        <div 
+                        <div
                             key={order._id}
                             onClick={(e) => {
-                                // Don't open if clicking action elements or small toggles
                                 if (e.target.closest('button')) return;
                                 setDetailsModal({ isOpen: true, order: order });
                             }}
@@ -483,7 +490,7 @@ const KitchenDashboard = () => {
                                 onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
                                 onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
                                 userRole={user.role}
-                                viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
+                                viewType={!isCardView ? 'list' : settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
                             />
                         </div>
                     ))}

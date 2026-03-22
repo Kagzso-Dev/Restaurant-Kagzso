@@ -44,10 +44,10 @@ const OrderCard = memo(({ order, formatPrice, onCancel, viewType = 'normal' }) =
                     <div className="flex flex-col text-left">
                         <h3 className={`font-black text-inherit tracking-tighter ${isMini ? 'text-[10px]' : (isList ? 'text-sm' : 'text-xs')}`}>{order.orderNumber}</h3>
                          <div className={`mt-1 flex items-center gap-1.5`}>
-                            <span className={`inline-flex items-center justify-center min-w-[28px] h-6 font-black text-inherit px-2 bg-[var(--theme-bg-hover)] rounded-lg border border-current/20 shadow-sm ${isMini || isList ? 'text-[8px]' : 'text-[10px]'}`}>
+                            <span className={`inline-flex items-center justify-center min-w-[32px] h-7 font-black text-inherit px-2.5 bg-[var(--theme-bg-hover)] rounded-lg border border-current/20 shadow-sm ${isMini || isList ? 'text-[9px]' : 'text-xs'}`}>
                                 {order.orderType === 'dine-in'
-                                    ? `DI T${order.tableId?.number || order.tableId || '?'}`
-                                    : `TA ${String(order.tokenNumber || 0).padStart(3, '0')}`}
+                                    ? `Table ${order.tableId?.number || order.tableId || '?'}`
+                                    : `Token ${order.tokenNumber || '?'}`}
                             </span>
                             {!isList && (
                                 <span className={`text-[8px] font-black uppercase opacity-60 tracking-wider`}>
@@ -79,35 +79,51 @@ const OrderCard = memo(({ order, formatPrice, onCancel, viewType = 'normal' }) =
     );
 });
 
-/* ── Production Token Card ───────────────────────────────────────────────── */
+/* ── Production Card ─────────────────────────────────────────────────────── */
 const TokenSquare = memo(({ order, onClick }) => {
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
-    const sColor = 
-        order.orderStatus === 'pending' ? 'bg-orange-500/10 border-orange-500 text-orange-600' :
-        order.orderStatus === 'accepted' ? 'bg-blue-600/10 border-blue-600 text-blue-600' :
+    const sColor =
+        order.orderStatus === 'pending'   ? 'bg-orange-500/10 border-orange-500 text-orange-600' :
+        order.orderStatus === 'accepted'  ? 'bg-blue-600/10 border-blue-600 text-blue-600' :
         order.orderStatus === 'preparing' ? 'bg-indigo-600/10 border-indigo-600 text-indigo-600' :
-        order.orderStatus === 'ready' ? 'bg-emerald-600/10 border-emerald-500 text-emerald-600' :
+        order.orderStatus === 'ready'     ? 'bg-emerald-600/10 border-emerald-500 text-emerald-600' :
         'bg-gray-500/10 border-gray-500 text-gray-500';
+
+    const itemCount = order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').length || 0;
+    const time = order.createdAt
+        ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '';
 
     return (
         <button
             onClick={onClick}
-            className={`
-                aspect-square rounded-3xl border-2 flex flex-col items-center justify-center p-3 transition-all active:scale-90 shadow-sm hover:shadow-md group relative overflow-hidden
-                ${sColor} ${isReady ? 'animate-pulse' : ''}
-            `}
+            className={`rounded-2xl border-2 flex flex-col items-center justify-between p-2.5 pt-3 pb-2.5 gap-1.5 transition-all active:scale-90 shadow-sm hover:shadow-md group relative overflow-hidden min-h-[110px]
+                ${sColor} ${isReady ? 'animate-pulse' : ''}`}
         >
-            <div className="absolute top-0 right-0 w-12 h-12 bg-current opacity-[0.03] -mr-4 -mt-4 rounded-full" />
-            <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-1 tracking-widest">
+            {/* order number top-left */}
+            <span className="absolute top-1.5 left-2.5 text-[8px] font-black opacity-25 tracking-tight">{order.orderNumber}</span>
+
+            {/* type label */}
+            <span className="text-[8px] uppercase font-black opacity-40 tracking-widest mt-2">
                 {order.orderType === 'dine-in' ? 'Dine In' : 'Takeaway'}
             </span>
-            <span className="text-lg sm:text-2xl font-black leading-none group-hover:scale-110 transition-transform tracking-tight">
+
+            {/* main identifier */}
+            <span className="text-sm sm:text-base font-black leading-none group-hover:scale-105 transition-transform tracking-tight text-center">
                 {order.orderType === 'dine-in'
-                    ? `DI T${order.tableId?.number || order.tableId || '?'}`
-                    : `TA ${String(order.tokenNumber || 0).padStart(3, '0')}`}
+                    ? `Table ${order.tableId?.number || order.tableId || '?'}`
+                    : `Token ${order.tokenNumber || '?'}`}
             </span>
-            <div className={`mt-3 text-[8px] font-black uppercase tracking-tighter px-2.5 py-1 rounded-lg border border-current/30 bg-white/5`}>
+
+            {/* status badge */}
+            <div className="text-[7px] font-black uppercase tracking-tight px-2 py-0.5 rounded-md border border-current/30 bg-white/5">
                 {order.orderStatus}
+            </div>
+
+            {/* footer: items + time */}
+            <div className="flex items-center justify-between w-full mt-0.5 opacity-40">
+                <span className="text-[7px] font-bold">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
+                <span className="text-[7px] font-bold">{time}</span>
             </div>
         </button>
     );
@@ -309,8 +325,12 @@ const WaiterDashboard = () => {
 
                     <div className="flex items-center gap-3 lg:gap-5 flex-1 min-w-0 pr-4 sm:pr-6 border-r border-[var(--theme-border)]">
                         <div className="min-w-0">
-                            <h1 className="text-sm sm:text-lg font-bold text-[var(--theme-text-main)] tracking-tight truncate leading-tight">Waiter Console</h1>
-                            <p className="text-[9px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest mt-0.5 hidden sm:block">Monitoring</p>
+                            <h1 className="text-sm sm:text-lg font-bold text-[var(--theme-text-main)] tracking-tight truncate leading-tight">
+                                {user?.role === 'cashier' ? 'Token Monitoring' : 'Waiter Console'}
+                            </h1>
+                            <p className="text-[9px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest mt-0.5 hidden sm:block">
+                                {user?.role === 'cashier' ? 'Live View' : 'Monitoring'}
+                            </p>
                         </div>
                     </div>
 
@@ -332,7 +352,7 @@ const WaiterDashboard = () => {
                         <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
                             isProductionMode ? 'text-blue-600' : 'text-orange-500'
                         }`}>
-                            {isProductionMode ? 'Token' : 'List'}
+                            {isProductionMode ? 'Card' : 'List'}
                         </span>
                     </button>
 
@@ -342,7 +362,7 @@ const WaiterDashboard = () => {
 
 
                 {/* Action Buttons */}
-                <div className="flex flex-row lg:flex-nowrap flex-wrap justify-end gap-2 shrink-0">
+                <div className="flex flex-row flex-wrap justify-end gap-2 w-full lg:w-auto">
 
                     {settings?.tableMapEnabled !== false && (
                         <button
@@ -357,7 +377,7 @@ const WaiterDashboard = () => {
                             <span className="truncate">Tables</span>
                         </button>
                     )}
-                    {settings?.dineInEnabled !== false && (
+                    {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
                         <button
                             onClick={() => navigate('/dine-in')}
                             className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-orange-500/20 active:scale-95 min-h-[44px]"
@@ -366,7 +386,7 @@ const WaiterDashboard = () => {
                             <span className="truncate">Dine In</span>
                         </button>
                     )}
-                    {settings?.takeawayEnabled !== false && (
+                    {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
                         <button
                             onClick={() => navigate('/take-away')}
                             className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-blue-600/20 active:scale-95 min-h-[44px]"

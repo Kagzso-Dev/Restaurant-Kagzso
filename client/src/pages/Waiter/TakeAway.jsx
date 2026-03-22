@@ -219,7 +219,15 @@ const TakeAway = () => {
                                             : 'flex flex-col gap-2.5'
                                 }>
                                     {filteredItems.map(item => (
-                                        <FoodItem key={item._id} item={item} viewMode={viewMode} formatPrice={formatPrice} onAdd={addToCart} cartQty={cart.find(i => i._id === item._id)?.quantity || 0} />
+                                        <FoodItem
+                                            key={item._id}
+                                            item={item}
+                                            viewMode={viewMode}
+                                            formatPrice={formatPrice}
+                                            onAdd={addToCart}
+                                            onRemove={(id) => updateQuantity(id, -1)}
+                                            cartQty={cart.find(i => i._id === item._id)?.quantity || 0}
+                                        />
                                     ))}
                                 </div>
                             )}

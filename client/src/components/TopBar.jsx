@@ -88,14 +88,15 @@ const TopBar = memo(({ onMenuClick }) => {
         const last = segments[segments.length - 1];
         const titles = {
             admin: 'Dashboard', kitchen: 'Kitchen Display', cashier: 'Cashier POS',
-            waiter: 'Waiter Mode', menu: 'Menu Items', tables: 'Table Map',
+            waiter: user?.role === 'cashier' ? 'Token View' : 'Waiter Mode',
+            menu: 'Menu Items', tables: 'Table Map',
             categories: 'Categories', orders: 'Order History', settings: 'Settings',
             'new-order': 'New Order',
             'working-process': 'Working Process', 'kitchen-view': 'Kitchen View',
             'dine-in': 'Dine-In Order', 'take-away': 'Take Away Order',
         };
         return titles[last] || (last.charAt(0).toUpperCase() + last.slice(1));
-    }, [location.pathname]);
+    }, [location.pathname, user?.role]);
 
     const isKitchenView = location.pathname.includes('kitchen');
 
