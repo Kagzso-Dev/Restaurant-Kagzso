@@ -415,13 +415,13 @@ const CashierDashboard = () => {
                                     <button
                                         key={t}
                                         onClick={() => setFilterType(t)}
-                                        className={`flex-1 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                                        className={`flex-1 px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide whitespace-nowrap transition-all ${
                                             filterType === t
                                                 ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
                                                 : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
                                         }`}
                                     >
-                                        {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
+                                        {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
                                     </button>
                                 ))}
                             </div>
@@ -445,7 +445,7 @@ const CashierDashboard = () => {
                                             selected={selectedOrder?._id === order._id}
                                             onClick={() => handleSelect(order)}
                                             formatPrice={formatPrice}
-                                            viewType={!isCardView ? 'list' : settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'compact'}
+                                            viewType={isCardView ? 'normal' : 'list'}
                                         />
                                     ))
                             )}

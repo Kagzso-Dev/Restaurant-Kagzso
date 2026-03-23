@@ -1,29 +1,20 @@
-import { useState, useEffect, useContext, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useContext, useCallback, memo } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api';
-import { Utensils, Package, Grid, List, ShoppingBag, Clock, XCircle, History, ClipboardList, WifiOff } from 'lucide-react';
+import { Utensils, Package, Grid, List, ShoppingBag, Clock, History, WifiOff } from 'lucide-react';
 import TableGrid from '../../components/TableGrid';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
 
-/* ── Status colors ───────────────────────────────────────────────────────── */
-const statusStyle = {
-    ready: { bar: 'bg-[var(--status-ready)]', badge: 'bg-[var(--status-ready-bg)] text-[var(--status-ready)] border-[var(--status-ready-border)]' },
-    preparing: { bar: 'bg-[var(--status-preparing)]', badge: 'bg-[var(--status-preparing-bg)] text-[var(--status-preparing)] border-[var(--status-preparing-border)]' },
-    pending: { bar: 'bg-[var(--status-pending)]', badge: 'bg-[var(--status-pending-bg)] text-[var(--status-pending)] border-[var(--status-pending-border)]' },
-    accepted: { bar: 'bg-[var(--status-accepted)]', badge: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted)] border-[var(--status-accepted-border)]' },
-    cancelled: { bar: 'bg-red-500', badge: 'bg-red-500/15 text-red-500 border-red-500/25' },
-};
 
 /* ── Order Card ──────────────────────────────────────────────────────────── */
-const OrderCard = memo(({ order, formatPrice, onCancel, viewType = 'normal' }) => {
+const OrderCard = memo(({ order, formatPrice, viewType = 'normal' }) => {
     const isCompact = viewType === 'compact' || viewType === 'mini';
     const isMini = viewType === 'mini';
     const isList = viewType === 'list';
-    const s = statusStyle[order.orderStatus] || statusStyle.pending;
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-main)]';
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
 
@@ -334,30 +325,6 @@ const WaiterDashboard = () => {
                         </div>
                     </div>
 
-                    {/* ── SLEEK TOGGLE SWITCH ────────────────────────────── */}
-                    <button
-                        onClick={() => setIsProductionMode(!isProductionMode)}
-                        className={`relative flex items-center gap-2 pl-1.5 pr-4 h-9 rounded-full border transition-all duration-300 shadow-sm active:scale-95 ${
-                            isProductionMode
-                                ? 'bg-blue-500/10 border-blue-500/25'
-                                : 'bg-orange-500/10 border-orange-500/25'
-                        }`}
-                    >
-                        {/* sliding thumb */}
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${
-                            isProductionMode ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'
-                        }`}>
-                            {isProductionMode ? <Grid size={12} strokeWidth={2.5} /> : <List size={12} strokeWidth={2.5} />}
-                        </div>
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
-                            isProductionMode ? 'text-blue-600' : 'text-orange-500'
-                        }`}>
-                            {isProductionMode ? 'Card' : 'List'}
-                        </span>
-                    </button>
-
-
-
                 </div>
 
 
@@ -399,23 +366,42 @@ const WaiterDashboard = () => {
             </div>
 
             {/* ── Tabs & Counters ─────────────────────────────────────── */}
-            <div className="flex flex-col gap-4">
-                {/* ALL / DINE IN / TAKEAWAY filter */}
-                <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
-                    {['all', 'dine-in', 'takeaway'].map(t => (
-                        <button
-                            key={t}
-                            onClick={() => setFilterType(t)}
-                            className={`
-                                flex-1 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                ${filterType === t
-                                    ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
-                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
-                            `}
-                        >
-                            {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
-                        </button>
-                    ))}
+            <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
+                {/* ALL / DINE-IN / TAKEAWAY filter + toggle */}
+                <div className="flex items-center gap-2 justify-between">
+                    <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-fit">
+                        {['all', 'dine-in', 'takeaway'].map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`
+                                    px-2 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wide transition-all whitespace-nowrap
+                                    ${filterType === t
+                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                                `}
+                            >
+                                {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        onClick={() => setIsProductionMode(!isProductionMode)}
+                        className={`relative flex items-center gap-2 pl-1.5 pr-4 h-10 rounded-full border transition-all duration-300 shadow-sm active:scale-95 shrink-0 ${
+                            isProductionMode ? 'bg-blue-500/10 border-blue-500/25' : 'bg-orange-500/10 border-orange-500/25'
+                        }`}
+                    >
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${
+                            isProductionMode ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'
+                        }`}>
+                            {isProductionMode ? <Grid size={12} strokeWidth={2.5} /> : <List size={12} strokeWidth={2.5} />}
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
+                            isProductionMode ? 'text-blue-600' : 'text-orange-500'
+                        }`}>
+                            {isProductionMode ? 'Card' : 'List'}
+                        </span>
+                    </button>
                 </div>
 
 
@@ -481,11 +467,10 @@ const WaiterDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className={`grid gap-2 sm:gap-3 ${
-                    isProductionMode ? 'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10' :
-                    (settings.dashboardView === 'one' ? 'grid-cols-1' :
-                    settings.dashboardView === 'two' ? 'grid-cols-1 md:grid-cols-2' :
-                    'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6')
+                <div className={`grid gap-1 ${
+                    isProductionMode
+                        ? 'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10'
+                        : 'grid-cols-1'
                 }`}>
                     {filteredOrders.map(order => (
                         isProductionMode ? (
@@ -500,7 +485,7 @@ const WaiterDashboard = () => {
                                     order={order}
                                     formatPrice={formatPrice}
                                     onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
-                                    viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
+                                    viewType="list"
                                 />
                             </div>
                         )
