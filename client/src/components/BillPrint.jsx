@@ -6,7 +6,7 @@
 
 export const printBill = (order, formatPrice, settings = {}) => {
     const isPaid = order.paymentStatus === 'paid';
-    const restaurantName = 'KAGZSO';
+    const restaurantName = settings.restaurantName || 'KAGZSO';
     const address = settings.address || '';
     const gstNumber = settings.gstNumber || '';
 

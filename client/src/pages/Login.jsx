@@ -61,7 +61,7 @@ const Login = () => {
                                 <img src={logoImg} alt="KAGZSO" className="w-full h-full object-contain" />
                             </div>
                         </div>
-                        <h1 className="text-xl sm:text-3xl font-black text-[var(--theme-text-main)] tracking-widest uppercase">KAGZSO</h1>
+                        <h1 className="text-xl sm:text-3xl font-black text-[var(--theme-text-main)] tracking-widest uppercase">{settings?.restaurantName || 'KAGZSO'}</h1>
                     </div>
                     <p className="text-[10px] sm:text-sm text-[var(--theme-text-muted)] font-medium tracking-wider uppercase">Smart POS & Kitchen Management</p>
                     <div className="mt-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--theme-bg-muted)] border border-[var(--theme-border)]">

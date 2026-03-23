@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, useCallback, memo } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import api from '../../api';
 import logoImg from '../../assets/logo.png';
 import PaymentModal from '../../components/PaymentModal';
@@ -8,30 +8,10 @@ import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
 import { printBill } from '../../components/BillPrint';
 import {
-    Printer, Banknote, ChefHat, CheckCircle,
-    ShoppingBag, RefreshCw, ArrowLeft, X,
-    CreditCard, QrCode, Smartphone, Clock, AlertTriangle, Grid, List
+    Printer, Banknote, CheckCircle,
+    ShoppingBag, RefreshCw, ArrowLeft,
+    Clock, AlertTriangle, Grid, List
 } from 'lucide-react';
-
-/* ── Order status badge ──────────────────────────────────────────────────── */
-const statusStyle = {
-    ready: 'text-[var(--status-ready)] bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]',
-    preparing: 'text-[var(--status-preparing)] bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]',
-    accepted: 'text-[var(--status-accepted)] bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',
-    pending: 'text-[var(--status-pending)] bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',
-    completed: 'text-[var(--theme-text-muted)] bg-[var(--theme-bg-hover)] border-[var(--theme-border)]',
-};
-
-/* ── Payment method icon helper ──────────────────────────────────────────── */
-const paymentMethodIcon = (method) => {
-    switch (method) {
-        case 'cash': return <Banknote size={12} />;
-        case 'qr': return <QrCode size={12} />;
-        case 'upi': return <Smartphone size={12} />;
-        case 'credit_card': return <CreditCard size={12} />;
-        default: return null;
-    }
-};
 
 /* ── Order List Item ──────────────────────────────────────────────────────── */
 const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'normal' }) => {
@@ -125,7 +105,7 @@ const Receipt = ({ order, formatPrice, settings }) => (
 
         {/* Header */}
         <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4 relative z-10">
-            <h1 className="text-2xl font-extrabold tracking-tight">KAGZSO</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight">{settings?.restaurantName || 'KAGZSO'}</h1>
             <p className="text-xs font-black text-black uppercase tracking-widest mt-0.5">Tax Invoice</p>
             <p className="text-[10px] text-gray-400 mt-1">{settings?.address || 'Restaurant Address'}</p>
             {settings?.gstNumber && <p className="text-[10px] text-gray-400">GSTIN: {settings.gstNumber}</p>}
@@ -203,8 +183,7 @@ const CashierDashboard = () => {
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [filterType, setFilterType] = useState('all'); // 'all' | 'dine-in' | 'takeaway'
     const [isCardView, setIsCardView] = useState(() => localStorage.getItem('cashierCardView') !== 'false');
-    const { user, socket, socketConnected, formatPrice, settings } = useContext(AuthContext);
-    const navigate = useNavigate();
+    const { user, socket, formatPrice, settings } = useContext(AuthContext);
     const location = useLocation();
     const isHistoryMode = location.pathname.includes('/history');
 
@@ -317,7 +296,7 @@ const CashierDashboard = () => {
     };
 
     /* ── Payment Success Handler ──────────────────────────────────── */
-    const handlePaymentSuccess = (data) => {
+    const handlePaymentSuccess = () => {
         setShowPaymentModal(false);
         setPaymentSuccess(true);
         setOrders(prev => prev.filter(o => o._id !== selectedOrder._id));
