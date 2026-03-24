@@ -7,63 +7,152 @@ import TableGrid from '../../components/TableGrid';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
-import { tokenColors } from '../../utils/tokenColors';
 
+/* ── Elapsed time hook ───────────────────────────────────────────────────── */
+const useElapsed = (createdAt) => {
+    const [elapsed, setElapsed] = useState('');
+    useEffect(() => {
+        const calc = () => {
+            const diff = Math.floor((Date.now() - new Date(createdAt)) / 1000);
+            if (diff < 60) { setElapsed(`${diff}s`); return; }
+            const m = Math.floor(diff / 60);
+            if (m < 60) { setElapsed(`${m}m ${diff % 60}s`); return; }
+            setElapsed(`${Math.floor(m / 60)}h ${m % 60}m`);
+        };
+        calc();
+        const id = setInterval(calc, 1000);
+        return () => clearInterval(id);
+    }, [createdAt]);
+    return elapsed;
+};
 
-/* ── Order Card ──────────────────────────────────────────────────────────── */
-const OrderCard = memo(({ order, formatPrice, viewType = 'normal' }) => {
-    const isCompact = viewType === 'compact' || viewType === 'mini';
-    const isMini = viewType === 'mini';
-    const isList = viewType === 'list';
-    const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-main)]';
+/* ── KOT-style Box Card (Waiter) ─────────────────────────────────────────── */
+const WaiterBoxCard = memo(({ order, formatPrice }) => {
+    const elapsed = useElapsed(order.createdAt);
+    const urgency = (Date.now() - new Date(order.createdAt)) > 600000;
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
+
+    const bgColor =
+        order.orderStatus === 'pending'   ? 'bg-orange-50 border-orange-200' :
+        order.orderStatus === 'accepted'  ? 'bg-blue-50 border-blue-200' :
+        order.orderStatus === 'preparing' ? 'bg-indigo-50 border-indigo-200' :
+        order.orderStatus === 'ready'     ? 'bg-emerald-50 border-emerald-200' :
+        'bg-white border-gray-200';
+
+    const borderAccent =
+        order.orderStatus === 'pending'   ? 'border-l-orange-500' :
+        order.orderStatus === 'accepted'  ? 'border-l-blue-500' :
+        order.orderStatus === 'preparing' ? 'border-l-indigo-500' :
+        order.orderStatus === 'ready'     ? 'border-l-emerald-500' :
+        'border-l-gray-400';
+
+    const visibleItems = order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED') || [];
 
     return (
         <div className={`
-            ${tColor} ${isReady ? 'animate-pulse' : ''}
-            rounded-xl border-l-[6px] sm:border-l-[8px] shadow-sm transition-all duration-200 flex transition-all
-            ${isList ? 'p-3 items-center border-l-8' : (isMini ? 'p-2 border-l-[4px]' : (isCompact ? 'p-2.5 sm:p-3 border-l-[6px]' : 'p-3 sm:p-4'))}
-            ${order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
-(order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
- (order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
-  (order.orderStatus === 'ready' ? 'border-l-[var(--status-ready)]' :
-   'border-l-red-500')))}
-            hover:shadow-md active:scale-95 group token-tap
+            relative flex flex-col rounded-xl border border-l-4 shadow-sm transition-all duration-200
+            hover:shadow-md active:scale-[0.98] cursor-pointer overflow-hidden h-full
+            ${bgColor} ${borderAccent} ${isReady ? 'animate-pulse' : ''}
         `}>
-            <div className={`flex flex-1 ${isList ? 'flex-row items-center justify-between gap-4 w-full' : 'flex-col'}`}>
-                <div className={`flex items-center gap-3 ${isList ? 'flex-1' : 'justify-between items-start mb-2'}`}>
-                    <div className="flex flex-col text-left">
-                        <h3 className={`font-black text-inherit tracking-tighter ${isMini ? 'text-[10px]' : (isList ? 'text-sm' : 'text-xs')}`}>{order.orderNumber}</h3>
-                         <div className={`mt-1 flex items-center gap-1.5`}>
-                            <span className={`inline-flex items-center justify-center min-w-[32px] h-7 font-black text-inherit px-2.5 bg-[var(--theme-bg-hover)] rounded-lg border border-current/20 shadow-sm ${isMini || isList ? 'text-[9px]' : 'text-xs'}`}>
-                                {order.orderType === 'dine-in'
-                                    ? `Table ${order.tableId?.number || order.tableId || '?'}`
-                                    : `Token ${order.tokenNumber || '?'}`}
-                            </span>
-                            {!isList && (
-                                <span className={`text-[8px] font-black uppercase opacity-60 tracking-wider`}>
-                                    {order.orderType}
-                                </span>
-                            )}
-                        </div>
+            {/* ── Header ── */}
+            <div className="px-2 pt-2.5 pb-2 border-b border-black/[0.04]">
+                <div className="flex items-center justify-between gap-1 mb-1">
+                    <h3 className="text-[13px] font-black text-gray-900 tracking-tight leading-none truncate pr-1">
+                        {order.orderNumber.replace('ORD-', '#')}
+                    </h3>
+                    <StatusBadge status={order.orderStatus} size="xs" />
+                </div>
+                
+                <div className="flex flex-col gap-1 mt-1.5">
+                    <div className="flex items-center justify-between gap-1">
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/60 border border-black/5 rounded-md text-[9px] font-black text-gray-700 shadow-sm truncate max-w-[50%]">
+                            <Utensils size={8} className="text-orange-500 shrink-0" />
+                            {order.orderType === 'dine-in'
+                                ? `T${order.tableId?.number || order.tableId || '?'}`
+                                : `TK${order.tokenNumber || '?'}`}
+                        </span>
+                        <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold shrink-0 ${urgency ? 'text-red-600 bg-red-100 px-1 py-0.5 rounded-md' : 'text-gray-400'}`}>
+                            <Clock size={8} />{elapsed.replace(' ', '')}
+                        </span>
                     </div>
                 </div>
+            </div>
 
-                {!isMini && !isCompact && !isList && (
-                    <p className={`text-inherit opacity-85 line-clamp-1 flex-1 text-left font-medium ${isList ? 'px-4' : 'text-[11px] mb-2'}`}>
-                        {order.items?.map(i => `${i.quantity} ${i.name}`).join(', ') || 'No items'}
-                    </p>
-                )}
+            {/* ── Items ── */}
+            <div className="flex-1 px-2 py-2 space-y-1 min-h-[60px] max-h-[120px] overflow-y-auto custom-scrollbar">
+                {visibleItems.map((item, i) => (
+                    <div key={i} className="flex items-start gap-1.5">
+                        <div className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center text-[9px] font-black bg-black/5 text-gray-600">
+                            {item.quantity}
+                        </div>
+                        <span className="flex-1 text-[10px] font-bold text-gray-800 leading-tight line-clamp-2">{item.name}</span>
+                    </div>
+                ))}
+            </div>
 
-                <div className={`flex items-center gap-4 ${isList ? 'shrink-0' : (isMini ? 'mt-1 pt-1 border-t border-white/5' : 'border-t border-white/10 mt-2 pt-2')}`}>
-                    <div className={`flex items-center gap-1 text-inherit opacity-50 font-bold uppercase ${isMini ? 'text-[6px]' : 'text-[8px]'}`}>
-                        <Clock size={isMini ? 8 : 10} />
-                        {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className={`font-black text-inherit ${isMini ? 'text-[10px]' : 'text-xs text-right'}`}>{formatPrice(order.finalAmount)}</span>
-                        {isList && <StatusBadge status={order.orderStatus} />}
-                    </div>
+            {/* ── Footer ── */}
+            <div className="px-2 py-2 border-t border-black/[0.04] bg-black/[0.02] mt-auto">
+                <div className="flex items-center justify-between gap-1">
+                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter shrink-0">
+                        {order.orderType === 'dine-in' ? 'DINE' : 'TAKE'}
+                    </span>
+                    <span className="text-[11px] font-black text-gray-900 tabular-nums">
+                        {formatPrice(order.finalAmount)}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+/* ── Order Card (List box style) ─────────────────────────────────────────── */
+const OrderCard = memo(({ order, formatPrice }) => {
+    const isReady = order.orderStatus?.toLowerCase() === 'ready';
+    const borderColor =
+        order.orderStatus === 'pending'   ? 'border-l-orange-500' :
+        order.orderStatus === 'accepted'  ? 'border-l-blue-500' :
+        order.orderStatus === 'preparing' ? 'border-l-indigo-500' :
+        order.orderStatus === 'ready'     ? 'border-l-emerald-500' :
+        'border-l-red-500';
+    const bgColor =
+        order.orderStatus === 'pending'   ? 'bg-orange-50 dark:bg-orange-500/5' :
+        order.orderStatus === 'accepted'  ? 'bg-blue-50 dark:bg-blue-500/5' :
+        order.orderStatus === 'preparing' ? 'bg-indigo-50 dark:bg-indigo-500/5' :
+        order.orderStatus === 'ready'     ? 'bg-emerald-50 dark:bg-emerald-500/5' :
+        'bg-[var(--theme-bg-card)]';
+
+    return (
+        <div className={`
+            ${bgColor} ${borderColor} ${isReady ? 'animate-pulse' : ''}
+            rounded-2xl border border-[var(--theme-border)] border-l-4 shadow-sm
+            hover:shadow-md active:scale-[0.99] transition-all cursor-pointer p-3.5
+        `}>
+            {/* Row 1: order number + table/token + price + status */}
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-black text-[var(--theme-text-main)] tracking-tight">{order.orderNumber}</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-white/60 dark:bg-white/10 border border-[var(--theme-border)] text-[10px] font-black text-[var(--theme-text-main)] whitespace-nowrap shadow-sm">
+                        {order.orderType === 'dine-in'
+                            ? `Table ${order.tableId?.number || order.tableId || '?'}`
+                            : `Token ${order.tokenNumber || '?'}`}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase opacity-40 tracking-wider whitespace-nowrap hidden sm:block">
+                        {order.orderType === 'dine-in' ? 'Dine-In' : 'Takeaway'}
+                    </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-sm font-black text-[var(--theme-text-main)]">{formatPrice(order.finalAmount)}</span>
+                    <StatusBadge status={order.orderStatus} />
+                </div>
+            </div>
+            {/* Row 2: items + time */}
+            <div className="flex items-center justify-between gap-3 mt-2">
+                <p className="text-[11px] text-[var(--theme-text-muted)] font-medium line-clamp-1 flex-1">
+                    {order.items?.map(i => `${i.quantity}× ${i.name}`).join(', ') || 'No items'}
+                </p>
+                <div className="flex items-center gap-1 text-[10px] text-[var(--theme-text-subtle)] font-bold shrink-0">
+                    <Clock size={10} />
+                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
             </div>
         </div>
@@ -123,7 +212,7 @@ const TokenSquare = memo(({ order, onClick }) => {
 /* ── Main Component ───────────────────────────────────────────────────────── */
 const WaiterDashboard = () => {
     const [orders, setOrders] = useState([]);
-    const [tables, setTables] = useState([]);
+    const [, setTables] = useState([]);
     const location = useLocation();
     const activeTab = location.pathname.includes('/history') ? 'history' : 'active';
     const [statusFilter, setStatusFilter] = useState(null); // null | 'pending' | 'preparing' | 'ready'
@@ -331,6 +420,33 @@ const WaiterDashboard = () => {
                 {/* Action Buttons */}
                 <div className="flex flex-row flex-wrap justify-end gap-2 w-full lg:w-auto">
 
+                    {/* TOKEN | CARD segmented pill */}
+                    <div className="flex items-center p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] shadow-sm shrink-0">
+                        <button
+                            onClick={() => setIsProductionMode(true)}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${
+                                isProductionMode 
+                                    ? 'bg-blue-600 text-white shadow-md' 
+                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                            }`}
+                        >
+                            <Grid size={11} strokeWidth={2.5} />
+                            Token
+                        </button>
+                        <button
+                            onClick={() => setIsProductionMode(false)}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${
+                                !isProductionMode 
+                                    ? 'bg-orange-500 text-white shadow-md' 
+                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                            }`}
+                        >
+                            <List size={11} strokeWidth={2.5} />
+                            Card
+                        </button>
+                    </div>
+
+                    {/* TABLES button */}
                     {settings?.tableMapEnabled !== false && (
                         <button
                             onClick={() => setShowTables(t => !t)}
@@ -344,6 +460,8 @@ const WaiterDashboard = () => {
                             <span className="truncate">Tables</span>
                         </button>
                     )}
+
+                    {/* ── DINE IN & TAKEAWAY ── */}
                     {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
                         <button
                             onClick={() => navigate('/dine-in')}
@@ -367,41 +485,22 @@ const WaiterDashboard = () => {
 
             {/* ── Tabs & Counters ─────────────────────────────────────── */}
             <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
-                {/* ALL / DINE-IN / TAKEAWAY filter + toggle */}
-                <div className="flex items-center gap-2 justify-between">
-                    <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-fit">
-                        {['all', 'dine-in', 'takeaway'].map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setFilterType(t)}
-                                className={`
-                                    px-2 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wide transition-all whitespace-nowrap
-                                    ${filterType === t
-                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
-                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
-                                `}
-                            >
-                                {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        onClick={() => setIsProductionMode(!isProductionMode)}
-                        className={`relative flex items-center gap-2 pl-1.5 pr-4 h-10 rounded-full border transition-all duration-300 shadow-sm active:scale-95 shrink-0 ${
-                            isProductionMode ? 'bg-blue-500/10 border-blue-500/25' : 'bg-orange-500/10 border-orange-500/25'
-                        }`}
-                    >
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${
-                            isProductionMode ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'
-                        }`}>
-                            {isProductionMode ? <Grid size={12} strokeWidth={2.5} /> : <List size={12} strokeWidth={2.5} />}
-                        </div>
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
-                            isProductionMode ? 'text-blue-600' : 'text-orange-500'
-                        }`}>
-                            {isProductionMode ? 'Card' : 'List'}
-                        </span>
-                    </button>
+                {/* ALL / DINE-IN / TAKEAWAY filter only — full width */}
+                <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
+                    {['all', 'dine-in', 'takeaway'].map(t => (
+                        <button
+                            key={t}
+                            onClick={() => setFilterType(t)}
+                            className={`
+                                flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all text-center
+                                ${filterType === t
+                                    ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
+                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                            `}
+                        >
+                            {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
+                        </button>
+                    ))}
                 </div>
 
 
@@ -467,10 +566,10 @@ const WaiterDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className={`grid gap-1 ${
+                <div className={`grid gap-3 ${
                     isProductionMode
                         ? 'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10'
-                        : 'grid-cols-1'
+                        : 'grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
                 }`}>
                     {filteredOrders.map(order => (
                         isProductionMode ? (
@@ -480,12 +579,10 @@ const WaiterDashboard = () => {
                                 onClick={() => setSelectedOrder(order)}
                             />
                         ) : (
-                            <div key={order._id} onClick={() => setSelectedOrder(order)} className="cursor-pointer">
-                                <OrderCard
+                            <div key={order._id} onClick={() => setSelectedOrder(order)}>
+                                <WaiterBoxCard
                                     order={order}
                                     formatPrice={formatPrice}
-                                    onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
-                                    viewType="list"
                                 />
                             </div>
                         )

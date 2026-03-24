@@ -1,20 +1,13 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
-import logoImg from '../../assets/logo.png';
-import { ChefHat, Clock, RefreshCw, CheckCheck, Utensils, XCircle, Grid, List } from 'lucide-react';
+import { ChefHat, Clock, CheckCheck, Utensils, XCircle, Grid, List } from 'lucide-react';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
+import TableGrid from '../../components/TableGrid';
 import { tokenColors } from '../../utils/tokenColors';
 
-/* ── Status badge color ──────────────────────────────────────────────────── */
-const ticketBg = {
-    pending: { bar: 'bg-[var(--status-pending)]', badge: 'bg-[var(--status-pending-bg)] text-[var(--status-pending)]', glow: 'hover:shadow-[var(--status-pending-border)]' },
-    accepted: { bar: 'bg-[var(--status-accepted)]', badge: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted)]', glow: 'hover:shadow-[var(--status-accepted-border)]' },
-    preparing: { bar: 'bg-[var(--status-preparing)]', badge: 'bg-[var(--status-preparing-bg)] text-[var(--status-preparing)]', glow: 'hover:shadow-[var(--status-preparing-border)]' },
-    ready: { bar: 'bg-[var(--status-ready)]', badge: 'bg-[var(--status-ready-bg)] text-[var(--status-ready)]', glow: 'hover:shadow-[var(--status-ready-border)]' },
-};
 
 /* ── Time since order ────────────────────────────────────────────────────── */
 const useElapsed = (createdAt) => {
@@ -50,40 +43,32 @@ const KitchenTimer = ({ createdAt, urgency }) => {
 
 /* ── KOT Ticket Card ─────────────────────────────────────────────────────── */
 const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCancelItem, userRole, viewType = 'normal' }) => {
-    const isCompact = viewType === 'compact' || viewType === 'mini';
-    const isMini = viewType === 'mini';
     const isList = viewType === 'list';
-    const cfg = ticketBg[order.orderStatus] || ticketBg.pending;
     const elapsed = useElapsed(order.createdAt);
-
-    // Urgency: warn if > 10 mins
     const urgency = (Date.now() - new Date(order.createdAt)) > 600000;
-
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)]';
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
-    const hasNewItems = order.items?.some(i => 
-        i.status?.toUpperCase() === 'PENDING' && 
+    const hasNewItems = order.items?.some(i =>
+        i.status?.toUpperCase() === 'PENDING' &&
         (new Date(i.createdAt) - new Date(order.createdAt)) > 30000
     );
 
-    /* ── LIST ROW (table-style) ─────────────────────────────────────────── */
-    if (isList) {
-        const borderColor =
-            hasNewItems ? 'border-l-[var(--status-pending)]' :
-            order.orderStatus === 'pending'   ? 'border-l-[var(--status-pending)]' :
-            order.orderStatus === 'accepted'  ? 'border-l-[var(--status-accepted)]' :
-            order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
-            order.orderStatus === 'ready'     ? 'border-l-[var(--status-ready)]' :
-            'border-l-[var(--theme-border)]';
+    const borderColor =
+        hasNewItems                          ? 'border-l-[var(--status-pending)]' :
+        order.orderStatus === 'pending'      ? 'border-l-[var(--status-pending)]' :
+        order.orderStatus === 'accepted'     ? 'border-l-[var(--status-accepted)]' :
+        order.orderStatus === 'preparing'    ? 'border-l-[var(--status-preparing)]' :
+        order.orderStatus === 'ready'        ? 'border-l-[var(--status-ready)]' :
+        'border-l-[var(--theme-border)]';
 
+    /* ── LIST ROW ───────────────────────────────────────────────────────── */
+    if (isList) {
         const itemsSummary = order.items
             .filter(i => i.status?.toUpperCase() !== 'CANCELLED')
             .map(i => `${i.quantity} ${i.name}`)
             .join(', ');
-
         return (
             <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-l-[6px] shadow-sm transition-all animate-fade-in ${tColor} ${borderColor} ${urgency ? 'ring-1 ring-red-500/30' : ''}`}>
-                {/* Order + Table */}
                 <div className="w-32 shrink-0">
                     <p className="text-sm font-black text-gray-900 leading-none">{order.orderNumber}</p>
                     <div className="flex items-center gap-1.5 mt-1.5">
@@ -93,48 +78,26 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                         </span>
                     </div>
                 </div>
-
-                {/* Items summary */}
                 <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-800 truncate">{itemsSummary || 'No items'}</p>
                     <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">
                         {order.orderType === 'dine-in' ? 'Dine-In' : 'Takeaway'} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                     </p>
                 </div>
-
-                {/* Timer */}
                 <div className={`shrink-0 flex items-center gap-1 text-[11px] font-bold ${urgency ? 'text-red-600 bg-red-100 px-2 py-0.5 rounded-md' : 'text-gray-400'}`}>
-                    <Clock size={11} />
-                    {elapsed}
+                    <Clock size={11} />{elapsed}
                 </div>
-
-                {/* Status */}
-                <div className="shrink-0">
-                    <StatusBadge status={order.orderStatus} size="sm" />
-                </div>
-
-                {/* Action */}
+                <div className="shrink-0"><StatusBadge status={order.orderStatus} size="sm" /></div>
                 {(userRole === 'kitchen' || userRole === 'admin') && (
                     <div className="shrink-0 flex items-center gap-1">
                         {order.orderStatus === 'pending' && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, 'accepted'); }}
-                                style={{ backgroundColor: 'var(--status-accepted)' }}
-                                className="px-3 h-8 text-white text-[10px] font-black rounded-xl active:scale-95 transition-all"
-                            >Accept</button>
+                            <button onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, 'accepted'); }} style={{ backgroundColor: 'var(--status-accepted)' }} className="px-3 h-8 text-white text-[10px] font-black rounded-xl active:scale-95 transition-all">Accept</button>
                         )}
                         {(order.orderStatus === 'accepted' || order.orderStatus === 'preparing') && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, order.orderStatus === 'accepted' ? 'preparing' : 'ready'); }}
-                                style={{ backgroundColor: order.orderStatus === 'accepted' ? 'var(--status-preparing)' : 'var(--status-ready)' }}
-                                className="px-3 h-8 text-white text-[10px] font-black rounded-xl active:scale-95 transition-all"
-                            >{order.orderStatus === 'accepted' ? 'Start' : 'Ready ✓'}</button>
+                            <button onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, order.orderStatus === 'accepted' ? 'preparing' : 'ready'); }} style={{ backgroundColor: order.orderStatus === 'accepted' ? 'var(--status-preparing)' : 'var(--status-ready)' }} className="px-3 h-8 text-white text-[10px] font-black rounded-xl active:scale-95 transition-all">{order.orderStatus === 'accepted' ? 'Start' : 'Ready ✓'}</button>
                         )}
                         {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (order.orderStatus !== 'ready' || userRole === 'admin') && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onCancel(order); }}
-                                className="p-1.5 hover:bg-red-500/10 rounded-lg text-red-400 transition-all"
-                            ><XCircle size={15} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); onCancel(order); }} className="p-1.5 hover:bg-red-500/10 rounded-lg text-red-400 transition-all"><XCircle size={15} /></button>
                         )}
                     </div>
                 )}
@@ -142,133 +105,105 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
         );
     }
 
+    /* ── CARD (box style) ───────────────────────────────────────────────── */
     return (
         <div className={`
-            relative rounded-2xl overflow-hidden border-l-[5px] transition-all duration-300
-            flex flex-col shadow-md sm:hover:shadow-xl
-            ${tColor}
-            ${hasNewItems ? `ring-2 ring-[var(--status-pending)] shadow-[0_0_20px_var(--status-pending-bg)] animate-pulse` : ''}
-            ${hasNewItems ? 'border-l-[var(--status-pending)]' : (
-                order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
-                order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
-                order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
-                order.orderStatus === 'ready' ? 'border-l-[var(--status-ready)]' :
-                'border-l-[var(--theme-border)]'
-            )}
+            relative rounded-2xl border-l-4 flex flex-col shadow-md transition-all duration-300 animate-fade-in overflow-hidden
+            ${tColor} ${borderColor}
+            ${hasNewItems ? 'ring-2 ring-orange-400/60' : ''}
             ${isReady && !hasNewItems ? 'animate-pulse' : ''}
             ${urgency ? 'ring-2 ring-red-500/40' : ''}
-            animate-fade-in
         `}>
-            {/* Ticket Header */}
-            <div className={`text-left ${isList ? 'border-none w-44 shrink-0 py-0 pr-3' : (isMini ? 'p-2 border-b border-black/8' : 'p-3 border-b border-black/8')}`}>
-                <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex items-center gap-2">
-                        <h3 className={`${isMini ? 'text-[11px]' : (isCompact ? 'text-xs' : 'text-sm')} font-black text-gray-900 leading-none tracking-tight whitespace-nowrap`}>
-                            {order.orderNumber}
-                        </h3>
-                        {!isList && !isCompact && (
-                            <span className="text-[9px] font-bold text-gray-500 opacity-60 uppercase tracking-widest hidden sm:inline">
-                                {order.orderType === 'dine-in' ? 'Dine In' : 'Takeaway'}
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {!isList && <StatusBadge status={order.orderStatus} size={isMini ? 'xs' : 'sm'} />}
-                        {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (order.orderStatus !== 'ready' || userRole === 'admin') && (userRole === 'kitchen' || userRole === 'admin') && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onCancel(order); }}
-                                className="p-1 hover:bg-red-500/10 rounded-lg text-red-500 transition-all"
-                                title="Cancel entire order"
-                            >
-                                <XCircle size={isMini ? 12 : 15} />
-                            </button>
-                        )}
-                    </div>
+            {/* ── Header ────────────────────────────────────────────────── */}
+            <div className="px-4 pt-3.5 pb-2.5 border-b border-black/[0.06]">
+                {/* Row 1: ORDER label + cancel btn */}
+                <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 opacity-70">Order</span>
+                    {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' &&
+                     (order.orderStatus !== 'ready' || userRole === 'admin') &&
+                     (userRole === 'kitchen' || userRole === 'admin') && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onCancel(order); }}
+                            className="p-1 hover:bg-red-500/15 rounded-lg text-red-500/70 hover:text-red-600 transition-all"
+                            title="Cancel order"
+                        >
+                            <XCircle size={14} />
+                        </button>
+                    )}
                 </div>
-
-                <div className={`flex flex-wrap items-center gap-2 mt-2 ${isCompact ? 'flex-col items-start gap-1' : ''}`}>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-white/40 rounded-lg border border-black/10 shadow-sm">
-                        <span className="text-gray-600"><Utensils size={isMini ? 9 : 11} /></span>
-                        <span className={`font-black text-gray-900 uppercase tracking-tight ${isMini ? 'text-[9px]' : 'text-[10px]'}`}>
-                            {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
-                        </span>
-                    </div>
-                    <span className={`inline-flex items-center gap-1 font-mono tracking-tight ${isMini ? 'text-[8px]' : 'text-[10px]'} ${urgency ? 'text-red-600 font-bold bg-red-100 px-1.5 py-0.5 rounded-md' : 'text-gray-500 opacity-60'} ${isMini ? 'hidden sm:flex' : ''}`}>
-                        <Clock size={isMini ? 8 : 10} />
-                        {elapsed}
+                {/* Row 2: Order number + status badge */}
+                <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-base font-black text-gray-900 tracking-tight leading-none">{order.orderNumber}</h3>
+                    <StatusBadge status={order.orderStatus} size="sm" />
+                </div>
+                {/* Row 3: Token/Table + timer */}
+                <div className="flex items-center gap-2 mt-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/50 border border-black/10 rounded-lg text-[10px] font-black text-gray-700 shadow-sm">
+                        <Utensils size={9} className="text-orange-500" />
+                        {order.orderType === 'dine-in'
+                            ? `Table ${order.tableId?.number || order.tableId || '?'}`
+                            : `Token ${order.tokenNumber || '?'}`}
                     </span>
-                    {/* Tap hint — inline, no overlap */}
-                    {!isList && !isCompact && (
-                        <span className="sm:hidden text-[8px] font-bold text-gray-400 opacity-50 uppercase tracking-wider ml-auto flex items-center gap-0.5">
-                            tap · details
-                        </span>
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${urgency ? 'text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md' : 'text-gray-400'}`}>
+                        <Clock size={10} />{elapsed}
+                    </span>
+                    {hasNewItems && (
+                        <span className="ml-auto text-[8px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wide animate-pulse">+New</span>
                     )}
                 </div>
             </div>
 
-            {/* Items List */}
-            <div className={`flex-1 overflow-y-auto custom-scrollbar ${isList ? 'p-0 px-3 h-full flex flex-wrap items-center gap-2' : (isMini ? 'p-2 space-y-1 max-h-[120px]' : 'p-3 space-y-2 max-h-[200px]')}`}>
+            {/* ── Items ─────────────────────────────────────────────────── */}
+            <div className="flex-1 px-3 py-2.5 space-y-2 overflow-y-auto custom-scrollbar max-h-[220px]">
                 {order.items.map(item => {
                     const status = item.status?.toUpperCase() || 'PENDING';
                     const isCancelled = status === 'CANCELLED';
                     const isItemReady = status === 'READY';
-                    const isNewAdd = status === 'PENDING' &&
-                        (new Date(item.createdAt) - new Date(order.createdAt)) > 30000;
-
-                    const nextStatus =
-                        status === 'PENDING'   ? 'ACCEPTED'  :
-                        status === 'ACCEPTED'  ? 'PREPARING' :
-                        status === 'PREPARING' ? 'READY'     : 'PENDING';
-
-                    const canCancelThisItem =
-                        !isCancelled && status === 'PENDING' &&
-                        (userRole === 'kitchen' || userRole === 'admin');
+                    const isNewAdd = status === 'PENDING' && (new Date(item.createdAt) - new Date(order.createdAt)) > 30000;
+                    const nextStatus = status === 'PENDING' ? 'ACCEPTED' : status === 'ACCEPTED' ? 'PREPARING' : status === 'PREPARING' ? 'READY' : 'PENDING';
+                    const canCancel = !isCancelled && status === 'PENDING' && (userRole === 'kitchen' || userRole === 'admin');
 
                     return (
-                        <div key={item._id} className={`${isList ? 'inline-flex items-center' : 'flex flex-col gap-0.5'} group`}>
-                            <div className="flex items-center justify-between gap-1.5 w-full">
-                                <div
-                                    className={`flex items-start gap-2 min-w-0 flex-1 cursor-pointer hover:opacity-80 transition-opacity ${isCancelled ? 'cursor-not-allowed opacity-50' : ''}`}
-                                    onClick={() => !isCancelled && status !== 'READY' && onUpdateItemStatus(order._id, item._id, nextStatus)}
-                                >
-                                    <div className={`
-                                        rounded-md flex-shrink-0 flex items-center justify-center font-bold transition-all
-                                        ${isMini ? 'w-4 h-4 text-[8px]' : (isCompact ? 'w-5 h-5 text-[9px]' : 'w-6 h-6 text-[11px]')}
-                                        ${status === 'READY'     ? 'bg-[var(--status-ready)] text-white shadow-sm' :
-                                          status === 'PREPARING' ? 'bg-[var(--status-preparing)] text-white shadow-sm' :
-                                          status === 'ACCEPTED'  ? 'bg-[var(--status-accepted)] text-white shadow-sm' :
-                                          isCancelled ? 'bg-red-500/20 text-red-500' :
-                                          isNewAdd ? 'bg-orange-500 text-white shadow-sm animate-pulse' :
-                                          'bg-white/50 text-gray-700 border border-black/10'}
-                                    `}>
-                                        {item.quantity}
-                                    </div>
-                                    <div className="min-w-0 text-left">
-                                        <div className="flex items-center gap-1 flex-wrap">
-                                            <p className={`font-bold leading-tight transition-colors ${isMini ? 'text-[10px]' : (isCompact ? 'text-[11px]' : 'text-xs')} ${
-                                                isItemReady ? 'text-[var(--status-ready)]' :
-                                                isCancelled ? 'text-red-400 line-through italic' :
-                                                'text-gray-900'
-                                            }`}>
-                                                {item.name}
-                                            </p>
-                                            {isNewAdd && !isMini && (
-                                                <span className="bg-orange-500 text-white text-[7px] font-black px-1.5 py-px rounded uppercase tracking-widest leading-none">NEW</span>
-                                            )}
-                                            {isItemReady && !isMini && (
-                                                <span className="bg-[var(--status-ready-bg)] text-[var(--status-ready)] text-[7px] font-black px-1.5 py-px rounded uppercase tracking-widest leading-none">Done</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                        <div key={item._id} className={`flex items-center gap-2 group ${isCancelled ? 'opacity-40' : ''}`}>
+                            {/* Qty badge */}
+                            <div className={`w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-[11px] font-black transition-all
+                                ${status === 'READY'     ? 'bg-emerald-500 text-white' :
+                                  status === 'PREPARING' ? 'bg-indigo-500 text-white' :
+                                  status === 'ACCEPTED'  ? 'bg-blue-500 text-white' :
+                                  isCancelled            ? 'bg-red-400/30 text-red-500' :
+                                  isNewAdd               ? 'bg-orange-500 text-white animate-pulse' :
+                                  'bg-white/60 text-gray-700 border border-black/10'}`}
+                            >{item.quantity}</div>
 
-                                {canCancelThisItem && (
+                            {/* Name */}
+                            <span
+                                className={`flex-1 text-xs font-bold leading-tight cursor-pointer transition-opacity hover:opacity-70
+                                    ${isItemReady ? 'text-emerald-600' : isCancelled ? 'line-through text-gray-400' : 'text-gray-900'}`}
+                                onClick={() => !isCancelled && status !== 'READY' && onUpdateItemStatus(order._id, item._id, nextStatus)}
+                            >
+                                {item.name}
+                                {isNewAdd && <span className="ml-1.5 bg-orange-500 text-white text-[7px] font-black px-1 py-px rounded uppercase">NEW</span>}
+                                {isItemReady && <span className="ml-1.5 text-[7px] font-black text-emerald-500 uppercase">✓ Done</span>}
+                            </span>
+
+                            {/* Item action buttons */}
+                            <div className="flex items-center gap-1 shrink-0">
+                                {!isCancelled && status !== 'READY' && (userRole === 'kitchen' || userRole === 'admin') && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onUpdateItemStatus(order._id, item._id, nextStatus); }}
+                                        className="w-6 h-6 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/15 transition-all"
+                                        title="Mark next status"
+                                    >
+                                        <CheckCheck size={13} />
+                                    </button>
+                                )}
+                                {canCancel && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onCancelItem(order, item); }}
-                                        className="sm:opacity-0 group-hover:opacity-100 opacity-100 p-2 sm:p-0.5 hover:bg-red-500/10 rounded-lg text-red-500 transition-all ml-1"
+                                        className="w-6 h-6 rounded-full flex items-center justify-center text-red-400 hover:bg-red-500/15 transition-all"
                                         title="Cancel item"
                                     >
-                                        <XCircle size={isMini ? 10 : 14} />
+                                        <XCircle size={13} />
                                     </button>
                                 )}
                             </div>
@@ -277,30 +212,72 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                 })}
             </div>
 
-            {/* Action Buttons */}
+            {/* ── Action Button ─────────────────────────────────────────── */}
             {(userRole === 'kitchen' || userRole === 'admin') && (
-                <div className={`shrink-0 ${isList ? 'h-full border-l border-black/10 p-2 w-28 flex flex-col justify-center' : (isMini ? 'p-2 border-t border-black/8 flex gap-1' : 'p-3 border-t border-black/8 flex gap-2')}`}>
-                    {order.orderStatus === 'pending' && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, 'accepted'); }}
-                            style={{ backgroundColor: 'var(--status-accepted)' }}
-                            className={`w-full py-2 text-white text-[11px] font-black rounded-xl shadow-md transition-all active:scale-95 hover:brightness-110 ${isList ? 'h-8' : ''}`}
-                        >
-                            Accept
-                        </button>
-                    )}
-                    {(order.orderStatus === 'accepted' || order.orderStatus === 'preparing') && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onUpdateStatus(order._id, order.orderStatus === 'accepted' ? 'preparing' : 'ready'); }}
-                            style={{ backgroundColor: order.orderStatus === 'accepted' ? 'var(--status-preparing)' : 'var(--status-ready)' }}
-                            className={`w-full py-2 text-white text-[11px] font-black rounded-xl shadow-md transition-all active:scale-95 hover:brightness-110 ${isList ? 'h-8' : ''}`}
-                        >
-                            {order.orderStatus === 'accepted' ? (isMini ? 'Go' : 'Start') : 'Ready ✓'}
-                        </button>
-                    )}
+                order.orderStatus === 'pending' || order.orderStatus === 'accepted' || order.orderStatus === 'preparing'
+            ) && (
+                <div className="px-3 pb-3 pt-2 border-t border-black/[0.06]">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const next = order.orderStatus === 'pending' ? 'accepted' : order.orderStatus === 'accepted' ? 'preparing' : 'ready';
+                            onUpdateStatus(order._id, next);
+                        }}
+                        style={{
+                            backgroundColor:
+                                order.orderStatus === 'pending' ? 'var(--status-accepted)' :
+                                order.orderStatus === 'accepted' ? 'var(--status-preparing)' :
+                                'var(--status-ready)'
+                        }}
+                        className="w-full py-2.5 text-white text-[12px] font-black rounded-xl shadow-md transition-all active:scale-95 hover:brightness-110 tracking-wide"
+                    >
+                        {order.orderStatus === 'pending' ? 'Accept' : order.orderStatus === 'accepted' ? 'Start Cooking' : 'Mark Ready ✓'}
+                    </button>
                 </div>
             )}
         </div>
+    );
+};
+
+/* ── Kitchen Token Card (Compact Mode) ─────────────────────────────────── */
+const KitchenTokenCard = ({ order, onClick }) => {
+    const urgency = (Date.now() - new Date(order.createdAt)) > 600000;
+    const isReady = order.orderStatus?.toLowerCase() === 'ready';
+    const sColor =
+        order.orderStatus === 'pending'   ? 'bg-orange-500/10 border-orange-500 text-orange-600' :
+        order.orderStatus === 'accepted'  ? 'bg-blue-600/10 border-blue-600 text-blue-600' :
+        order.orderStatus === 'preparing' ? 'bg-indigo-600/10 border-indigo-600 text-indigo-600' :
+        order.orderStatus === 'ready'     ? 'bg-emerald-600/10 border-emerald-500 text-emerald-600' :
+        'bg-gray-500/10 border-gray-500 text-gray-500';
+
+    const itemCount = order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').length || 0;
+    const time = order.createdAt
+        ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '';
+
+    return (
+        <button
+            onClick={onClick}
+            className={`rounded-2xl border-2 flex flex-col items-center justify-between p-2.5 pt-3 pb-2.5 gap-1.5 transition-all active:scale-95 shadow-sm hover:shadow-md group relative overflow-hidden min-h-[100px]
+                ${sColor} ${isReady ? 'animate-pulse' : ''} ${urgency ? 'ring-2 ring-red-500/50' : ''}`}
+        >
+            <span className="absolute top-1.5 left-2.5 text-[8px] font-black opacity-25 tracking-tight">{order.orderNumber}</span>
+            <span className="text-[8px] uppercase font-black opacity-40 tracking-widest mt-2">
+                {order.orderType === 'dine-in' ? 'Dine In' : 'Takeaway'}
+            </span>
+            <span className="text-sm font-black leading-none group-hover:scale-105 transition-transform tracking-tight text-center">
+                {order.orderType === 'dine-in'
+                    ? `T${order.tableId?.number || order.tableId || '?'}`
+                    : `TK${order.tokenNumber || '?'}`}
+            </span>
+            <div className="text-[7px] font-black uppercase tracking-tight px-2 py-0.5 rounded-md border border-current/30 bg-white/5">
+                {order.orderStatus}
+            </div>
+            <div className="flex items-center justify-between w-full mt-0.5 opacity-40 text-[7px] font-bold">
+                <span>{itemCount} items</span>
+                <span>{time}</span>
+            </div>
+        </button>
     );
 };
 
@@ -311,11 +288,12 @@ const KitchenDashboard = () => {
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'cancelled'
     const [filterType, setFilterType] = useState('all'); // 'all', 'dine-in', 'takeaway'
     const [statusFilter, setStatusFilter] = useState(null);
-    const [lastRefresh, setLastRefresh] = useState(new Date());
+    const [, setLastRefresh] = useState(new Date());
     const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, item: null });
     const [detailsModal, setDetailsModal] = useState({ isOpen: false, order: null });
     const [isCardView, setIsCardView] = useState(() => localStorage.getItem('kitchenCardView') !== 'false');
-    const { user, socket, socketConnected, settings } = useContext(AuthContext);
+    const [showTables, setShowTables] = useState(false);
+    const { user, socket, settings } = useContext(AuthContext);
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -448,57 +426,72 @@ const KitchenDashboard = () => {
 
             {/* ── Tabs & Stats ────────────────────────────────────────── */}
             <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 p-1.5 bg-[var(--theme-bg-hover)] rounded-2xl border border-[var(--theme-border)] w-full sm:w-fit">
-                    <button
-                        onClick={() => setActiveTab('active')}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'active' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
-                    >
-                        Active ({counts.pending + counts.accepted + counts.preparing + counts.ready})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('cancelled')}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'cancelled' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
-                    >
-                        Cancelled ({counts.cancelled})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('completed')}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'completed' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
-                    >
-                        Completed ({counts.completed})
-                    </button>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 p-1.5 bg-[var(--theme-bg-hover)] rounded-2xl border border-[var(--theme-border)] w-full sm:w-fit">
+                        <button
+                            onClick={() => setActiveTab('active')}
+                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'active' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
+                        >
+                            Active ({counts.pending + counts.accepted + counts.preparing + counts.ready})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('cancelled')}
+                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'cancelled' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
+                        >
+                            Cancelled ({counts.cancelled})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('completed')}
+                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'completed' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}`}
+                        >
+                            Completed ({counts.completed})
+                        </button>
+                    </div>
+                    {/* TOKEN | CARD segmented pill */}
+                    <div className="flex items-center p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] shadow-sm shrink-0">
+                        <button
+                            onClick={() => { setIsCardView(true); localStorage.setItem('kitchenCardView', 'true'); }}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${
+                                isCardView 
+                                    ? 'bg-blue-600 text-white shadow-md' 
+                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                            }`}
+                        >
+                            <Grid size={11} strokeWidth={2.5} />
+                            Token
+                        </button>
+                        <button
+                            onClick={() => { setIsCardView(false); localStorage.setItem('kitchenCardView', 'false'); }}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${
+                                !isCardView 
+                                    ? 'bg-orange-500 text-white shadow-md' 
+                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                            }`}
+                        >
+                            <List size={11} strokeWidth={2.5} />
+                            Card
+                        </button>
+                    </div>
                 </div>
 
                 {/* ── Header ─────────────────────────────────────────────── */}
                 <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
-                    <div className="flex items-center gap-2 justify-between">
-                        <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-fit">
-                            {['all', 'dine-in', 'takeaway'].map(t => (
-                                <button
-                                    key={t}
-                                    onClick={() => setFilterType(t)}
-                                    className={`
-                                        flex-1 px-2 sm:px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all whitespace-nowrap
-                                        ${filterType === t
-                                            ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
-                                            : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
-                                    `}
-                                >
-                                    {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
-                                </button>
-                            ))}
-                        </div>
-                        <button
-                            onClick={() => { const v = !isCardView; setIsCardView(v); localStorage.setItem('kitchenCardView', v); }}
-                            className={`relative flex items-center gap-2 pl-1.5 pr-4 h-10 rounded-full border transition-all duration-300 shadow-sm active:scale-95 shrink-0 ${isCardView ? 'bg-blue-500/10 border-blue-500/25' : 'bg-orange-500/10 border-orange-500/25'}`}
-                        >
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${isCardView ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'}`}>
-                                {isCardView ? <Grid size={12} strokeWidth={2.5} /> : <List size={12} strokeWidth={2.5} />}
-                            </div>
-                            <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isCardView ? 'text-blue-600' : 'text-orange-500'}`}>
-                                {isCardView ? 'Card' : 'List'}
-                            </span>
-                        </button>
+                    {/* ALL / DINE-IN / TAKEAWAY filter only — full width */}
+                    <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
+                        {['all', 'dine-in', 'takeaway'].map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`
+                                    flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all text-center
+                                    ${filterType === t
+                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
+                                        : 'text-black hover:text-black/70'}
+                                `}
+                            >
+                                {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
+                            </button>
+                        ))}
                     </div>
 
                     <div className="grid grid-cols-4 gap-2">
@@ -552,138 +545,59 @@ const KitchenDashboard = () => {
                         </>
                     )}
                 </div>
-            ) : !isCardView ? (
-                /* ── LIST: proper table ──────────────────────────────── */
-                <div className="bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)] overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-[var(--theme-bg-deep)] text-[var(--theme-text-muted)] text-[10px] font-black uppercase tracking-widest">
-                                <tr>
-                                    <th className="px-4 py-3 w-36">Order</th>
-                                    <th className="px-4 py-3">Items</th>
-                                    <th className="px-4 py-3 w-24 text-center hidden sm:table-cell">Time</th>
-                                    <th className="px-4 py-3 w-24 text-center hidden md:table-cell">Status</th>
-                                    <th className="px-4 py-3 w-32 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--theme-border)]">
-                                {displayOrders.map(order => {
-                                    const urgency = (Date.now() - new Date(order.createdAt)) > 600000;
-                                    const leftColor =
-                                        order.orderStatus === 'pending'   ? 'border-l-[var(--status-pending)]' :
-                                        order.orderStatus === 'accepted'  ? 'border-l-[var(--status-accepted)]' :
-                                        order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
-                                        order.orderStatus === 'ready'     ? 'border-l-[var(--status-ready)]' :
-                                        'border-l-transparent';
-                                    const rowBg = tokenColors[order.orderStatus] || '';
-                                    const items = order.items.filter(i => i.status?.toUpperCase() !== 'CANCELLED');
-
-                                    return (
-                                        <tr
-                                            key={order._id}
-                                            onClick={() => setDetailsModal({ isOpen: true, order })}
-                                            className={`group border-l-4 ${leftColor} ${rowBg} cursor-pointer hover:brightness-95 transition-all`}
-                                        >
-                                            {/* Order + table */}
-                                            <td className="px-4 py-3">
-                                                <p className="font-black text-sm text-gray-900 leading-none">{order.orderNumber}</p>
-                                                <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 bg-black/8 border border-black/10 rounded-lg text-[10px] font-black text-gray-800">
-                                                    <Utensils size={9} />
-                                                    {order.orderType === 'dine-in'
-                                                        ? `T${order.tableId?.number || order.tableId || '?'}`
-                                                        : `TK${order.tokenNumber}`}
-                                                </span>
-                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1">
-                                                    {order.orderType === 'dine-in' ? 'Dine-In' : 'Takeaway'}
-                                                </p>
-                                            </td>
-
-                                            {/* Items */}
-                                            <td className="px-4 py-3">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {items.map((item, i) => (
-                                                        <span key={i} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${
-                                                            item.status?.toUpperCase() === 'READY'     ? 'bg-[var(--status-ready-bg)] text-[var(--status-ready)] border-[var(--status-ready-border)]' :
-                                                            item.status?.toUpperCase() === 'PREPARING' ? 'bg-[var(--status-preparing-bg)] text-[var(--status-preparing)] border-[var(--status-preparing-border)]' :
-                                                            item.status?.toUpperCase() === 'ACCEPTED'  ? 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted)] border-[var(--status-accepted-border)]' :
-                                                            'bg-black/5 text-gray-700 border-black/10'
-                                                        }`}>
-                                                            <span className="font-black">{item.quantity}×</span>{item.name}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </td>
-
-                                            {/* Time */}
-                                            <td className="px-4 py-3 text-center hidden sm:table-cell">
-                                                <KitchenTimer createdAt={order.createdAt} urgency={urgency} />
-                                            </td>
-
-                                            {/* Status */}
-                                            <td className="px-4 py-3 text-center hidden md:table-cell">
-                                                <StatusBadge status={order.orderStatus} size="sm" />
-                                            </td>
-
-                                            {/* Action */}
-                                            <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
-                                                <div className="flex items-center justify-end gap-1">
-                                                    {order.orderStatus === 'pending' && (
-                                                        <button
-                                                            onClick={() => updateStatus(order._id, 'accepted')}
-                                                            style={{ backgroundColor: 'var(--status-accepted)' }}
-                                                            className="px-3 h-8 text-white text-[10px] font-black rounded-xl active:scale-95 transition-all whitespace-nowrap"
-                                                        >Accept</button>
-                                                    )}
-                                                    {(order.orderStatus === 'accepted' || order.orderStatus === 'preparing') && (
-                                                        <button
-                                                            onClick={() => updateStatus(order._id, order.orderStatus === 'accepted' ? 'preparing' : 'ready')}
-                                                            style={{ backgroundColor: order.orderStatus === 'accepted' ? 'var(--status-preparing)' : 'var(--status-ready)' }}
-                                                            className="px-3 h-8 text-white text-[10px] font-black rounded-xl active:scale-95 transition-all whitespace-nowrap"
-                                                        >{order.orderStatus === 'accepted' ? 'Start' : 'Ready ✓'}</button>
-                                                    )}
-                                                    {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' && (order.orderStatus !== 'ready' || user.role === 'admin') && (user.role === 'kitchen' || user.role === 'admin') && (
-                                                        <button
-                                                            onClick={() => setCancelModal({ isOpen: true, order, item: null })}
-                                                            className="p-1.5 hover:bg-red-500/10 rounded-lg text-red-400 transition-all"
-                                                        ><XCircle size={15} /></button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             ) : (
-                /* ── CARD: grid ──────────────────────────────────────── */
-                <div className={`grid gap-2 sm:gap-4 ${
-                    settings.dashboardView === 'one' ? 'grid-cols-1' :
-                    settings.dashboardView === 'two' ? 'grid-cols-1 sm:grid-cols-2' :
-                    'grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
-                }`}>
-                    {displayOrders.map(order => (
-                        <div
-                            key={order._id}
-                            onClick={(e) => {
-                                if (e.target.closest('button')) return;
-                                setDetailsModal({ isOpen: true, order: order });
-                            }}
-                            className="transition-transform active:scale-[0.98]"
-                        >
-                            <KotTicket
-                                order={order}
-                                onUpdateStatus={updateStatus}
-                                onUpdateItemStatus={updateItemStatus}
-                                onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
-                                onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
-                                userRole={user.role}
-                                viewType={settings.dashboardView === 'one' ? 'list' : settings.dashboardView === 'two' ? 'normal' : 'mini'}
+                <>
+                    {/* ── Table Map ─────────────────────────────────────────── */}
+                    {showTables && (
+                        <div className="bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm animate-fade-in mb-5">
+                            <TableGrid
+                                onSelectTable={(t) => {
+                                    if (t.status === 'occupied' || t.status === 'active') {
+                                        // Find active order for kitchen display comparison
+                                        const order = orders.find(o => o.tableId?._id === t._id && ['pending', 'preparing', 'ready'].includes(o.orderStatus));
+                                        if (order) setDetailsModal({ isOpen: true, order });
+                                    }
+                                }}
+                                activeOrders={orders}
                             />
                         </div>
-                    ))}
-                </div>
+                    )}
+
+                    {/* ── KOT Grid ────────────────────────────────────────────── */}
+                    <div className={`grid gap-3 ${
+                        isCardView 
+                            ? 'grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12' 
+                            : 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+                    }`}>
+                        {displayOrders.map(order => (
+                            <div
+                                key={order._id}
+                                onClick={(e) => {
+                                    if (e.target.closest('button')) return;
+                                    setDetailsModal({ isOpen: true, order: order });
+                                }}
+                                className="transition-transform active:scale-[0.98]"
+                            >
+                                {isCardView ? (
+                                    <KitchenTokenCard
+                                        order={order}
+                                        onClick={() => setDetailsModal({ isOpen: true, order })}
+                                    />
+                                ) : (
+                                    <KotTicket
+                                        order={order}
+                                        onUpdateStatus={updateStatus}
+                                        onUpdateItemStatus={updateItemStatus}
+                                        onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
+                                        onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
+                                        userRole={user.role}
+                                        viewType="normal"
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
 
             <OrderDetailsModal
