@@ -385,7 +385,7 @@ const Settings = () => {
             <Card>
                 <SectionHeader icon={Palette} title="Order Status Colors" color="emerald" />
                 <div className="p-5">
-                    <div className="flex flex-col gap-2 mb-4">
+                    <div className="flex flex-col gap-3 mb-4">
                         {[
                             { key: 'pending', label: 'Pending' },
                             { key: 'accepted', label: 'Accepted' },
@@ -393,14 +393,33 @@ const Settings = () => {
                             { key: 'ready', label: 'Ready' },
                         ].map(({ key, label }) => (
                             <div key={key} className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-md overflow-hidden border border-[var(--theme-border)] relative shrink-0"
+                                {/* Color swatch + native picker */}
+                                <div className="w-9 h-9 rounded-lg overflow-hidden border-2 border-[var(--theme-border)] relative shrink-0 shadow-sm"
                                     style={{ backgroundColor: generalConfig[`${key}Color`] }}>
                                     <input type="color" name={`${key}Color`} value={generalConfig[`${key}Color`]}
                                         onChange={handleChange}
+                                        title="Click to pick color"
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                                 </div>
-                                <p className="text-xs font-medium text-[var(--theme-text-main)] w-20">{label}</p>
-                                <p className="text-[10px] font-mono text-[var(--theme-text-muted)]">{generalConfig[`${key}Color`].toUpperCase()}</p>
+                                {/* Label */}
+                                <p className="text-xs font-semibold text-[var(--theme-text-main)] w-20 shrink-0">{label}</p>
+                                {/* Manual hex input */}
+                                <input
+                                    type="text"
+                                    value={generalConfig[`${key}Color`].toUpperCase()}
+                                    onChange={e => {
+                                        const val = e.target.value.startsWith('#') ? e.target.value : '#' + e.target.value;
+                                        if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                                            setGeneralConfig(prev => ({ ...prev, [`${key}Color`]: val }));
+                                        }
+                                    }}
+                                    maxLength={7}
+                                    placeholder="#000000"
+                                    className="font-mono text-[11px] w-24 px-2 py-1.5 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] focus:outline-none focus:ring-2 focus:ring-orange-400 uppercase tracking-widest"
+                                />
+                                {/* Live preview dot */}
+                                <div className="w-3 h-3 rounded-full border border-[var(--theme-border)] shrink-0"
+                                    style={{ backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(generalConfig[`${key}Color`]) ? generalConfig[`${key}Color`] : 'transparent' }} />
                             </div>
                         ))}
                     </div>

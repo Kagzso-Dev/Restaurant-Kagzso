@@ -1,6 +1,6 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AIProvider } from './context/AIContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -32,19 +32,35 @@ const DineIn = lazy(() => import('./pages/Waiter/DineIn'));
 const TakeAway = lazy(() => import('./pages/Waiter/TakeAway'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 
-/**
- * Global Page Loading Spinner
- * Matches the SaaS brand aesthetic
- */
+/** Suspense fallback — shown when lazy chunks are loading */
 const PageLoader = () => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0f172a] z-[9999]">
+  <div className="fixed inset-0 flex flex-col items-center justify-center bg-[var(--theme-bg-dark,#0f172a)] z-[9999]">
     <div className="relative w-16 h-16">
       <div className="absolute inset-0 border-4 border-orange-500/20 rounded-full" />
       <div className="absolute inset-0 border-4 border-t-orange-500 rounded-full animate-spin" />
     </div>
-    <p className="mt-4 text-gray-500 text-sm font-bold uppercase tracking-widest animate-pulse">Loading Terminal...</p>
+    <p className="mt-4 text-gray-500 text-sm font-bold uppercase tracking-widest animate-pulse">Loading…</p>
   </div>
 );
+
+/** Global overlay — shown whenever AuthContext.loading is true (login, etc.) */
+const GlobalLoader = () => {
+  const { loading } = useContext(AuthContext);
+  if (!loading) return null;
+  return (
+    <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-[var(--theme-bg-card)] rounded-2xl p-8 flex flex-col items-center gap-4 shadow-2xl border border-[var(--theme-border)]">
+        <div className="relative w-14 h-14">
+          <div className="absolute inset-0 border-4 border-orange-500/20 rounded-full" />
+          <div className="absolute inset-0 border-4 border-t-orange-500 rounded-full animate-spin" />
+        </div>
+        <p className="text-[var(--theme-text-muted)] text-xs font-bold uppercase tracking-widest animate-pulse">
+          Please wait…
+        </p>
+      </div>
+    </div>
+  );
+};
 
 function App() {
   return (
@@ -55,6 +71,7 @@ function App() {
           <NotificationProvider>
           {/* Global Toast Alerts */}
           <NotificationToast />
+          <GlobalLoader />
 
           <DynamicTheme />
           <Suspense fallback={<PageLoader />}>

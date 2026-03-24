@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, CheckCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 // Helper: get dashboard path by role
@@ -129,9 +129,10 @@ const Login = () => {
 
                         <button
                             type="submit"
-                            className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
+                            disabled={loading}
+                            className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] min-h-[44px] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            Sign In
+                            {loading ? <><Loader2 size={18} className="animate-spin" /> Signing in…</> : 'Sign In'}
                         </button>
                     </form>
                 </div>
