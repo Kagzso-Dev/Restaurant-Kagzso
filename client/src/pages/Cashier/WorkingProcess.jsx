@@ -56,16 +56,20 @@ const WorkingProcess = () => {
         };
     }, [user, socket, selectedOrder]);
 
-    const currentTypeOrders = orders.filter(o => filterType === 'all' || o.orderType === filterType);
+    const enabledOrders = orders
+        .filter(o => settings?.takeawayEnabled !== false || o.orderType !== 'takeaway')
+        .filter(o => settings?.dineInEnabled   !== false || o.orderType !== 'dine-in');
+
+    const currentTypeOrders = enabledOrders.filter(o => filterType === 'all' || o.orderType === filterType);
 
     const counts = {
-        pending: currentTypeOrders.filter(o => o.orderStatus === 'pending').length,
+        pending:  currentTypeOrders.filter(o => o.orderStatus === 'pending').length,
         accepted: currentTypeOrders.filter(o => o.orderStatus === 'accepted').length,
-        preparing: currentTypeOrders.filter(o => o.orderStatus === 'preparing').length,
-        ready: currentTypeOrders.filter(o => o.orderStatus === 'ready').length,
+        preparing:currentTypeOrders.filter(o => o.orderStatus === 'preparing').length,
+        ready:    currentTypeOrders.filter(o => o.orderStatus === 'ready').length,
     };
 
-    const displayOrders = orders.filter(o => {
+    const displayOrders = enabledOrders.filter(o => {
         const matchesType = filterType === 'all' || o.orderType === filterType;
         const matchesStatus = !statusFilter || o.orderStatus === statusFilter;
         return matchesType && matchesStatus;
@@ -182,14 +186,17 @@ const WorkingProcess = () => {
             {/* ── Tabs & Counters ─────────────────────────────────────── */}
             <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
                 <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
-                    {['all', 'dine-in', 'takeaway'].map(t => (
+                    {['all', 'dine-in', 'takeaway']
+                        .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
+                        .filter(t => t !== 'dine-in'  || settings?.dineInEnabled   !== false)
+                        .map(t => (
                         <button
                             key={t}
                             onClick={() => setFilterType(t)}
                             className={`
-                                flex-1 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                ${filterType === t 
-                                    ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' 
+                                flex-1 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap
+                                ${filterType === t
+                                    ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
                                     : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
                             `}
                         >

@@ -27,7 +27,9 @@ export const printBill = (order, formatPrice, settings = {}) => {
         .map(
             (item) => `
         <tr>
-            <td style="padding:4px 0;font-size:11px;word-break:break-word;vertical-align:top;">${item.name}</td>
+            <td style="padding:4px 0;font-size:11px;word-break:break-word;vertical-align:top;">
+                ${item.name}${item.variant ? `<br/><span style="font-size:9px;opacity:0.8;font-weight:bold;">[${item.variant.name}]</span>` : ''}
+            </td>
             <td style="padding:4px 0;font-size:11px;text-align:center;vertical-align:top;">${item.quantity}</td>
             <td style="padding:4px 0;font-size:11px;text-align:right;vertical-align:top;">${formatPrice(item.price)}</td>
             <td style="padding:4px 0;font-size:11px;text-align:right;font-weight:bold;vertical-align:top;">${formatPrice(item.price * item.quantity)}</td>

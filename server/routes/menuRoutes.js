@@ -7,7 +7,7 @@ const { cacheMiddleware } = require('../utils/cache');
 router.use(protect);
 
 router.route('/')
-    .get(cacheMiddleware(1800, 'menu'), getMenuItems)
+    .get(cacheMiddleware(60, 'menu'), getMenuItems)
     .post(authorize('admin'), createMenuItem);
 
 router.route('/:id')

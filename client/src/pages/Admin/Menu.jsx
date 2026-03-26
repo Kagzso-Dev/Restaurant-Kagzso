@@ -17,7 +17,7 @@ const AdminMenu = () => {
     const [formError, setFormError] = useState('');
 
     const [formData, setFormData] = useState({
-        name: '', description: '', price: '', category: '', image: '', isVeg: true, availability: true,
+        name: '', description: '', price: '', category: '', image: '', isVeg: true, availability: true, variants: [],
     });
     const [userInteracted, setUserInteracted] = useState(false);
     const [viewMode, setViewMode] = useState(() => settings?.menuView || 'grid');
@@ -115,14 +115,18 @@ const AdminMenu = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError('');
+        const cleanVariants = (formData.variants || [])
+            .filter(v => v.name.trim())
+            .map(v => ({ name: v.name.trim(), price: parseFloat(v.price) || 0 }));
+        const submitData = { ...formData, variants: cleanVariants };
         try {
             if (editingItem) {
-                const res = await api.put(`/api/menu/${editingItem._id}`, formData, {
+                const res = await api.put(`/api/menu/${editingItem._id}`, submitData, {
                     headers: { Authorization: `Bearer ${user.token}` },
                 });
                 setItems(prev => prev.map(i => i._id === editingItem._id ? res.data : i));
             } else {
-                const res = await api.post('/api/menu', formData, {
+                const res = await api.post('/api/menu', submitData, {
                     headers: { Authorization: `Bearer ${user.token}` },
                 });
                 // Deduplicate in case socket fires first
@@ -146,13 +150,14 @@ const AdminMenu = () => {
                 image: item.image || '',
                 isVeg: item.isVeg,
                 availability: item.availability,
+                variants: item.variants || [],
             });
         } else {
             setEditingItem(null);
             setFormData({
                 name: '', description: '', price: '',
                 category: categories.find(c => c.status === 'active')?._id || categories[0]?._id || '',
-                image: '', isVeg: true, availability: true,
+                image: '', isVeg: true, availability: true, variants: [],
             });
         }
         setIsModalOpen(true);
@@ -363,6 +368,45 @@ const AdminMenu = () => {
                                         {formData.availability ? 'Available on menu' : 'Hidden from menu'}
                                     </span>
                                 </label>
+                            </div>
+
+                            {/* Variants / Portion Sizes */}
+                            <div className="border border-[var(--theme-border)] rounded-xl p-3 bg-[var(--theme-bg-dark)]">
+                                <div className="flex items-center justify-between mb-3">
+                                    <label className="text-sm font-bold text-[var(--theme-text-main)]">Portion Sizes</label>
+                                    <button type="button" onClick={() => setFormData(f => ({ ...f, variants: [...(f.variants || []), { name: '', price: '' }] }))}
+                                        className="text-xs bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 border border-blue-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all">
+                                        <Plus size={12} /> Add Size
+                                    </button>
+                                </div>
+                                {(formData.variants || []).length === 0 && (
+                                    <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                                        <span className="text-orange-400 text-lg">⚠️</span>
+                                        <p className="text-xs text-orange-300 font-medium">No sizes added — customers will order at base price. Add sizes like Half / Full / Quarter.</p>
+                                    </div>
+                                )}
+                                {(formData.variants || []).map((v, idx) => (
+                                    <div key={idx} className="flex gap-2 mb-2 items-center">
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Half"
+                                            value={v.name}
+                                            onChange={e => setFormData(f => ({ ...f, variants: f.variants.map((x, i) => i === idx ? { ...x, name: e.target.value } : x) }))}
+                                            className="flex-1 bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none text-sm"
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Price"
+                                            min="0"
+                                            step="0.01"
+                                            value={v.price}
+                                            onChange={e => setFormData(f => ({ ...f, variants: f.variants.map((x, i) => i === idx ? { ...x, price: e.target.value } : x) }))}
+                                            className="w-24 bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none text-sm"
+                                        />
+                                        <button type="button" onClick={() => setFormData(f => ({ ...f, variants: f.variants.filter((_, i) => i !== idx) }))}
+                                            className="text-red-400 hover:text-red-300 p-1">&#x2715;</button>
+                                    </div>
+                                ))}
                             </div>
 
                             <div className="flex justify-end space-x-3 mt-6">

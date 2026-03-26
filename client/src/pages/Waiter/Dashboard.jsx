@@ -17,7 +17,13 @@ const useElapsed = (createdAt) => {
             if (diff < 60) { setElapsed(`${diff}s`); return; }
             const m = Math.floor(diff / 60);
             if (m < 60) { setElapsed(`${m}m ${diff % 60}s`); return; }
-            setElapsed(`${Math.floor(m / 60)}h ${m % 60}m`);
+            const h = Math.floor(m / 60);
+            if (h < 24) { setElapsed(`${h}h ${m % 60}m`); return; }
+            const days = Math.floor(h / 24);
+            if (days < 30) { setElapsed(`${days}d ${h % 24}h`); return; }
+            const months = Math.floor(days / 30);
+            if (months < 12) { setElapsed(`${months}mo ${days % 30}d`); return; }
+            setElapsed(`${Math.floor(months / 12)}y ${months % 12}mo`);
         };
         calc();
         const id = setInterval(calc, 1000);
@@ -85,7 +91,8 @@ const WaiterBoxCard = memo(({ order, formatPrice }) => {
                         <div className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center text-[9px] font-black bg-black/5 text-gray-600">
                             {item.quantity}
                         </div>
-                        <span className="flex-1 text-[10px] font-bold text-gray-800 leading-tight line-clamp-2">{item.name}</span>
+                        <span className="flex-1 text-[10px] font-bold text-gray-800 leading-tight line-clamp-2">{item.name}{item.variant ? ` (${item.variant.name})` : ''}</span>
+
                     </div>
                 ))}
             </div>
@@ -148,7 +155,8 @@ const OrderCard = memo(({ order, formatPrice }) => {
             {/* Row 2: items + time */}
             <div className="flex items-center justify-between gap-3 mt-2">
                 <p className="text-[11px] text-[var(--theme-text-muted)] font-medium line-clamp-1 flex-1">
-                    {order.items?.map(i => `${i.quantity}× ${i.name}`).join(', ') || 'No items'}
+                    {order.items?.map(i => `${i.quantity}× ${i.name}${i.variant ? ` (${i.variant.name})` : ''}`).join(', ') || 'No items'}
+
                 </p>
                 <div className="flex items-center gap-1 text-[10px] text-[var(--theme-text-subtle)] font-bold shrink-0">
                     <Clock size={10} />
@@ -366,6 +374,8 @@ const WaiterDashboard = () => {
     };
 
     const filteredOrders = (activeTab === 'active' ? activeOrders : historyOrders)
+        .filter(o => settings?.takeawayEnabled !== false || o.orderType !== 'takeaway')
+        .filter(o => settings?.dineInEnabled !== false || o.orderType !== 'dine-in')
         .filter(o => filterType === 'all' || o.orderType === filterType)
         .filter(o => {
             if (activeTab !== 'active') return true;
@@ -485,14 +495,17 @@ const WaiterDashboard = () => {
 
             {/* ── Tabs & Counters ─────────────────────────────────────── */}
             <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
-                {/* ALL / DINE-IN / TAKEAWAY filter only — full width */}
+                {/* ALL / DINE-IN / TAKEAWAY filter — hide disabled types */}
                 <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
-                    {['all', 'dine-in', 'takeaway'].map(t => (
+                    {['all', 'dine-in', 'takeaway']
+                        .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
+                        .filter(t => t !== 'dine-in'  || settings?.dineInEnabled   !== false)
+                        .map(t => (
                         <button
                             key={t}
                             onClick={() => setFilterType(t)}
                             className={`
-                                flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all text-center
+                                flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all text-center whitespace-nowrap
                                 ${filterType === t
                                     ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
                                     : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}

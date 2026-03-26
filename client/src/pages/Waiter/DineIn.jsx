@@ -66,23 +66,30 @@ const DineIn = () => {
         fetchData();
     }, []);
 
-    const addToCart = useCallback((item) => {
+    const addToCart = useCallback((item, variant = null) => {
+        const cartKey = variant ? `${item._id}_${variant.name}` : item._id;
+        const price = variant ? variant.price : item.price;
         setCart(prev => {
-            const existing = prev.find(i => i._id === item._id);
-            if (existing) return prev.map(i => i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i);
-            return [...prev, { ...item, quantity: 1, notes: '' }];
+            const existing = prev.find(i => i.cartKey === cartKey);
+            if (existing) return prev.map(i => i.cartKey === cartKey ? { ...i, quantity: existing.quantity + 1 } : i);
+            return [...prev, { ...item, cartKey, price, variant: variant || null, quantity: 1, notes: '' }];
         });
     }, []);
 
-    const updateQuantity = useCallback((itemId, delta) => {
+    const updateQuantity = useCallback((cartKey, delta) => {
         setCart(prev => {
-            const existing = prev.find(i => i._id === itemId);
+            const existing = prev.find(i => i.cartKey === cartKey);
             if (!existing) return prev;
             const newQty = existing.quantity + delta;
-            if (newQty <= 0) return prev.filter(i => i._id !== itemId);
-            return prev.map(i => i._id === itemId ? { ...i, quantity: newQty } : i);
+            if (newQty <= 0) return prev.filter(i => i.cartKey !== cartKey);
+            return prev.map(i => i.cartKey === cartKey ? { ...i, quantity: newQty } : i);
         });
     }, []);
+
+    const handleItemAdd = (item, variant = null) => {
+        if (!variant && item.variants?.length > 0) return;
+        addToCart(item, variant);
+    };
 
     const clearCart = () => { if (window.confirm('Clear all items?')) setCart([]); };
 
@@ -104,7 +111,7 @@ const DineIn = () => {
         const orderData = {
             orderType,
             tableId: selectedTable._id,
-            items: cart.map(i => ({ menuItemId: i._id, name: i.name, price: i.price, quantity: i.quantity, notes: i.notes })),
+            items: cart.map(i => ({ menuItemId: i._id, name: i.name, price: i.price, quantity: i.quantity, notes: i.notes, variant: i.variant || null })),
             totalAmount, tax, finalAmount,
         };
 
@@ -239,22 +246,22 @@ const DineIn = () => {
                                         <p className="font-medium text-lg">No items found</p>
                                     </div>
                                 ) : (
-                                    <div className={
-                                        viewMode === 'grid'
-                                            ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-3'
-                                            : viewMode === 'compact'
-                                                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2'
-                                                : 'flex flex-col gap-2.5'
-                                    }>
+                                    <div className={`grid gap-2 xs:gap-3 ${viewMode === 'grid'
+                                        ? 'grid-cols-2 xs:grid-cols-3'
+                                        : viewMode === 'compact'
+                                            ? 'grid-cols-3 xs:grid-cols-4 lg:grid-cols-6'
+                                            : 'grid-cols-1'
+                                    }`}>
                                         {filteredItems.map(item => (
                                             <FoodItem
                                                 key={item._id}
                                                 item={item}
                                                 viewMode={viewMode}
                                                 formatPrice={formatPrice}
-                                                onAdd={addToCart}
-                                                onRemove={(id) => updateQuantity(id, -1)}
-                                                cartQty={cart.find(i => i._id === item._id)?.quantity || 0}
+                                                onAdd={handleItemAdd}
+                                                onRemove={(key) => updateQuantity(key, -1)}
+                                                cartQty={cart.filter(i => i._id === item._id).reduce((s, i) => s + i.quantity, 0)}
+                                                itemCart={cart.filter(i => i._id === item._id)}
                                             />
                                         ))}
                                     </div>
@@ -297,7 +304,7 @@ const DineIn = () => {
                                     </div>
                                 ) : (
                                     cart.map(item => (
-                                        <div key={item._id} className="flex gap-3 animate-slide-up">
+                                        <div key={item.cartKey} className="flex gap-3 animate-slide-up">
                                             <div className="w-12 h-12 rounded-xl bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden">
                                                 {item.image
                                                     ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
@@ -305,13 +312,16 @@ const DineIn = () => {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <h4 className="text-sm font-bold text-[var(--theme-text-main)] pr-2">{item.name}</h4>
+                                                    <div className="pr-2">
+                                                        <h4 className="text-sm font-bold text-[var(--theme-text-main)]">{item.name}</h4>
+                                                        {item.variant && <span className="text-xs text-[var(--theme-text-muted)]">({item.variant.name})</span>}
+                                                    </div>
                                                     <span className="text-sm font-black text-[var(--theme-text-main)]">{formatPrice(item.price * item.quantity)}</span>
                                                 </div>
                                                 <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-lg p-0.5 border border-[var(--theme-border)] w-fit">
-                                                    <button onClick={() => updateQuantity(item._id, -1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]"><Minus size={12} /></button>
+                                                    <button onClick={() => updateQuantity(item.cartKey, -1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]"><Minus size={12} /></button>
                                                     <span className="w-8 text-center text-xs font-black text-[var(--theme-text-main)]">{item.quantity}</span>
-                                                    <button onClick={() => updateQuantity(item._id, 1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]"><Plus size={12} /></button>
+                                                    <button onClick={() => updateQuantity(item.cartKey, 1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]"><Plus size={12} /></button>
                                                 </div>
                                             </div>
                                         </div>

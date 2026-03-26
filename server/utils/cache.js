@@ -111,8 +111,8 @@ const cacheMiddleware = (ttlSeconds = 30, prefix = '') => {
         // Bypass cache if requested
         const isRefresh = req.headers['x-refresh'] === 'true' || req.query.refresh === 'true';
 
-        // Build scoped cache key: global + route + query
-        const scope = 'global';
+        // Build scoped cache key: global + role + route + query
+        const scope = req.role || 'guest';
         const queryString = JSON.stringify(req.query || {});
         const key = `${prefix}:${scope}:${req.originalUrl}:${queryString}`;
 

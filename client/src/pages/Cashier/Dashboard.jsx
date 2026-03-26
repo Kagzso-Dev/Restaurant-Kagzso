@@ -135,7 +135,10 @@ const Receipt = ({ order, formatPrice, settings }) => (
             <tbody>
                 {order.items?.filter(item => item.status?.toUpperCase() !== 'CANCELLED').map((item, i) => (
                     <tr key={i} className="border-b border-dashed border-gray-200">
-                        <td className="py-2">{item.name}</td>
+                        <td className="py-2">
+                            {item.name}
+                            {item.variant?.name && <span className="text-xs opacity-70"> ({item.variant.name})</span>}
+                        </td>
                         <td className="py-2 text-center">{item.quantity}</td>
                         <td className="py-2 text-right">{formatPrice(item.price * item.quantity)}</td>
                     </tr>

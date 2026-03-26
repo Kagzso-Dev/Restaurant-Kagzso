@@ -53,6 +53,7 @@ export default {
                 'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                 'bounce-in': 'bounceIn 0.4s ease-out forwards',
                 'shimmer': 'shimmer 1.5s infinite',
+                'scale-up': 'scaleUp 0.2s ease-out forwards',
             },
             keyframes: {
                 fadeIn: {
@@ -83,6 +84,10 @@ export default {
                 shimmer: {
                     '0%': { backgroundPosition: '-200% 0' },
                     '100%': { backgroundPosition: '200% 0' },
+                },
+                scaleUp: {
+                    '0%': { opacity: '0', transform: 'scale(0.85)' },
+                    '100%': { opacity: '1', transform: 'scale(1)' },
                 },
             },
             boxShadow: {

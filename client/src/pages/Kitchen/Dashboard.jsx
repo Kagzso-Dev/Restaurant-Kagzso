@@ -21,8 +21,10 @@ const useElapsed = (createdAt) => {
             const hours = Math.floor(minutes / 60);
             if (hours < 24) { setElapsed(`${hours}h ${minutes % 60}m`); return; }
             const days = Math.floor(hours / 24);
-            if (days < 7) { setElapsed(`${days}d ${hours % 24}h`); return; }
-            setElapsed(`${Math.floor(days / 7)}w ago`);
+            if (days < 30) { setElapsed(`${days}d ${hours % 24}h`); return; }
+            const months = Math.floor(days / 30);
+            if (months < 12) { setElapsed(`${months}mo ${days % 30}d`); return; }
+            setElapsed(`${Math.floor(months / 12)}y ${months % 12}mo`);
         };
         calc();
         const id = setInterval(calc, 1000);
@@ -65,7 +67,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
     if (isList) {
         const itemsSummary = order.items
             .filter(i => i.status?.toUpperCase() !== 'CANCELLED')
-            .map(i => `${i.quantity} ${i.name}`)
+            .map(i => `${i.quantity} ${i.name}${i.variant ? ` (${i.variant.name})` : ''}`)
             .join(', ');
         return (
             <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-l-[6px] shadow-sm transition-all animate-fade-in ${tColor} ${borderColor} ${urgency ? 'ring-1 ring-red-500/30' : ''}`}>
@@ -182,6 +184,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                 onClick={() => !isCancelled && status !== 'READY' && onUpdateItemStatus(order._id, item._id, nextStatus)}
                             >
                                 {item.name}
+                                {item.variant?.name && <span className="ml-1 text-[7px] opacity-70">({item.variant.name})</span>}
                                 {isNewAdd && <span className="ml-1.5 bg-orange-500 text-white text-[7px] font-black px-1 py-px rounded uppercase">NEW</span>}
                                 {isItemReady && <span className="ml-1.5 text-[7px] font-black text-emerald-500 uppercase">✓ Done</span>}
                             </span>
@@ -413,7 +416,10 @@ const KitchenDashboard = () => {
         : activeTab === 'cancelled'
             ? orders.filter(o => o.orderStatus === 'cancelled')
             : orders.filter(o => o.orderStatus === 'completed')
-    ).filter(o => {
+    )
+    .filter(o => settings?.takeawayEnabled !== false || o.orderType !== 'takeaway')
+    .filter(o => settings?.dineInEnabled   !== false || o.orderType !== 'dine-in')
+    .filter(o => {
         const matchesType = filterType === 'all' || o.orderType === filterType;
         const matchesStatus = !statusFilter || o.orderStatus === statusFilter;
         return matchesType && matchesStatus;
@@ -476,17 +482,20 @@ const KitchenDashboard = () => {
 
                 {/* ── Header ─────────────────────────────────────────────── */}
                 <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
-                    {/* ALL / DINE-IN / TAKEAWAY filter only — full width */}
+                    {/* ALL / DINE-IN / TAKEAWAY filter — hide disabled types */}
                     <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
-                        {['all', 'dine-in', 'takeaway'].map(t => (
+                        {['all', 'dine-in', 'takeaway']
+                            .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
+                            .filter(t => t !== 'dine-in'  || settings?.dineInEnabled   !== false)
+                            .map(t => (
                             <button
                                 key={t}
                                 onClick={() => setFilterType(t)}
                                 className={`
-                                    flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all text-center
+                                    flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all text-center whitespace-nowrap
                                     ${filterType === t
                                         ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
-                                        : 'text-black hover:text-black/70'}
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
                                 `}
                             >
                                 {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}

@@ -19,7 +19,7 @@ const getMenuItems = async (req, res) => {
 // @route   POST /api/menu
 // @access  Private (Admin)
 const createMenuItem = async (req, res) => {
-    const { name, description, price, category, image, isVeg, availability } = req.body;
+    const { name, description, price, category, image, isVeg, availability, variants } = req.body;
     if (!name || !name.trim()) {
         return res.status(400).json({ message: 'Item name is required' });
     }
@@ -32,7 +32,7 @@ const createMenuItem = async (req, res) => {
     try {
         const item = await MenuItem.create({
             name: name.trim(), description, price, category, image,
-            isVeg, availability: availability !== false,
+            isVeg, availability: availability !== false, variants,
         });
         invalidateCache('menu');
         req.app.get('io').to('restaurant_main').emit('menu-updated', { action: 'create', item });

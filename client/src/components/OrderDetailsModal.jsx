@@ -290,6 +290,7 @@ const OrderDetailsModal = ({
                                                 <div className="flex items-center gap-2">
                                                     <p className={`text-base font-black tracking-tight truncate ${cancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}`}>
                                                         {item.name}
+                                                        {item.variant?.name && <span className="ml-1 text-xs opacity-70 font-normal">({item.variant.name})</span>}
                                                     </p>
                                                     {isNewItem && !cancelled && (
                                                         <span className="bg-orange-500/10 text-orange-500 text-[12px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest animate-pulse">New</span>

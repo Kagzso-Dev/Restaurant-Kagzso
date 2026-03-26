@@ -10,6 +10,7 @@ const fmtItem = (doc) => ({
     price:        parseFloat(doc.price),
     quantity:     doc.quantity,
     notes:        doc.notes,
+    variant:      doc.variant ? JSON.parse(doc.variant) : null,
     status:       doc.status,
     cancelledBy:  doc.cancelled_by,
     cancelReason: doc.cancel_reason,
@@ -217,7 +218,7 @@ const Order = {
             const orderId = orderDoc.$id;
             
             // 2. Insert items in parallel
-            const itemDocs = await Promise.all(data.items.map(item => 
+            const itemDocs = await Promise.all(data.items.map(item =>
                 databases.createDocument(
                     databaseId,
                     COLLECTIONS.order_items,
@@ -229,6 +230,7 @@ const Order = {
                         price: parseFloat(item.price),
                         quantity: parseInt(item.quantity),
                         notes: item.notes || null,
+                        variant: item.variant ? JSON.stringify(item.variant) : null,
                         status: 'PENDING'
                     }
                 )
@@ -400,6 +402,7 @@ const Order = {
                     price: parseFloat(item.price),
                     quantity: parseInt(item.quantity),
                     notes: item.notes || null,
+                    variant: item.variant ? JSON.stringify(item.variant) : null,
                     status: 'PENDING'
                 }
             );

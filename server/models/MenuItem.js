@@ -14,6 +14,7 @@ const fmt = (doc, catDoc = null) => {
         image: doc.image,
         availability: !!doc.availability,
         isVeg: !!doc.is_veg,
+        variants: doc.variants ? JSON.parse(doc.variants) : [],
         createdAt: doc.$createdAt,
         updatedAt: doc.$updatedAt,
     };
@@ -65,7 +66,7 @@ const MenuItem = {
         }
     },
 
-    async create({ name, description, price, category, image, isVeg, availability }) {
+    async create({ name, description, price, category, image, isVeg, availability, variants }) {
         const doc = await databases.createDocument(
             databaseId,
             COLLECTIONS.menu_items,
@@ -77,7 +78,8 @@ const MenuItem = {
                 category_id: category,
                 image: image || null,
                 availability: availability !== false,
-                is_veg: isVeg !== false
+                is_veg: isVeg !== false,
+                variants: variants?.length ? JSON.stringify(variants) : null
             }
         );
         return this.findById(doc.$id);
@@ -85,13 +87,14 @@ const MenuItem = {
 
     async updateById(id, updates) {
         const fieldMap = {
-            name: 'name', 
-            description: 'description', 
+            name: 'name',
+            description: 'description',
             price: 'price',
-            category: 'category_id', 
+            category: 'category_id',
             image: 'image',
-            availability: 'availability', 
+            availability: 'availability',
             isVeg: 'is_veg',
+            variants: 'variants',
         };
         const data = {};
         for (const [key, val] of Object.entries(updates)) {
@@ -100,6 +103,8 @@ const MenuItem = {
                 // Ensure price is a number if it's being updated
                 if (col === 'price' && val !== undefined) {
                     data[col] = parseFloat(val);
+                } else if (key === 'variants' && val !== undefined) {
+                    data['variants'] = val?.length ? JSON.stringify(val) : null;
                 } else {
                     data[col] = val;
                 }

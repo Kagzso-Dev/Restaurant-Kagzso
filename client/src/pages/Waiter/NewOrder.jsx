@@ -39,6 +39,7 @@ const NewOrder = () => {
     const [userInteracted, setUserInteracted] = useState(false);
     const [viewMode, setViewMode] = useState(() => settings?.menuView || 'grid');
 
+
     // Sync with global settings
     useEffect(() => {
         if (settings?.enforceMenuView) {
@@ -141,8 +142,9 @@ const NewOrder = () => {
                 });
                 // Update price in cart if item is there
                 setCart(prev => prev.map(c =>
-                    c._id === item._id ? { ...c, name: item.name, price: item.price } : c
+                    c._id === item._id ? { ...c, name: item.name, price: c.variant ? c.variant.price : item.price } : c
                 ));
+
             } else if (action === 'delete' && id) {
                 setMenuItems(prev => prev.filter(i => i._id !== id));
                 setCart(prev => prev.filter(c => c._id !== id));
@@ -170,25 +172,50 @@ const NewOrder = () => {
 
 
     // ── Cart Logic ───────────────────────────────────────────────────
-    const addToCart = useCallback((item) => {
+    const addToCart = useCallback((item, variant = null) => {
+        if (!variant && item.variants && item.variants.length > 0) return; // Must select portion inline
+
         setCart(prev => {
-            const existing = prev.find(i => i._id === item._id);
+            const existing = variant
+                ? prev.find(i => i._id === item._id && i.variant?.name === variant.name)
+                : prev.find(i => i._id === item._id && !i.variant);
+
             if (existing) {
-                return prev.map(i => i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i);
+                return prev.map(i => {
+                    const match = variant
+                        ? (i._id === item._id && i.variant?.name === variant.name)
+                        : (i._id === item._id && !i.variant);
+                    return match ? { ...i, quantity: i.quantity + 1 } : i;
+                });
             }
-            return [...prev, { ...item, quantity: 1, notes: '' }];
+            return [...prev, { ...item, variant, price: variant ? variant.price : item.price, quantity: 1, notes: '' }];
         });
     }, []);
 
-    const updateQuantity = useCallback((itemId, delta) => {
+    const updateQuantity = useCallback((itemKey, delta) => {
+        // itemKey can be id OR id-variantName
         setCart(prev => {
-            const existing = prev.find(i => i._id === itemId);
+            const existing = prev.find(i => {
+                const currentKey = i.variant ? `${i._id}-${i.variant.name}` : i._id;
+                return currentKey === itemKey;
+            });
             if (!existing) return prev;
             const newQty = existing.quantity + delta;
-            if (newQty <= 0) return prev.filter(i => i._id !== itemId);
-            return prev.map(i => i._id === itemId ? { ...i, quantity: newQty } : i);
+            
+            if (newQty <= 0) {
+                return prev.filter(i => {
+                    const currentKey = i.variant ? `${i._id}-${i.variant.name}` : i._id;
+                    return currentKey !== itemKey;
+                });
+            }
+
+            return prev.map(i => {
+                const currentKey = i.variant ? `${i._id}-${i.variant.name}` : i._id;
+                return currentKey === itemKey ? { ...i, quantity: newQty } : i;
+            });
         });
     }, []);
+
 
     const clearCart = () => {
         if (window.confirm("Clear all items?")) setCart([]);
@@ -221,6 +248,7 @@ const NewOrder = () => {
                 name: i.name,
                 price: i.price,
                 quantity: i.quantity,
+                variant: i.variant,
                 notes: i.notes
             })),
             totalAmount,
@@ -426,13 +454,12 @@ const NewOrder = () => {
                                         <p className="text-sm">Try a different category or search term</p>
                                     </div>
                                 ) : (
-                                    <div className={
-                                        viewMode === 'grid'
-                                            ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3'
-                                            : viewMode === 'compact'
-                                                ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2'
-                                                : 'flex flex-col gap-2.5'
-                                    }>
+                                    <div className={`grid gap-2 xs:gap-3 ${viewMode === 'grid'
+                                        ? 'grid-cols-2 xs:grid-cols-3'
+                                        : viewMode === 'compact'
+                                            ? 'grid-cols-3 xs:grid-cols-4 lg:grid-cols-6'
+                                            : 'grid-cols-1'
+                                    }`}>
                                         {filteredItems.map(item => (
                                             <FoodItem
                                                 key={item._id}
@@ -440,7 +467,9 @@ const NewOrder = () => {
                                                 viewMode={viewMode}
                                                 formatPrice={formatPrice}
                                                 onAdd={addToCart}
-                                                cartQty={cart.find(i => i._id === item._id)?.quantity || 0}
+                                                onRemove={(key) => updateQuantity(key, -1)}
+                                                cartQty={cart.filter(i => i._id === item._id).reduce((sum, i) => sum + i.quantity, 0)}
+                                                itemCart={cart.filter(i => i._id === item._id)}
                                             />
                                         ))}
                                     </div>
@@ -486,7 +515,7 @@ const NewOrder = () => {
                                                 <div key={`prev-${idx}`} className="flex justify-between items-center text-[11px] font-bold text-[var(--theme-text-muted)]">
                                                     <div className="flex items-center gap-2">
                                                         <span className="w-5 h-5 flex items-center justify-center bg-[var(--theme-bg-hover)] rounded border border-[var(--theme-border)] text-[9px]">{item.quantity}×</span>
-                                                        <span className="truncate max-w-[120px]">{item.name}</span>
+                                                        <span className="truncate max-w-[120px]">{item.name}{item.variant ? ` (${item.variant.name})` : ''}</span>
                                                     </div>
                                                     <span>{formatPrice(item.price * item.quantity)}</span>
                                                 </div>
@@ -509,23 +538,29 @@ const NewOrder = () => {
                                     </div>
                                 ) : (
                                     cart.map(item => (
-                                        <div key={item._id} className="flex gap-3 animate-slide-up group">
+                                        <div key={item.cartKey || (item.variant ? `${item._id}-${item.variant.name}` : item._id)} className="flex gap-3 animate-slide-up group">
                                             <div className="w-12 h-12 rounded-xl bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden border border-[var(--theme-border)]">
                                                 {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xl bg-[var(--theme-bg-hover)]">🥘</div>}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <h4 className="text-sm font-black text-[var(--theme-text-main)] truncate pr-2">{item.name}</h4>
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-[var(--theme-text-main)] truncate pr-2">{item.name}</h4>
+                                                        {item.variant && (
+                                                            <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">{item.variant.name}</p>
+                                                        )}
+                                                    </div>
                                                     <span className="text-sm font-black text-orange-500">{formatPrice(item.price * item.quantity)}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-lg p-0.5 border border-[var(--theme-border)] shadow-inner">
-                                                        <button onClick={() => updateQuantity(item._id, -1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-white transition-colors"><Minus size={12} strokeWidth={3} /></button>
+                                                        <button onClick={() => updateQuantity(item.variant ? `${item._id}-${item.variant.name}` : item._id, -1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-white transition-colors"><Minus size={12} strokeWidth={3} /></button>
                                                         <span className="w-9 text-center text-xs font-black text-[var(--theme-text-main)]">{item.quantity}</span>
-                                                        <button onClick={() => updateQuantity(item._id, 1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-white transition-colors"><Plus size={12} strokeWidth={3} /></button>
+                                                        <button onClick={() => updateQuantity(item.variant ? `${item._id}-${item.variant.name}` : item._id, 1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-white transition-colors"><Plus size={12} strokeWidth={3} /></button>
                                                     </div>
                                                 </div>
                                             </div>
+
                                         </div>
                                     ))
                                 )}
@@ -583,29 +618,28 @@ const NewOrder = () => {
             )}
 
             {/* ── Mobile Cart Trigger (Sticky Bottom) ──────────────────── */}
-            {
-                step === 3 && cart.length > 0 && !isCartOpen && (
-                    <div className="lg:hidden fixed bottom-20 left-4 right-4 z-40 bg-orange-600 rounded-2xl shadow-2xl p-4 flex items-center justify-between animate-slide-up">
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <ShoppingCart size={24} className="text-white" />
-                                <span className="absolute -top-2 -right-2 w-5 h-5 bg-white text-orange-600 rounded-full flex items-center justify-center text-xs font-black">{cart.length}</span>
-                            </div>
-                            <div className="text-white">
-                                <p className="text-[10px] font-bold uppercase tracking-widest leading-none">Checkout</p>
-                                <p className="text-lg font-black leading-tight">{formatPrice(finalAmount)}</p>
-                            </div>
+            {step === 3 && cart.length > 0 && !isCartOpen && (
+                <div className="lg:hidden fixed bottom-20 left-4 right-4 z-40 bg-orange-600 rounded-2xl shadow-2xl p-4 flex items-center justify-between animate-slide-up">
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <ShoppingCart size={24} className="text-white" />
+                            <span className="absolute -top-2 -right-2 w-5 h-5 bg-white text-orange-600 rounded-full flex items-center justify-center text-xs font-black">{cart.length}</span>
                         </div>
-                        <button
-                            onClick={() => setIsCartOpen(true)}
-                            className="bg-white text-orange-600 px-5 py-2.5 rounded-xl font-black text-sm active:scale-95 flex items-center gap-2"
-                        >
-                            View Order <ChevronRight size={18} />
-                        </button>
+                        <div className="text-white">
+                            <p className="text-[10px] font-bold uppercase tracking-widest leading-none">Checkout</p>
+                            <p className="text-lg font-black leading-tight">{formatPrice(finalAmount)}</p>
+                        </div>
                     </div>
-                )
-            }
+                    <button
+                        onClick={() => setIsCartOpen(true)}
+                        className="bg-white text-orange-600 px-5 py-2.5 rounded-xl font-black text-sm active:scale-95 flex items-center gap-2"
+                    >
+                        View Order <ChevronRight size={18} />
+                    </button>
+                </div>
+            )}
         </div >
+
     );
 };
 
