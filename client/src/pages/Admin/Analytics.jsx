@@ -3,7 +3,8 @@ import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
 import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    Legend, AreaChart, Area
+    Legend, AreaChart, Area, PieChart, Pie, Cell
+
 } from 'recharts';
 import {
     TrendingUp, Award, Clock, ChefHat, Download, RefreshCw, FileText
@@ -239,9 +240,9 @@ const Analytics = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {/* ── Revenue & Order Trends ────────────────────── */}
-                <div className="bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
+                <div className="xl:col-span-2 bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
                     <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Clock size={20} className="text-blue-400" />
@@ -257,7 +258,7 @@ const Analytics = () => {
                                 No revenue data for this period.
                             </div>
                         ) : (
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                            <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={reportData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
@@ -283,7 +284,48 @@ const Analytics = () => {
                     </div>
                 </div>
 
+                {/* ── Payment Distribution ───────────────────────── */}
+                <div className="bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
+                    <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center gap-2">
+                        <TrendingUp size={20} className="text-purple-400" />
+                        Bills & Payments
+                    </h3>
+                    <div className="h-[300px]">
+                        {!summary.paymentSummary ? (
+                            <div className="h-full flex items-center justify-center text-[var(--theme-text-muted)] text-sm italic">
+                                Loading payments...
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={[
+                                            { name: 'Cash', value: summary.paymentSummary.cash || 0 },
+                                            { name: 'QR/UPI', value: summary.paymentSummary.qr || 0 },
+                                            { name: 'Online', value: summary.paymentSummary.online || 0 }
+                                        ]}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        <Cell fill="#10b981" />
+                                        <Cell fill="#f97316" />
+                                        <Cell fill="#3b82f6" />
+                                    </Pie>
+                                    <Tooltip {...tooltipStyle} formatter={(v) => formatPrice(v)} />
+                                    <Legend verticalAlign="bottom" height={36}/>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        )}
+                </div>
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
                 {/* ── Waiter Ranking ─────────────────────────────── */}
+
                 <div className="bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
                     <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center gap-2">
                         <Award size={20} className="text-orange-400" />

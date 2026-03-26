@@ -76,11 +76,26 @@ const getSummary = async (req, res) => {
         const orderCount = analytics.reduce((sum, a) => sum + parseInt(a.completed_orders || 0), 0);
         const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
 
+        // Fetch payment method distribution from actual orders in this range
+        const orders = await fetchAll(COLLECTIONS.orders, [
+            Query.equal('payment_status', 'paid'),
+            Query.greaterThanEqual('$createdAt', start.toISOString()),
+            Query.lessThanEqual('$createdAt', end.toISOString())
+        ]);
+
+        const paymentMethods = { cash: 0, qr: 0, online: 0 };
+        orders.forEach(o => {
+            const method = (o.payment_method || 'cash').toLowerCase();
+            paymentMethods[method] = (paymentMethods[method] || 0) + parseFloat(o.final_amount || 0);
+        });
+
         res.json({
             totalRevenue,
             orderCount,
             avgOrderValue,
+            paymentSummary: paymentMethods
         });
+
     } catch (error) {
         console.error('[analyticsController] getSummary error:', error.message);
         res.status(500).json({ message: error.message });
