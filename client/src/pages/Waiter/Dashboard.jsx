@@ -39,18 +39,18 @@ const WaiterBoxCard = memo(({ order, formatPrice }) => {
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
 
     const bgColor =
-        order.orderStatus === 'pending'   ? 'bg-orange-50 border-orange-200' :
-        order.orderStatus === 'accepted'  ? 'bg-blue-50 border-blue-200' :
-        order.orderStatus === 'preparing' ? 'bg-indigo-50 border-indigo-200' :
-        order.orderStatus === 'ready'     ? 'bg-emerald-50 border-emerald-200' :
-        'bg-white border-gray-200';
+        order.orderStatus === 'pending' ? 'bg-orange-50 border-orange-200' :
+            order.orderStatus === 'accepted' ? 'bg-blue-50 border-blue-200' :
+                order.orderStatus === 'preparing' ? 'bg-indigo-50 border-indigo-200' :
+                    order.orderStatus === 'ready' ? 'bg-emerald-50 border-emerald-200' :
+                        'bg-white border-gray-200';
 
     const borderAccent =
-        order.orderStatus === 'pending'   ? 'border-l-orange-500' :
-        order.orderStatus === 'accepted'  ? 'border-l-blue-500' :
-        order.orderStatus === 'preparing' ? 'border-l-indigo-500' :
-        order.orderStatus === 'ready'     ? 'border-l-emerald-500' :
-        'border-l-gray-400';
+        order.orderStatus === 'pending' ? 'border-l-orange-500' :
+            order.orderStatus === 'accepted' ? 'border-l-blue-500' :
+                order.orderStatus === 'preparing' ? 'border-l-indigo-500' :
+                    order.orderStatus === 'ready' ? 'border-l-emerald-500' :
+                        'border-l-gray-400';
 
     const visibleItems = order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED') || [];
 
@@ -68,7 +68,7 @@ const WaiterBoxCard = memo(({ order, formatPrice }) => {
                     </h3>
                     <StatusBadge status={order.orderStatus} size="xs" />
                 </div>
-                
+
                 <div className="flex flex-col gap-1 mt-1.5">
                     <div className="flex items-center justify-between gap-1">
                         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/60 border border-black/5 rounded-md text-[9px] font-black text-gray-700 shadow-sm truncate max-w-[50%]">
@@ -116,17 +116,17 @@ const WaiterBoxCard = memo(({ order, formatPrice }) => {
 const OrderCard = memo(({ order, formatPrice }) => {
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
     const borderColor =
-        order.orderStatus === 'pending'   ? 'border-l-orange-500' :
-        order.orderStatus === 'accepted'  ? 'border-l-blue-500' :
-        order.orderStatus === 'preparing' ? 'border-l-indigo-500' :
-        order.orderStatus === 'ready'     ? 'border-l-emerald-500' :
-        'border-l-red-500';
+        order.orderStatus === 'pending' ? 'border-l-orange-500' :
+            order.orderStatus === 'accepted' ? 'border-l-blue-500' :
+                order.orderStatus === 'preparing' ? 'border-l-indigo-500' :
+                    order.orderStatus === 'ready' ? 'border-l-emerald-500' :
+                        'border-l-red-500';
     const bgColor =
-        order.orderStatus === 'pending'   ? 'bg-orange-50 dark:bg-orange-500/5' :
-        order.orderStatus === 'accepted'  ? 'bg-blue-50 dark:bg-blue-500/5' :
-        order.orderStatus === 'preparing' ? 'bg-indigo-50 dark:bg-indigo-500/5' :
-        order.orderStatus === 'ready'     ? 'bg-emerald-50 dark:bg-emerald-500/5' :
-        'bg-[var(--theme-bg-card)]';
+        order.orderStatus === 'pending' ? 'bg-orange-50 dark:bg-orange-500/5' :
+            order.orderStatus === 'accepted' ? 'bg-blue-50 dark:bg-blue-500/5' :
+                order.orderStatus === 'preparing' ? 'bg-indigo-50 dark:bg-indigo-500/5' :
+                    order.orderStatus === 'ready' ? 'bg-emerald-50 dark:bg-emerald-500/5' :
+                        'bg-[var(--theme-bg-card)]';
 
     return (
         <div className={`
@@ -171,11 +171,11 @@ const OrderCard = memo(({ order, formatPrice }) => {
 const TokenSquare = memo(({ order, onClick }) => {
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
     const sColor =
-        order.orderStatus === 'pending'   ? 'bg-orange-500/10 border-orange-500 text-orange-600' :
-        order.orderStatus === 'accepted'  ? 'bg-blue-600/10 border-blue-600 text-blue-600' :
-        order.orderStatus === 'preparing' ? 'bg-indigo-600/10 border-indigo-600 text-indigo-600' :
-        order.orderStatus === 'ready'     ? 'bg-emerald-600/10 border-emerald-500 text-emerald-600' :
-        'bg-gray-500/10 border-gray-500 text-gray-500';
+        order.orderStatus === 'pending' ? 'bg-orange-500/10 border-orange-500 text-orange-600' :
+            order.orderStatus === 'accepted' ? 'bg-blue-600/10 border-blue-600 text-blue-600' :
+                order.orderStatus === 'preparing' ? 'bg-indigo-600/10 border-indigo-600 text-indigo-600' :
+                    order.orderStatus === 'ready' ? 'bg-emerald-600/10 border-emerald-500 text-emerald-600' :
+                        'bg-gray-500/10 border-gray-500 text-gray-500';
 
     const itemCount = order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').length || 0;
     const time = order.createdAt
@@ -361,16 +361,16 @@ const WaiterDashboard = () => {
     };
 
     // Active = not paid yet AND not cancelled; History = paid (completed)
-    const activeOrders  = orders.filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled');
+    const activeOrders = orders.filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled');
     const historyOrders = orders.filter(o => o.paymentStatus === 'paid')
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const counts = {
-        pending:  activeOrders.filter(o => o.orderStatus === 'pending').length,
+        pending: activeOrders.filter(o => o.orderStatus === 'pending').length,
         accepted: activeOrders.filter(o => o.orderStatus === 'accepted').length,
-        preparing:activeOrders.filter(o => o.orderStatus === 'preparing').length,
-        ready:    activeOrders.filter(o => o.orderStatus === 'ready').length,
-        history:  historyOrders.length,
+        preparing: activeOrders.filter(o => o.orderStatus === 'preparing').length,
+        ready: activeOrders.filter(o => o.orderStatus === 'ready').length,
+        history: historyOrders.length,
     };
 
     const filteredOrders = (activeTab === 'active' ? activeOrders : historyOrders)
@@ -397,7 +397,7 @@ const WaiterDashboard = () => {
                             <p className="text-[10px] text-red-500 font-medium">Cannot reach the POS server. Please check your WiFi or IP settings.</p>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={() => fetchOrders()}
                         className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 shadow-lg shadow-red-500/20"
                     >
@@ -427,67 +427,66 @@ const WaiterDashboard = () => {
                 </div>
 
 
-                {/* Action Buttons */}
-                <div className="flex flex-row flex-wrap justify-end gap-2 w-full lg:w-auto">
+                {/* Action Buttons - Auto-adaptive single-line toolbar */}
+                <div className="flex flex-row items-center justify-end gap-1.5 w-full lg:w-auto overflow-x-auto hide-scrollbar flex-nowrap pb-1 lg:pb-0">
 
-                    {/* TOKEN | CARD segmented pill */}
-                    <div className="flex items-center p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] shadow-sm shrink-0">
+                    {/* Compact Mode Switch */}
+                    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm shrink-0 h-[44px]">
                         <button
-                            onClick={() => setIsProductionMode(true)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${
-                                isProductionMode 
-                                    ? 'bg-blue-600 text-white shadow-md' 
-                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
-                            }`}
+                            onClick={() => setIsProductionMode(!isProductionMode)}
+                            className={`
+                                relative inline-flex h-4 w-8 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent 
+                                transition-colors duration-300 ease-in-out focus:outline-none 
+                                ${isProductionMode ? 'bg-emerald-500' : 'bg-orange-500'}
+                            `}
                         >
-                            <Grid size={11} strokeWidth={2.5} />
-                            Token
+                            <span 
+                                className={`
+                                    pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md
+                                    transition duration-300 ease-in-out
+                                    ${isProductionMode ? 'translate-x-4' : 'translate-x-0'}
+                                `} 
+                            />
                         </button>
-                        <button
-                            onClick={() => setIsProductionMode(false)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${
-                                !isProductionMode 
-                                    ? 'bg-orange-500 text-white shadow-md' 
-                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
-                            }`}
-                        >
-                            <List size={11} strokeWidth={2.5} />
-                            Card
-                        </button>
+                        <span className={`text-[9px] font-black uppercase tracking-tighter transition-colors whitespace-nowrap ${isProductionMode ? 'text-emerald-500' : 'text-orange-500'}`}>
+                            {isProductionMode ? 'TOKEN' : 'CARD'}
+                        </span>
                     </div>
 
                     {/* TABLES button */}
                     {settings?.tableMapEnabled !== false && (
                         <button
                             onClick={() => setShowTables(t => !t)}
-                            className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all min-h-[44px] border ${
+                            className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all border border-[var(--theme-border)] h-[44px] shrink-0 ${
                                 showTables
                                     ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-600 shadow-sm'
-                                    : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:border-gray-400'
+                                    : 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
                             }`}
                         >
                             <Grid size={13} />
-                            <span className="truncate">Tables</span>
+                            <span>Tables</span>
                         </button>
                     )}
 
-                    {/* ── DINE IN & TAKEAWAY ── */}
+                    {/* DINE IN button */}
                     {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
                         <button
                             onClick={() => navigate('/dine-in')}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-orange-500/20 active:scale-95 min-h-[44px]"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[9px] uppercase tracking-wider transition-all shadow-md shadow-orange-500/20 active:scale-95 h-[44px] shrink-0"
                         >
-                            <Utensils size={13} />
-                            <span className="truncate">Dine In</span>
+                            <Utensils size={13} strokeWidth={3} />
+                            <span>Dine In</span>
                         </button>
                     )}
+
+                    {/* TAKEAWAY button */}
                     {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
                         <button
                             onClick={() => navigate('/take-away')}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md shadow-blue-600/20 active:scale-95 min-h-[44px]"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[9px] uppercase tracking-wider transition-all shadow-md shadow-blue-600/20 active:scale-95 h-[44px] shrink-0"
                         >
-                            <Package size={13} />
-                            <span className="truncate">Takeaway</span>
+                            <Package size={13} strokeWidth={3} />
+                            <span>Takeaway</span>
                         </button>
                     )}
                 </div>
@@ -499,31 +498,31 @@ const WaiterDashboard = () => {
                 <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
                     {['all', 'dine-in', 'takeaway']
                         .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
-                        .filter(t => t !== 'dine-in'  || settings?.dineInEnabled   !== false)
+                        .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
                         .map(t => (
-                        <button
-                            key={t}
-                            onClick={() => setFilterType(t)}
-                            className={`
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`
                                 flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all text-center whitespace-nowrap
                                 ${filterType === t
-                                    ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
-                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
                             `}
-                        >
-                            {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
-                        </button>
-                    ))}
+                            >
+                                {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
+                            </button>
+                        ))}
                 </div>
 
 
                 {activeTab === 'active' && (
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {[
-                            { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Pending',  activeText: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',   hover: 'hover:border-[var(--status-pending-border)]' },
-                            { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'Accepted', activeText: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',  hover: 'hover:border-[var(--status-accepted-border)]' },
-                            { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]',  label: 'Cooking',  activeText: 'text-[var(--status-preparing)]', activeBg: 'bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]', hover: 'hover:border-[var(--status-preparing-border)]' },
-                            { key: 'ready',     count: counts.ready,     dot: 'bg-[var(--status-ready)]',      label: 'Ready',    activeText: 'text-[var(--status-ready)]',     activeBg: 'bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]',     hover: 'hover:border-[var(--status-ready-border)]' },
+                            { key: 'pending', count: counts.pending, dot: 'bg-[var(--status-pending)]', label: 'Pending', activeText: 'text-[var(--status-pending)]', activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]', hover: 'hover:border-[var(--status-pending-border)]' },
+                            { key: 'accepted', count: counts.accepted, dot: 'bg-[var(--status-accepted)]', label: 'Accepted', activeText: 'text-[var(--status-accepted)]', activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]', hover: 'hover:border-[var(--status-accepted-border)]' },
+                            { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]', label: 'Cooking', activeText: 'text-[var(--status-preparing)]', activeBg: 'bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]', hover: 'hover:border-[var(--status-preparing-border)]' },
+                            { key: 'ready', count: counts.ready, dot: 'bg-[var(--status-ready)]', label: 'Ready', activeText: 'text-[var(--status-ready)]', activeBg: 'bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]', hover: 'hover:border-[var(--status-ready-border)]' },
                         ].map(({ key, count, dot, label, activeText, activeBg, hover }) => (
                             <button
                                 key={key}
@@ -579,10 +578,10 @@ const WaiterDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className={`grid gap-3 ${
+                <div className={`grid gap-3 transition-all duration-300 ${
                     isProductionMode
                         ? 'grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10'
-                        : 'grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+                        : 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
                 }`}>
                     {filteredOrders.map(order => (
                         isProductionMode ? (
