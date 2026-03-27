@@ -464,7 +464,7 @@ const CashierDashboard = () => {
                                             <p className="text-emerald-400 text-sm font-medium">Token closed • Order completed</p>
                                         </div>
                                     )}
-                                    <div className="p-4 md:p-8 flex justify-center">
+                                    <div className="p-4 sm:p-6 md:p-8 flex justify-center">
                                         <Receipt order={selectedOrder} formatPrice={formatPrice} settings={settings} />
                                     </div>
                                 </div>

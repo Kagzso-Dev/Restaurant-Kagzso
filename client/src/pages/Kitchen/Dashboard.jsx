@@ -107,56 +107,43 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
         );
     }
 
-    /* ── CARD (box style) ───────────────────────────────────────────────── */
+    /* ── CARD (box style - mimics Waiter Order History view) ────────────── */
     return (
         <div className={`
-            relative rounded-2xl border-l-4 flex flex-col shadow-md transition-all duration-300 animate-fade-in overflow-hidden
-            ${tColor} ${borderColor}
+            relative flex flex-col rounded-2xl border shadow-sm transition-all duration-300 animate-fade-in overflow-hidden h-full
+            bg-[var(--theme-bg-card)] border-[var(--theme-border)] border-l-4 ${borderColor}
             ${hasNewItems ? 'ring-2 ring-orange-400/60' : ''}
             ${isReady && !hasNewItems ? 'animate-pulse' : ''}
             ${urgency ? 'ring-2 ring-red-500/40' : ''}
         `}>
             {/* ── Header ────────────────────────────────────────────────── */}
-            <div className="px-4 pt-3.5 pb-2.5 border-b border-black/[0.06]">
-                {/* Row 1: ORDER label + cancel btn */}
-                <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 opacity-70">Order</span>
-                    {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' &&
-                     (order.orderStatus !== 'ready' || userRole === 'admin') &&
-                     (userRole === 'kitchen' || userRole === 'admin') && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onCancel(order); }}
-                            className="p-1 hover:bg-red-500/15 rounded-lg text-red-500/70 hover:text-red-600 transition-all"
-                            title="Cancel order"
-                        >
-                            <XCircle size={14} />
-                        </button>
-                    )}
+            <div className="px-3 pt-3 pb-2.5 border-b border-[var(--theme-border)]">
+                {/* Row 1: order number + status badge */}
+                <div className="flex items-center justify-between gap-1 mb-2 relative">
+                    <h3 className="text-[14px] font-black text-[var(--theme-text-main)] tracking-tight leading-none truncate pr-1">
+                        {order.orderNumber.replace('ORD-', '#')}
+                    </h3>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        {hasNewItems && <span className="text-[8px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wide animate-pulse">+New</span>}
+                        <StatusBadge status={order.orderStatus} size="xs" />
+                    </div>
                 </div>
-                {/* Row 2: Order number + status badge */}
-                <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-base font-black text-gray-900 tracking-tight leading-none">{order.orderNumber}</h3>
-                    <StatusBadge status={order.orderStatus} size="sm" />
-                </div>
-                {/* Row 3: Token/Table + timer */}
-                <div className="flex items-center gap-2 mt-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/50 border border-black/10 rounded-lg text-[10px] font-black text-gray-700 shadow-sm">
-                        <Utensils size={9} className="text-orange-500" />
-                        {order.orderType === 'dine-in'
-                            ? `Table ${order.tableId?.number || order.tableId || '?'}`
-                            : `Token ${order.tokenNumber || '?'}`}
-                    </span>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${urgency ? 'text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md' : 'text-gray-400'}`}>
-                        <Clock size={10} />{elapsed}
-                    </span>
-                    {hasNewItems && (
-                        <span className="ml-auto text-[8px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wide animate-pulse">+New</span>
-                    )}
+                {/* Row 2: Token/Table + timer */}
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between gap-1">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--theme-bg-hover)] border border-[var(--theme-border)] rounded-lg text-[10px] font-black text-[var(--theme-text-main)] shadow-sm truncate max-w-[50%]">
+                            <Utensils size={9} className="text-orange-500 shrink-0" />
+                            {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber || '?'}`}
+                        </span>
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold shrink-0 text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-md">
+                            <Clock size={10} />{elapsed.replace(' ', '')}
+                        </span>
+                    </div>
                 </div>
             </div>
 
             {/* ── Items ─────────────────────────────────────────────────── */}
-            <div className="flex-1 px-3 py-2.5 space-y-2 overflow-y-auto custom-scrollbar max-h-[220px]">
+            <div className="flex-1 px-3 py-2.5 space-y-2 overflow-y-auto custom-scrollbar min-h-[60px] max-h-[180px]">
                 {order.items.map(item => {
                     const status = item.status?.toUpperCase() || 'PENDING';
                     const isCancelled = status === 'CANCELLED';
@@ -166,27 +153,22 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                     const canCancel = !isCancelled && status === 'PENDING' && (userRole === 'kitchen' || userRole === 'admin');
 
                     return (
-                        <div key={item._id} className={`flex items-center gap-2 group ${isCancelled ? 'opacity-40' : ''}`}>
+                        <div key={item._id} className={`flex items-start gap-2 group ${isCancelled ? 'opacity-40' : ''}`}>
                             {/* Qty badge */}
-                            <div className={`w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-[11px] font-black transition-all
-                                ${status === 'READY'     ? 'bg-emerald-500 text-white' :
-                                  status === 'PREPARING' ? 'bg-indigo-500 text-white' :
-                                  status === 'ACCEPTED'  ? 'bg-blue-500 text-white' :
-                                  isCancelled            ? 'bg-red-400/30 text-red-500' :
-                                  isNewAdd               ? 'bg-orange-500 text-white animate-pulse' :
-                                  'bg-white/60 text-gray-700 border border-black/10'}`}
-                            >{item.quantity}</div>
+                            <div className="w-4 h-4 mt-0.5 shrink-0 rounded flex items-center justify-center text-[10px] font-black bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border border-[var(--theme-border)]">
+                                {item.quantity}
+                            </div>
 
                             {/* Name */}
                             <span
-                                className={`flex-1 text-xs font-bold leading-tight cursor-pointer transition-opacity hover:opacity-70
-                                    ${isItemReady ? 'text-emerald-600' : isCancelled ? 'line-through text-gray-400' : 'text-gray-900'}`}
+                                className={`flex-1 text-[11px] font-bold leading-tight cursor-pointer transition-opacity hover:opacity-70 mt-0.5
+                                    ${isItemReady ? 'text-emerald-600' : isCancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}`}
                                 onClick={() => !isCancelled && status !== 'READY' && onUpdateItemStatus(order._id, item._id, nextStatus)}
                             >
                                 {item.name}
-                                {item.variant?.name && <span className="ml-1 text-[7px] opacity-70">({item.variant.name})</span>}
+                                {item.variant?.name && <span className="ml-1 text-[8px] opacity-70">({item.variant.name})</span>}
                                 {isNewAdd && <span className="ml-1.5 bg-orange-500 text-white text-[7px] font-black px-1 py-px rounded uppercase">NEW</span>}
-                                {isItemReady && <span className="ml-1.5 text-[7px] font-black text-emerald-500 uppercase">✓ Done</span>}
+                                {isItemReady && <span className="ml-1.5 text-[8px] font-black text-emerald-500 uppercase">✓ Done</span>}
                             </span>
 
                             {/* Item action buttons */}
@@ -194,19 +176,19 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                 {!isCancelled && status !== 'READY' && (userRole === 'kitchen' || userRole === 'admin') && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onUpdateItemStatus(order._id, item._id, nextStatus); }}
-                                        className="w-6 h-6 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/15 transition-all"
+                                        className="w-5 h-5 rounded-full flex items-center justify-center text-[var(--theme-text-subtle)] hover:text-emerald-500 hover:bg-emerald-500/10 transition-all border border-transparent hover:border-emerald-500/20"
                                         title="Mark next status"
                                     >
-                                        <CheckCheck size={13} />
+                                        <CheckCheck size={12} />
                                     </button>
                                 )}
                                 {canCancel && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onCancelItem(order, item); }}
-                                        className="w-6 h-6 rounded-full flex items-center justify-center text-red-400 hover:bg-red-500/15 transition-all"
+                                        className="w-5 h-5 rounded-full flex items-center justify-center text-[var(--theme-text-subtle)] hover:text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
                                         title="Cancel item"
                                     >
-                                        <XCircle size={13} />
+                                        <XCircle size={12} />
                                     </button>
                                 )}
                             </div>
@@ -215,29 +197,45 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                 })}
             </div>
 
-            {/* ── Action Button ─────────────────────────────────────────── */}
-            {(userRole === 'kitchen' || userRole === 'admin') && (
-                order.orderStatus === 'pending' || order.orderStatus === 'accepted' || order.orderStatus === 'preparing'
-            ) && (
-                <div className="px-3 pb-3 pt-2 border-t border-black/[0.06]">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            const next = order.orderStatus === 'pending' ? 'accepted' : order.orderStatus === 'accepted' ? 'preparing' : 'ready';
-                            onUpdateStatus(order._id, next);
-                        }}
-                        style={{
-                            backgroundColor:
-                                order.orderStatus === 'pending' ? 'var(--status-accepted)' :
-                                order.orderStatus === 'accepted' ? 'var(--status-preparing)' :
-                                'var(--status-ready)'
-                        }}
-                        className="w-full py-2.5 text-white text-[12px] font-black rounded-xl shadow-md transition-all active:scale-95 hover:brightness-110 tracking-wide"
-                    >
-                        {order.orderStatus === 'pending' ? 'Accept' : order.orderStatus === 'accepted' ? 'Start Cooking' : 'Mark Ready ✓'}
-                    </button>
+            {/* ── Footer ────────────────────────────────────────────────── */}
+            <div className="px-3 py-2 border-t border-[var(--theme-border)] bg-[var(--theme-bg-hover)] mt-auto flex items-center justify-between gap-2">
+                <span className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-tighter shrink-0">
+                    {order.orderType === 'dine-in' ? 'DINE' : 'TAKE'}
+                </span>
+
+                <div className="flex items-center gap-1">
+                    {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' &&
+                     (order.orderStatus !== 'ready' || userRole === 'admin') &&
+                     (userRole === 'kitchen' || userRole === 'admin') && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onCancel(order); }}
+                            className="p-1 hover:bg-red-500/15 rounded-md text-red-500/70 hover:text-red-500 transition-all border border-transparent hover:border-red-500/20 mr-1"
+                            title="Cancel order"
+                        >
+                            <XCircle size={14} />
+                        </button>
+                    )}
+                    
+                    {(userRole === 'kitchen' || userRole === 'admin') && (
+                        order.orderStatus === 'pending' || order.orderStatus === 'accepted' || order.orderStatus === 'preparing'
+                    ) ? (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const next = order.orderStatus === 'pending' ? 'accepted' : order.orderStatus === 'accepted' ? 'preparing' : 'ready';
+                                onUpdateStatus(order._id, next);
+                            }}
+                            className={`px-3 py-1.5 text-white text-[10px] font-black rounded-lg shadow-sm transition-all active:scale-95 uppercase tracking-wider ${
+                                order.orderStatus === 'pending' ? 'bg-[var(--status-accepted)] hover:brightness-110' :
+                                order.orderStatus === 'accepted' ? 'bg-[var(--status-preparing)] hover:brightness-110' :
+                                'bg-[var(--status-ready)] hover:brightness-110 text-emerald-900 border border-emerald-900/10'
+                            }`}
+                        >
+                            {order.orderStatus === 'pending' ? 'Accept' : order.orderStatus === 'accepted' ? 'Start' : 'Ready'}
+                        </button>
+                    ) : null}
                 </div>
-            )}
+            </div>
         </div>
     );
 };
@@ -503,7 +501,7 @@ const KitchenDashboard = () => {
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {[
                             { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Pending',  activeText: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',   hover: 'hover:border-[var(--status-pending-border)]' },
                             { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'Accepted', activeText: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',  hover: 'hover:border-[var(--status-accepted-border)]' },

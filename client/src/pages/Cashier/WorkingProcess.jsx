@@ -182,7 +182,7 @@ const WorkingProcess = () => {
     };
 
     return (
-        <div className="flex flex-col h-full space-y-6">
+        <div className="flex flex-col space-y-4 animate-fade-in">
             {/* ── Tabs & Counters ─────────────────────────────────────── */}
             <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
                 <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
@@ -205,7 +205,7 @@ const WorkingProcess = () => {
                     ))}
                 </div>
 
-                <div className="grid grid-cols-4 gap-2 mt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
                     {[
                         { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Pending',  activeText: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',   hover: 'hover:border-[var(--status-pending-border)]' },
                         { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'Accepted', activeText: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',  hover: 'hover:border-[var(--status-accepted-border)]' },
@@ -229,9 +229,9 @@ const WorkingProcess = () => {
 
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8 flex-1 overflow-hidden h-auto md:h-[calc(100dvh-320px)] min-h-[500px]">
-                {/* Left: Active Orders List */}
-                <div className="md:col-span-1 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] overflow-hidden flex flex-col">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 h-auto md:h-[calc(100dvh-280px)] min-h-0 md:min-h-[420px]">
+                {/* Left: Active Orders List — 2/5 of available width */}
+                <div className="md:col-span-2 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] overflow-hidden flex flex-col min-h-[300px] md:min-h-0">
                     <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-bg-hover)] flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <h2 className="text-lg font-bold text-[var(--theme-text-main)]">Active Orders</h2>
@@ -254,7 +254,7 @@ const WorkingProcess = () => {
                             </span>
                         </button>
                     </div>
-                    <div className={`overflow-y-auto flex-1 p-4 custom-scrollbar ${isGridView ? 'grid grid-cols-3 gap-2 content-start' : 'space-y-3'}`}>
+                    <div className={`overflow-y-auto flex-1 p-3 custom-scrollbar ${isGridView ? 'grid grid-cols-2 gap-3 content-start' : 'space-y-2.5'}`}>
                         {displayOrders.map(order => {
                             const tokenLabel = order.orderType === 'dine-in'
                                 ? `Table ${order.tableId?.number || order.tableId || '?'}`
@@ -263,19 +263,29 @@ const WorkingProcess = () => {
                                 <button
                                     key={order._id}
                                     onClick={() => setSelectedOrder(order)}
-                                    className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center p-2 transition-all active:scale-90 ${
-                                        selectedOrder?._id === order._id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+                                    className={`w-full min-h-[100px] h-[100px] sm:min-h-[120px] sm:h-[120px] max-w-[150px] mx-auto rounded-2xl border-2 flex flex-col items-center justify-between p-2.5 sm:p-3 transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm overflow-hidden ${
+                                        selectedOrder?._id === order._id ? 'ring-2 ring-blue-500 ring-offset-2' : ''
                                     } ${order.orderStatus === 'ready' ? 'animate-pulse' : ''} ${getStatusColor(order.orderStatus)}`}
                                 >
-                                    <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-1 tracking-widest">
-                                        {order.orderType === 'dine-in' ? 'Dine In' : 'Takeaway'}
-                                    </span>
-                                    <span className="text-lg font-black leading-tight tracking-tight text-center">
-                                        {tokenLabel}
-                                    </span>
-                                    <span className={`mt-2 text-[7px] font-black uppercase px-2 py-0.5 rounded border border-current/30 bg-white/5`}>
-                                        {order.orderStatus}
-                                    </span>
+                                    {/* Top Row: Type & Status */}
+                                    <div className="flex items-start justify-between w-full shrink-0">
+                                        <span className="text-[9px] uppercase font-black opacity-50 tracking-wider">
+                                            {order.orderType === 'dine-in' ? 'Dine' : 'Take'}
+                                        </span>
+                                        <span className="text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-current/30 bg-white/10 shrink-0">
+                                            {order.orderStatus}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Centered Large Label */}
+                                    <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0">
+                                        <span className="text-lg sm:text-xl font-black leading-[1.1] tracking-tight text-center px-1 break-words w-full truncate">
+                                            {tokenLabel}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Bottom aesthetic indicator bar */}
+                                    <div className="w-1/3 h-1 rounded-full bg-current opacity-20 shrink-0 mt-auto" />
                                 </button>
                             ) : (
                             <div
@@ -307,15 +317,15 @@ const WorkingProcess = () => {
                     </div>
                 </div>
 
-                {/* Right: Order Details */}
-                <div className="md:col-span-2 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] flex flex-col overflow-hidden relative">
+                {/* Right: Order Details — 3/5 of available width, hidden on mobile when empty */}
+                <div className={`md:col-span-3 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] flex flex-col overflow-hidden relative ${!selectedOrder ? 'hidden md:flex' : 'flex'}`}>
                     {selectedOrder ? (
                         <div className="flex flex-col h-full">
-                            <div className="flex-1 p-8 overflow-y-auto custom-scrollbar flex justify-center bg-[var(--theme-bg-dark)]">
+                            <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar flex justify-center bg-[var(--theme-bg-dark)]">
                                 <div id="printable-kot" className="w-full max-w-sm bg-white text-black p-6 shadow-2xl relative">
                                     {/* Watermark */}
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                                        <h1 className="text-9xl font-bold uppercase rotate-45">KOT</h1>
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none overflow-hidden">
+                                        <h1 className="text-7xl font-bold uppercase rotate-45 select-none">KOT</h1>
                                     </div>
 
                                     {/* KOT Header */}
@@ -385,7 +395,7 @@ const WorkingProcess = () => {
                             </div>
 
                             {/* Actions */}
-                            <div className="p-6 bg-[var(--theme-bg-hover)] border-t border-[var(--theme-border)] flex items-center justify-end gap-4">
+                            <div className="px-4 py-3 bg-[var(--theme-bg-hover)] border-t border-[var(--theme-border)] flex items-center justify-end gap-3">
                                 <button
                                     onClick={printKOT}
                                     className="flex items-center space-x-2 px-6 py-3 bg-[var(--theme-bg-card)] hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-main)] rounded-xl transition-colors font-semibold border border-[var(--theme-border)]"

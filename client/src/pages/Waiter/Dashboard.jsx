@@ -418,7 +418,7 @@ const WaiterDashboard = () => {
                             <h1 className="text-sm sm:text-lg font-bold text-[var(--theme-text-main)] tracking-tight truncate leading-tight">
                                 {user?.role === 'cashier' ? 'Token Monitoring' : 'Waiter Console'}
                             </h1>
-                            <p className="text-[9px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest mt-0.5 hidden sm:block">
+                            <p className="text-[9px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest mt-0.5 hidden sm:block whitespace-nowrap truncate">
                                 {user?.role === 'cashier' ? 'Live View' : 'Monitoring'}
                             </p>
                         </div>
@@ -428,29 +428,24 @@ const WaiterDashboard = () => {
 
 
                 {/* Action Buttons - Auto-adaptive single-line toolbar */}
-                <div className="flex flex-row items-center justify-end gap-1.5 w-full lg:w-auto overflow-x-auto hide-scrollbar flex-nowrap pb-1 lg:pb-0">
+                <div className="flex flex-row items-center justify-end gap-1.5 w-full md:w-auto md:shrink-0 overflow-x-auto hide-scrollbar flex-nowrap pb-1 md:pb-0">
 
                     {/* Compact Mode Switch */}
-                    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm shrink-0 h-[44px]">
+                    <div className="flex items-center justify-center bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm shrink-0 h-[44px] px-3">
                         <button
+                            type="button"
                             onClick={() => setIsProductionMode(!isProductionMode)}
-                            className={`
-                                relative inline-flex h-4 w-8 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent 
-                                transition-colors duration-300 ease-in-out focus:outline-none 
-                                ${isProductionMode ? 'bg-emerald-500' : 'bg-orange-500'}
-                            `}
+                            className={`relative flex items-center appearance-none p-0 m-0 w-10 h-5 rounded-full shrink-0 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-orange-500/30 overflow-hidden ${isProductionMode ? 'bg-emerald-500' : 'bg-orange-500'}`}
+                            style={{ minHeight: '20px', minWidth: '40px' }}
                         >
+                            <span className="absolute inset-0 flex items-center justify-between px-1.5 pointer-events-none">
+                                <span className={`text-[7px] leading-none font-black text-white transition-opacity duration-300 ${isProductionMode ? 'opacity-100' : 'opacity-0'}`}>TOK</span>
+                                <span className={`text-[6px] pl-[2px] leading-none font-black text-white transition-opacity duration-300 tracking-tighter ${!isProductionMode ? 'opacity-100' : 'opacity-0'}`}>CARD</span>
+                            </span>
                             <span 
-                                className={`
-                                    pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md
-                                    transition duration-300 ease-in-out
-                                    ${isProductionMode ? 'translate-x-4' : 'translate-x-0'}
-                                `} 
+                                className={`relative z-10 block w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isProductionMode ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} 
                             />
                         </button>
-                        <span className={`text-[9px] font-black uppercase tracking-tighter transition-colors whitespace-nowrap ${isProductionMode ? 'text-emerald-500' : 'text-orange-500'}`}>
-                            {isProductionMode ? 'TOKEN' : 'CARD'}
-                        </span>
                     </div>
 
                     {/* TABLES button */}

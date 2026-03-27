@@ -127,7 +127,7 @@ const AdminNotifications = () => {
             </div>
 
             {/* ── Stats Cards ─────────────────────────────────────────── */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-[var(--theme-bg-card)] p-4 rounded-2xl border border-[var(--theme-border)]">
                     <p className="text-[10px] uppercase font-bold tracking-widest text-[var(--theme-text-muted)]">Total</p>
                     <p className="text-2xl font-black text-[var(--theme-text-main)] mt-1">{stats.total}</p>
