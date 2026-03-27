@@ -48,6 +48,27 @@
   --bg-card2: var(--theme-bg-card2);
   --text-main: var(--theme-text-main);
   --text-muted: var(--theme-text-muted);
+
+  /* ── Order Status Color Tokens (used in Kitchen, Waiter, StatusBadge) ── */
+  /* Default values (blue-dark theme). Overridden per theme or via Settings. */
+  --status-pending:           #3b82f6;
+  --status-pending-bg:        rgba(59, 130, 246, 0.08);
+  --status-pending-border:    rgba(59, 130, 246, 0.25);
+
+  --status-accepted:          #8b5cf6;
+  --status-accepted-bg:       rgba(139, 92, 246, 0.08);
+  --status-accepted-border:   rgba(139, 92, 246, 0.25);
+
+  --status-preparing:         #f59e0b;
+  --status-preparing-bg:      rgba(245, 158, 11, 0.08);
+  --status-preparing-border:  rgba(245, 158, 11, 0.25);
+
+  --status-ready:             #10b981;
+  --status-ready-bg:          rgba(16, 185, 129, 0.08);
+  --status-ready-border:      rgba(16, 185, 129, 0.25);
+
+  --status-completed:         #6b7280;
+  --status-cancelled:         #ef4444;
 }
 
 /* ─── Theme: Default (Blue-Black — existing design) ─────────────────────── */
@@ -150,8 +171,8 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  /* ── Fluid base font: 13px on 320px → 15px on 640px → 16px on 1024px+ */
-  font-size: clamp(13px, 0.5vw + 11.5px, 16px);
+  /* ── Fluid base font: 14px on mobile → scales with viewport → 18px on 1400px+ */
+  font-size: clamp(14px, 1.5vw, 18px);
 }
 
 body {
@@ -163,6 +184,7 @@ body {
   font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
   /* Inherits fluid font-size from html via clamp() */
   font-size: inherit;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--theme-bg-dark);
@@ -282,6 +304,8 @@ select:-webkit-autofill:focus {
 
 svg {
   filter: none !important;
+  /* Do NOT set max-width/height on svg globally — it breaks Lucide icons
+     inside fixed-size containers. Only img/video/canvas get that treatment. */
 }
 
 /* ─── Scrollbar ──────────────────────────────────────────────────────────── */
@@ -856,10 +880,11 @@ button {
 /* Ensure images and media never overflow their containers */
 img,
 video,
-canvas,
-svg {
+canvas {
   max-width: 100%;
   height: auto;
+  /* NOTE: SVG intentionally excluded — Lucide icons are inline SVGs that must
+     not be constrained by responsive media rules. */
 }
 
 /* Cards stack and go full-width on mobile */
@@ -935,9 +960,11 @@ a:not([class]) {
     padding-right: max(0px, env(safe-area-inset-right));
   }
 
-  /* Scrollable content clears the fixed bottom nav + gesture bar on Android */
-  .content-scroll-pad {
-    padding-bottom: calc(var(--bottomnav-h) + max(1rem, env(safe-area-inset-bottom)) + 0.75rem);
+  /* Scrollable content clears the fixed bottom nav + gesture bar on Android (mobile only) */
+  @media (max-width: 767px) {
+    .content-scroll-pad {
+      padding-bottom: calc(var(--bottomnav-h) + max(1rem, env(safe-area-inset-bottom)) + 0.75rem);
+    }
   }
 }
 
@@ -981,12 +1008,13 @@ a:not([class]) {
 }
 
 /* ─── Main content scroll pad: clears fixed bottom nav + safe area ──────── */
-/* Replaces hard-coded pb-28 so Android gesture bar is always accounted for  */
+/* Bottom nav is mobile-only (<768px). Tablet/Desktop get a flat pad.        */
 .content-scroll-pad {
   padding-bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 1rem) + 0.75rem);
 }
 
-@media (min-width: 1024px) {
+/* Tablet (768px+) and Desktop: no bottom nav, use a simple top/bottom pad */
+@media (min-width: 768px) {
   .content-scroll-pad {
     padding-bottom: 1.5rem;
   }
@@ -998,6 +1026,7 @@ a:not([class]) {
   bottom: calc(4.5rem + env(safe-area-inset-bottom, 12px));
 }
 
+/* Tablet/Desktop: bottom nav hidden, so no offset needed */
 @media (min-width: 768px) {
   .bottom-nav-offset {
     bottom: 0;
@@ -1141,8 +1170,10 @@ a:not([class]) {
     --sp-4: 12px;
   }
 
-  /* Prevent any element from exceeding viewport */
-  * { max-width: 100vw; }
+  /* Prevent block-level containers from exceeding viewport */
+  div, section, article, main, header, footer, nav, aside {
+    max-width: 100vw;
+  }
 
   /* Tighten grid gaps */
   .grid { gap: 6px !important; }
@@ -1182,10 +1213,11 @@ p, span, h1, h2, h3, h4, h5, h6 {
 }
 
 /* ─── Prevent images from exceeding card bounds on any screen ───────────── */
+/* Note: object-fit is NOT applied globally — only content images use cover.
+   Apply .img-cover individually where needed, not on all img elements. */
 img {
   max-width: 100%;
-  height: auto;
-  object-fit: cover;
+  /* height: auto is already set in the media block above. */
 }
 
 /* ─── Stat counter cards — never overflow on narrow screens ─────────────── */
@@ -1219,9 +1251,298 @@ img {
   }
 }
 
+/* ─── Tablet (768px – 1024px): Desktop-like horizontal layout ───────────── */
+/* Tablet behaves like desktop: sidebar visible (collapsed), no bottom nav.  */
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root {
+    --content-px: 20px;
+  }
+
+  /* Ensure modals are sheet-style, not full-screen on tablet */
+  .modal-shell {
+    width: auto;
+    max-width: 600px;
+    border-radius: 16px !important;
+    margin: auto !important;
+    position: relative !important;
+    bottom: auto !important;
+  }
+
+  /* Charts keep responsive container but with comfortable height */
+  .recharts-responsive-container {
+    min-height: 200px;
+  }
+}
+
 /* ─── Landscape phone adjustments ─────────────────────────────────────────── */
 @media (max-height: 500px) and (orientation: landscape) {
   .hide-landscape { display: none !important; }
   .h-dynamic-screen { height: 100dvh; }
   .content-scroll-pad { padding-bottom: 0.5rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPREHENSIVE RESPONSIVE FIX SYSTEM v2
+   Addresses all device-specific layout issues
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Image content helper (apply to food/content images, NOT icons) ──────── */
+.img-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ─── Global text overflow protection ────────────────────────────────────── */
+/* Prevents any text from forcing horizontal scroll */
+h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* ─── Flex children safe defaults ────────────────────────────────────────── */
+/* Any direct flex child that might overflow: add min-w-0 in JSX or here */
+.flex-safe > * {
+  min-width: 0;
+}
+
+/* ─── Full-width form inputs (override any conflicting styles) ────────────── */
+.w-full {
+  max-width: 100%;
+}
+
+/* ─── Kitchen & Waiter grid: tablet should stay dense like desktop ─────────── */
+/* Tablet (768px – 1024px) — keep 2+ column grids, NOT single column */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Kitchen stats: enforce 4 col on tablet */
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  /* Admin stat cards: 2 col minimum on tablet */
+  .xs\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Waiter status filter: always 4 col on tablet */
+  .sm\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  /* Table wrapper: allow horizontal scroll for overflow tables */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ─── Mobile grid layout (≤ 767px) ──────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Kitchen stats: 2-col on mobile */
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Prevent any fixed-width layout from causing scroll */
+  [style*="width: 1200"],
+  [style*="width:1200"],
+  [style*="min-width: 1200"],
+  [style*="min-width:1200"] {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Stack all header action rows on mobile */
+  .flex-col-mobile {
+    flex-direction: column !important;
+  }
+}
+
+/* ─── OnePlus / Android shift fix ────────────────────────────────────────── */
+/* Prevents layout shift caused by system bars on Android devices */
+@media (max-width: 767px) {
+  html, body, #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Prevent any absolutely-positioned element from causing page-width issues */
+  .fixed, [style*="position: fixed"], [style*="position:fixed"] {
+    max-width: 100vw;
+  }
+}
+
+/* ─── Layout wrapper — ensures content never overflows sidebar ───────────── */
+/* The main content flex child already has min-w-0 in Layout.jsx.
+   These rules add defensive overflow handling for deep-nested content. */
+main > div {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ─── Table mobile cards helper ──────────────────────────────────────────── */
+/* For table rows that should become cards on mobile, use .table-to-cards */
+@media (max-width: 640px) {
+  .table-to-cards table,
+  .table-to-cards thead,
+  .table-to-cards tbody,
+  .table-to-cards th,
+  .table-to-cards td,
+  .table-to-cards tr {
+    display: block;
+  }
+  .table-to-cards thead tr {
+    display: none;
+  }
+  .table-to-cards td {
+    text-align: right;
+    padding-left: 40%;
+    position: relative;
+  }
+  .table-to-cards td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 12px;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--theme-text-muted);
+  }
+}
+
+/* ─── Touch & interaction improvements for all mobile devices ────────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover-dependent-only states that don't work on touch */
+  .hover\:scale-105:hover,
+  .hover\:scale-\[1\.02\]:hover {
+    transform: none;
+  }
+
+  /* Increase tap targets for better touch accuracy */
+  .touch-target,
+  button:not(.btn-xs),
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ─── Recharts responsiveness enforcement ───────────────────────────────── */
+.recharts-wrapper,
+.recharts-responsive-container {
+  max-width: 100% !important;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .recharts-responsive-container {
+    min-height: 180px;
+  }
+}
+
+/* ─── Modal backdrop: prevent overflow behind modal ──────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── Sidebar layout: CSS-level fix to prevent content shifting ──────────── */
+/* On tablet: sidebar is fixed-width (80px collapsed). Main content gets the rest. */
+@media (min-width: 768px) {
+  .sidebar-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .sidebar-layout > aside {
+    flex-shrink: 0;
+  }
+
+  .sidebar-layout > .main-area {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+}
+
+/* ─── Topbar: fix title truncation on very small devices ─────────────────── */
+@media (max-width: 360px) {
+  header h1 {
+    font-size: 0.875rem !important;
+    max-width: calc(100vw - 120px);
+  }
+}
+
+/* ─── Bottom nav: always above system bars ───────────────────────────────── */
+@media (max-width: 767px) {
+  nav.fixed.bottom-0 {
+    z-index: 40;
+    /* Ensure bottom nav doesn't clip behind Android nav bar */
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+  }
+}
+
+/* ─── Card grids: consistent gap management ──────────────────────────────── */
+@media (max-width: 374px) {
+  /* Tightest screens: reduce grid gap to reclaim space */
+  .gap-3 { gap: 8px !important; }
+  .gap-4 { gap: 10px !important; }
+}
+
+/* ─── Admin Analytics: prevent chart overflow ─────────────────────────────── */
+.analytics-chart-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* ─── Flex row: prevent single items from forcing full width ─────────────── */
+.flex-row-safe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+/* ─── Utility: clamp text to prevent overflow ────────────────────────────── */
+.text-safe {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ─── Focus ring: accessible and consistent across all devices ───────────── */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Suppress focus ring for mouse/touch (only show for keyboard) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Print: hide non-essential UI elements ──────────────────────────────── */
+@media print {
+  nav, aside, header, .bottom-nav-safe,
+  button:not(.print-show),
+  .no-print {
+    display: none !important;
+  }
+}

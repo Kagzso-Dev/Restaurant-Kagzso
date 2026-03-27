@@ -275,7 +275,7 @@ const NewOrder = () => {
 
     // ── Render Helpers ───────────────────────────────────────────────
     if (loading) return (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-[100dvh]">
             <div className="skeleton w-12 h-12 rounded-full" />
         </div>
     );
@@ -363,7 +363,7 @@ const NewOrder = () => {
 
             {/* ── STEP 3: MAIN POS MENU (Categories | Menu | Cart) ─────── */}
             {step === 3 && (
-                <div className="flex flex-col lg:flex-row h-full gap-5 animate-fade-in overflow-hidden">
+                <div className="flex flex-col md:flex-row h-full gap-5 animate-fade-in overflow-hidden">
 
                     {/* Panel 1 & 2: Categories + Menu Grid */}
                     <div className="flex-1 flex flex-col min-w-0 bg-[var(--theme-bg-card)] rounded-3xl border border-[var(--theme-border)] shadow-2xl overflow-hidden">
@@ -480,14 +480,16 @@ const NewOrder = () => {
 
                     {/* ── Panel 3: Cart / Sidebar Summary ────────────────── */}
                     <aside className={`
-                        fixed inset-0 z-40 lg:relative lg:inset-auto lg:z-0 lg:w-[300px] xl:w-[360px] flex-shrink-0
+                        fixed inset-0 z-40 md:relative md:inset-auto md:z-0 md:w-[300px] xl:w-[360px] flex-shrink-0
                         transition-transform duration-300 ease-in-out
-                        ${isCartOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+                        ${isCartOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
                     `}>
                         {/* mobile backdrop */}
-                        {isCartOpen && <div onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm lg:hidden" />}
+                        {isCartOpen && <div onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" />}
 
-                        <div className="relative h-full w-full max-w-[400px] ml-auto lg:ml-0 bg-[var(--theme-bg-card)] rounded-none lg:rounded-3xl border-l lg:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
+
+                        <div className="relative h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
+
                             {/* Cart Header */}
                             <div className="px-5 py-5 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
                                 <div>
@@ -608,7 +610,8 @@ const NewOrder = () => {
                                 >
                                     {orderId ? `Add to Order ${currentOrder?.orderNumber || ''}` : 'Confirm & Place Order'} <ArrowRight size={18} />
                                 </button>
-                                <button className="lg:hidden w-full py-3 text-gray-400 font-bold text-xs uppercase tracking-widest" onClick={() => setIsCartOpen(false)}>
+                                <button className="md:hidden w-full py-3 text-gray-400 font-bold text-xs uppercase tracking-widest" onClick={() => setIsCartOpen(false)}>
+
                                     Continue Adding Items
                                 </button>
                             </div>
@@ -619,7 +622,8 @@ const NewOrder = () => {
 
             {/* ── Mobile Cart Trigger (Sticky Bottom) ──────────────────── */}
             {step === 3 && cart.length > 0 && !isCartOpen && (
-                <div className="lg:hidden fixed bottom-20 left-4 right-4 z-40 bg-orange-600 rounded-2xl shadow-2xl p-4 flex items-center justify-between animate-slide-up">
+                <div className="md:hidden fixed bottom-20 left-4 right-4 z-40 bg-orange-600 rounded-2xl shadow-2xl p-4 flex items-center justify-between animate-slide-up">
+
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <ShoppingCart size={24} className="text-white" />

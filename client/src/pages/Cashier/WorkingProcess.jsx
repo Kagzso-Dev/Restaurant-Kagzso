@@ -229,9 +229,9 @@ const WorkingProcess = () => {
 
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8 flex-1 overflow-hidden h-auto lg:h-[calc(100vh-320px)] min-h-[500px]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8 flex-1 overflow-hidden h-auto md:h-[calc(100dvh-320px)] min-h-[500px]">
                 {/* Left: Active Orders List */}
-                <div className="lg:col-span-1 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] overflow-hidden flex flex-col">
+                <div className="md:col-span-1 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] overflow-hidden flex flex-col">
                     <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-bg-hover)] flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <h2 className="text-lg font-bold text-[var(--theme-text-main)]">Active Orders</h2>
@@ -308,7 +308,7 @@ const WorkingProcess = () => {
                 </div>
 
                 {/* Right: Order Details */}
-                <div className="lg:col-span-2 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] flex flex-col overflow-hidden relative">
+                <div className="md:col-span-2 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] flex flex-col overflow-hidden relative">
                     {selectedOrder ? (
                         <div className="flex flex-col h-full">
                             <div className="flex-1 p-8 overflow-y-auto custom-scrollbar flex justify-center bg-[var(--theme-bg-dark)]">

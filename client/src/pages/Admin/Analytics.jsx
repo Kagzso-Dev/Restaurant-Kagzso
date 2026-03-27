@@ -240,10 +240,10 @@ const Analytics = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* ── Revenue & Order Trends ────────────────────── */}
-                <div className="xl:col-span-2 bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
-                    <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center justify-between">
+                <div className="lg:col-span-2 bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-2xl border border-[var(--theme-border)]">
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] mb-4 sm:mb-6 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Clock size={20} className="text-blue-400" />
                             Revenue &amp; Order Trends
@@ -252,7 +252,7 @@ const Analytics = () => {
                             {reportRange}
                         </span>
                     </h3>
-                    <div className="h-[300px]">
+                    <div className="analytics-chart-wrap h-[260px] sm:h-[300px]">
                         {reportData.length === 0 ? (
                             <div className="h-full flex items-center justify-center text-[var(--theme-text-muted)] text-sm italic">
                                 No revenue data for this period.
@@ -285,12 +285,12 @@ const Analytics = () => {
                 </div>
 
                 {/* ── Payment Distribution ───────────────────────── */}
-                <div className="bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
-                    <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center gap-2">
+                <div className="bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-2xl border border-[var(--theme-border)]">
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] mb-4 sm:mb-6 flex items-center gap-2">
                         <TrendingUp size={20} className="text-purple-400" />
                         Bills & Payments
                     </h3>
-                    <div className="h-[300px]">
+                    <div className="analytics-chart-wrap h-[260px] sm:h-[300px]">
                         {!summary.paymentSummary ? (
                             <div className="h-full flex items-center justify-center text-[var(--theme-text-muted)] text-sm italic">
                                 Loading payments...
@@ -322,16 +322,16 @@ const Analytics = () => {
             </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {/* ── Waiter Ranking ─────────────────────────────── */}
 
-                <div className="bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
-                    <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center gap-2">
+                <div className="bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-2xl border border-[var(--theme-border)]">
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] mb-4 sm:mb-6 flex items-center gap-2">
                         <Award size={20} className="text-orange-400" />
                         Waiter Productivity Ranking
                     </h3>
-                    <div className="h-[300px]">
+                    <div className="analytics-chart-wrap h-[260px] sm:h-[300px]">
                         {waiters.length === 0 ? (
                             <div className="h-full flex items-center justify-center text-[var(--theme-text-muted)] text-sm italic">
                                 No completed orders yet.
@@ -360,12 +360,12 @@ const Analytics = () => {
                 </div>
 
                 {/* ── Kitchen Performance ─────────────────────────── */}
-                <div className="bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
-                    <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center gap-2">
+                <div className="bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-2xl border border-[var(--theme-border)]">
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] mb-4 sm:mb-6 flex items-center gap-2">
                         <ChefHat size={20} className="text-emerald-400" />
                         Kitchen Prep Time Trends (min)
                     </h3>
-                    <div className="h-[300px]">
+                    <div className="analytics-chart-wrap h-[260px] sm:h-[300px]">
                         {kitchen.length === 0 ? (
                             <div className="h-full flex items-center justify-center text-[var(--theme-text-muted)] text-sm italic">
                                 No kitchen data yet.
@@ -387,12 +387,12 @@ const Analytics = () => {
                 </div>
 
                 {/* ── Hourly Revenue Distribution ─────────────────── */}
-                <div className="bg-[var(--theme-bg-card)] p-6 rounded-2xl border border-[var(--theme-border)]">
-                    <h3 className="text-lg font-bold text-[var(--theme-text-main)] mb-6 flex items-center gap-2">
+                <div className="bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-2xl border border-[var(--theme-border)]">
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] mb-4 sm:mb-6 flex items-center gap-2">
                         <TrendingUp size={20} className="text-blue-400" />
                         Hourly Revenue Distribution
                     </h3>
-                    <div className="h-[300px]">
+                    <div className="analytics-chart-wrap h-[260px] sm:h-[300px]">
                         {heatmap.length === 0 ? (
                             <div className="h-full flex items-center justify-center text-[var(--theme-text-muted)] text-sm italic">
                                 No hourly data yet.

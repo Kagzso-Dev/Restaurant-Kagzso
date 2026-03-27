@@ -74,7 +74,7 @@ const FoodItem = memo(({
                     {/* Image */}
                     <div className="relative w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0 shadow-sm">
                         {item.image
-                            ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            ? <img src={item.image} alt={item.name} className="img-cover group-hover:scale-105 transition-transform duration-300" />
                             : <div className="w-full h-full flex items-center justify-center text-3xl">🍔</div>
                         }
                         {item.availability === false && (
@@ -181,7 +181,7 @@ const FoodItem = memo(({
             >
                 <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
                     {item.image
-                        ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        ? <img src={item.image} alt={item.name} className="img-cover" />
                         : <div className="w-full h-full flex items-center justify-center text-xl">🍔</div>
                     }
                     <div className={`absolute top-0.5 left-0.5 w-2 h-2 rounded-full border border-white ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
@@ -216,7 +216,7 @@ const FoodItem = memo(({
             {/* Image */}
             <div className="relative w-full aspect-[4/3] overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
                 {item.image
-                    ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ? <img src={item.image} alt={item.name} className="img-cover group-hover:scale-105 transition-transform duration-300" />
                     : <div className="w-full h-full flex items-center justify-center text-4xl">🍔</div>
                 }
                 <div className={`absolute top-2 left-2 w-3 h-3 rounded-full border-2 border-white shadow-md ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />

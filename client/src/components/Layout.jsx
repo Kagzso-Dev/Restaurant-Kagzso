@@ -10,7 +10,8 @@ import { Outlet, Navigate } from 'react-router-dom';
  *
  * Mobile  (<768px):  No sidebar. Full-width content + BottomNav bar.
  *                    Hamburger opens slide-in Drawer.
- * Tablet  (768-1024): Collapsible sidebar (icon-only by default), TopBar visible.
+ * Tablet  (768-1024): Desktop-like: collapsible sidebar (icon-only), no BottomNav.
+ *                     Hamburger toggles sidebar expand/collapse.
  * Desktop (1025px+): Permanent full sidebar, no BottomNav.
  */
 const Layout = () => {
@@ -34,26 +35,42 @@ const Layout = () => {
         document.body.classList.remove('drawer-open');
     }, []);
 
-    // Resize listener for state updates
-    useEffect(() => {
-        const handleResize = () => {
-            const width = window.innerWidth;
-            const tabletRange = width >= 768 && width < 1025;
-            setIsMobile(width < 768);
-            setIsTablet(tabletRange);
+    // On mobile: open sidebar drawer. On tablet/desktop: toggle sidebar collapse.
+    const handleMenuClick = useCallback(() => {
+        if (isMobile) {
+            openDrawer();
+        } else {
+            setSidebarCollapsed(c => !c);
+        }
+    }, [isMobile, openDrawer]);
 
-            if (width >= 1025) {
-                closeDrawer();
-                setSidebarCollapsed(false);
-            } else if (tabletRange) {
-                setSidebarCollapsed(true);
-            } else {
-                // Mobile
-                setSidebarCollapsed(false);
-            }
+    // Resize listener for state updates — debounced to avoid excessive re-renders
+    useEffect(() => {
+        let resizeTimer;
+        const handleResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const width = window.innerWidth;
+                const tabletRange = width >= 768 && width < 1025;
+                setIsMobile(width < 768);
+                setIsTablet(tabletRange);
+
+                if (width >= 1025) {
+                    closeDrawer();
+                    setSidebarCollapsed(false);
+                } else if (tabletRange) {
+                    setSidebarCollapsed(true);
+                } else {
+                    // Mobile
+                    setSidebarCollapsed(false);
+                }
+            }, 100);
         };
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            clearTimeout(resizeTimer);
+        };
     }, [closeDrawer]);
 
     // ── Auth Guards ──────────────────────────────────────────────────────────
@@ -112,7 +129,7 @@ const Layout = () => {
             {/* ── Main Content Area ────────────────────────────────────── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Top Bar with hamburger menu trigger */}
-                <TopBar onMenuClick={openDrawer} sidebarCollapsed={sidebarCollapsed} />
+                <TopBar onMenuClick={handleMenuClick} sidebarCollapsed={sidebarCollapsed} />
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-y-auto overflow-x-hidden pt-safe">
@@ -126,8 +143,8 @@ const Layout = () => {
             </div>
 
             {/* ── Mobile Bottom Nav ────────────────────────────────────── */}
-            {/* Only show on screens where sidebar is drawer (lg) */}
-            <div className="lg:hidden">
+            {/* Mobile only (<768px). Tablet/Desktop use the sidebar instead. */}
+            <div className="md:hidden">
                 <BottomNav />
             </div>
         </div>

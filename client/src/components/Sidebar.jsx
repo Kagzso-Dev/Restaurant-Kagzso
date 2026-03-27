@@ -120,11 +120,11 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                     </div>
                 )}
 
-                {/* Close button – visible only on mobile drawer */}
+                {/* Close button – visible only on mobile drawer (<768px) */}
                 {!collapsed && onClose && (
                     <button
                         onClick={onClose}
-                        className="lg:hidden flex-shrink-0 p-1.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-lg tap-scale"
+                        className="md:hidden flex-shrink-0 p-1.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-lg tap-scale"
                         aria-label="Close menu"
                     >
                         <X size={18} />

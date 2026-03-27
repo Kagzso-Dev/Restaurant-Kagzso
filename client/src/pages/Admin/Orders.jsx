@@ -345,11 +345,11 @@ const AdminOrders = () => {
         : DATE_RANGES.find(r => r.value === dateRange)?.label || 'Today';
 
     return (
-        <div className="flex h-[calc(100vh-70px)] overflow-hidden animate-fade-in text-[var(--theme-text-main)]">
+        <div className="flex h-[calc(100dvh-70px)] overflow-hidden animate-fade-in text-[var(--theme-text-main)]">
 
         {/* ── Left: Orders list (independent scroll) ──────────────────── */}
         <div className="flex-1 min-w-0 overflow-y-auto custom-scrollbar p-4 sm:p-6 space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-[var(--theme-bg-card)] p-6 rounded-3xl shadow-xl border border-[var(--theme-border)]">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-3xl shadow-xl border border-[var(--theme-border)]">
                 <div>
                     <h2 className="text-2xl font-black text-[var(--theme-text-main)]">Order History</h2>
                     <p className="text-sm text-[var(--theme-text-muted)] mt-1">

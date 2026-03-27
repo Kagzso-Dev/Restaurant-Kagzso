@@ -407,7 +407,7 @@ const WaiterDashboard = () => {
             )}
 
             {/* ── Header ─────────────────────────────────────────────── */}
-            <div className="flex flex-col lg:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl border border-[var(--theme-border)] shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl border border-[var(--theme-border)] shadow-sm">
                 <div className="flex flex-1 items-center gap-3 lg:gap-6 min-w-0">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 flex-shrink-0">
                         <Utensils className="text-orange-500" size={22} />

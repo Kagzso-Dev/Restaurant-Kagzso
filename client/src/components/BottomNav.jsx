@@ -48,7 +48,7 @@ const BottomNav = memo(() => {
 
     return (
         <nav className="
-            lg:hidden fixed bottom-0 left-0 right-0 z-40
+            md:hidden fixed bottom-0 left-0 right-0 z-40
             mobile-nav-glass flex items-stretch
             bottom-nav-safe shadow-2xl
         ">
