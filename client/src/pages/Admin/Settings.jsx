@@ -173,6 +173,7 @@ const Settings = () => {
         menuView: 'grid',
         dineInEnabled: true, tableMapEnabled: true, takeawayEnabled: true, waiterServiceEnabled: true,
         enforceMenuView: false,
+        mobileMenuView: 'list',
         cashierOfferEnabled: false,
         cashierOfferLabel: '',
         cashierOfferDiscount: 0,
@@ -210,6 +211,7 @@ const Settings = () => {
                 takeawayEnabled: settings.takeawayEnabled !== false,
                 waiterServiceEnabled: settings.waiterServiceEnabled !== false,
                 enforceMenuView: settings.enforceMenuView === true,
+                mobileMenuView: settings.mobileMenuView || 'list',
                 cashierOfferEnabled: settings.cashierOfferEnabled === true,
                 cashierOfferLabel: settings.cashierOfferLabel || '',
                 cashierOfferDiscount: settings.cashierOfferDiscount || 0,
@@ -509,6 +511,29 @@ const Settings = () => {
                         >
                             <div className={`w-4 h-4 bg-white rounded-full shadow-lg transition-transform ${generalConfig.enforceMenuView ? 'translate-x-6' : 'translate-x-0'}`} />
                         </button>
+                    </div>
+
+                    <div className="mt-8">
+                        <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-black tracking-widest mb-4">Mobile Food Item Grid Mode</p>
+                        <div className="grid grid-cols-3 gap-2 p-1.5 bg-[var(--theme-bg-dark)] border border-[var(--theme-border)] rounded-xl">
+                            {[
+                                { id: 'grid', icon: LayoutGrid, label: 'Standard' },
+                                { id: 'compact', icon: Grid2X2, label: 'Compact' },
+                                { id: 'list', icon: List, label: 'List View' },
+                            ].map(opt => (
+                                <button key={opt.id} type="button"
+                                    onClick={() => setGeneralConfig({ ...generalConfig, mobileMenuView: opt.id })}
+                                    className={`flex items-center justify-center gap-2 h-11 rounded-lg text-xs font-semibold transition-all ${
+                                        generalConfig.mobileMenuView === opt.id
+                                            ? 'bg-rose-600 text-white shadow-md'
+                                            : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
+                                    }`}>
+                                    <opt.icon size={16} />
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-[10px] text-[var(--theme-text-subtle)] mt-2 italic px-1">Specific layout applied only when accessed from mobile devices.</p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-5 mt-4 border-t border-[var(--theme-border)]">

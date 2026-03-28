@@ -187,8 +187,6 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                         {user.role === 'kitchen' && (
                             <>
                                 <NavItem to="/kitchen?tab=active" icon={ChefHat} label="Active" color="text-orange-400" />
-                                <NavItem to="/kitchen?tab=completed" icon={CheckCircle2} label="Completed" color="text-emerald-400" />
-                                <NavItem to="/kitchen?tab=cancelled" icon={XCircle} label="Cancelled" color="text-red-400" />
                             </>
                         )}
 

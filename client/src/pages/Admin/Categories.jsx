@@ -234,7 +234,7 @@ const AdminCategories = () => {
 
                             <div className="p-6 flex flex-col h-full">
                                 <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-extrabold text-[var(--theme-text-main)] text-xl leading-snug break-words pr-12">
+                                    <h3 className="font-extrabold text-[var(--theme-text-main)] text-lg leading-snug truncate pr-6" title={cat.name}>
                                         {cat.name}
                                     </h3>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { Plus, Minus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Minus, Edit, Trash2, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 
 /* ── Reusable +/- stepper ─────────────────────────────────────────────── */
 const QtyControl = ({ qty, onAdd, onRemove, size = 'md' }) => {
@@ -12,7 +12,7 @@ const QtyControl = ({ qty, onAdd, onRemove, size = 'md' }) => {
         return (
             <button
                 onClick={(e) => { e.stopPropagation(); onAdd(); }}
-                className={`${btnCls} rounded-xl flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/30 active:scale-90 transition-all flex-shrink-0`}
+                className={`${btnCls} rounded-xl flex items-center justify-center bg-white hover:bg-gray-50 text-gray-900 shadow-sm active:scale-90 transition-all flex-shrink-0 border-2 border-gray-900/10`}
             >
                 <Plus size={size === 'sm' ? 14 : 16} strokeWidth={3} />
             </button>
@@ -53,9 +53,11 @@ const FoodItem = memo(({
     itemCart = []
 }) => {
     const [selectedSize, setSelectedSize] = useState(item.variants?.[0] || null);
-
+    
     useEffect(() => {
-        setSelectedSize(item.variants?.[0] || null);
+        if (item.variants?.length > 0) {
+            setSelectedSize(item.variants[0]);
+        }
     }, [item.variants]);
 
     const isVeg = item.isVeg;
@@ -65,7 +67,7 @@ const FoodItem = memo(({
         return (
             <div
                 onClick={() => { if (!isAdmin && showActions && cartQty === 0) onAdd(item); }}
-                className={`group bg-[var(--theme-bg-card)] rounded-2xl overflow-hidden border transition-all animate-fade-in ${cartQty > 0 ? 'border-orange-400/50 shadow-md' : 'border-[var(--theme-border)] hover:border-orange-400/40 hover:shadow-md'} ${!isAdmin && cartQty === 0 ? 'cursor-pointer' : 'cursor-default'}`}
+                className={`group bg-[var(--theme-bg-card)] rounded-2xl overflow-hidden border transition-all animate-fade-in ${cartQty > 0 ? 'border-gray-400/50 shadow-md' : 'border-[var(--theme-border)] hover:border-gray-400/40 hover:shadow-md'} ${!isAdmin && cartQty === 0 ? 'cursor-pointer' : 'cursor-default'}`}
             >
                 <div className="flex items-center gap-3 p-3">
                     {/* Veg indicator */}
@@ -106,26 +108,26 @@ const FoodItem = memo(({
                                     return (
                                         <div key={i} className="flex-1 min-w-[120px]">
                                             {isAdmin ? (
-                                                <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/25 whitespace-nowrap opacity-60">
+                                                <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-gray-500/10 text-gray-500 border border-gray-500/25 whitespace-nowrap opacity-60">
                                                     <span>{v.name}</span>
                                                     <span>{formatPrice(v.price)}</span>
                                                 </div>
                                             ) : q > 0 ? (
-                                                <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl px-2 py-1 flex-1 animate-scale-up">
+                                                <div className="flex items-center gap-2 bg-gray-500/10 border border-gray-500/30 rounded-xl px-2 py-1 flex-1 animate-scale-up">
                                                     <button onClick={(e) => { e.stopPropagation(); onRemove(cartKey); }} className="w-6 h-6 flex items-center justify-center bg-rose-500/15 text-rose-500 rounded-lg active:scale-95 transition-all"><Minus size={12} /></button>
-                                                    <span className="text-[11px] font-black text-orange-500 tabular-nums">{q}</span>
+                                                    <span className="text-[11px] font-black text-gray-600 tabular-nums">{q}</span>
                                                     <button onClick={(e) => { e.stopPropagation(); onAdd(item, v); }} className="w-6 h-6 flex items-center justify-center bg-emerald-500 text-white rounded-lg shadow-sm active:scale-95 transition-all"><Plus size={12} /></button>
-                                                    <span className="ml-auto text-[9px] font-black uppercase text-orange-400 opacity-60 tracking-tighter">{v.name}</span>
+                                                    <span className="ml-auto text-[9px] font-black uppercase text-gray-400 opacity-60 tracking-tighter">{v.name}</span>
                                                 </div>
                                             ) : (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); onAdd(item, v); }}
-                                                    className="w-full h-8 flex items-center justify-between gap-1 text-[10px] font-bold px-3 py-2 rounded-xl bg-orange-500/5 text-orange-500/70 border border-orange-500/15 hover:bg-orange-500/10 hover:border-orange-500/30 active:scale-95 transition-all shadow-sm"
+                                                    className="w-full h-8 flex items-center justify-between gap-1 text-[10px] font-bold px-3 py-2 rounded-xl bg-white text-gray-900 border-2 border-gray-900/10 hover:bg-gray-50 active:scale-95 transition-all shadow-sm"
                                                 >
-                                                    <span className="uppercase tracking-tight opacity-70">{v.name}</span>
+                                                    <span className="uppercase tracking-tight opacity-50">{v.name}</span>
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className="font-black text-orange-500">{formatPrice(v.price)}</span>
-                                                        <Plus size={10} strokeWidth={3} className="text-orange-500" />
+                                                        <span className="font-black text-gray-900">{formatPrice(v.price)}</span>
+                                                        <Plus size={10} strokeWidth={3} className="text-gray-900" />
                                                     </div>
                                                 </button>
                                             )}
@@ -138,7 +140,7 @@ const FoodItem = memo(({
 
                     {/* Price + Actions */}
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                        <span className="text-orange-400 font-black text-sm tabular-nums whitespace-nowrap mt-2 block">
+                        <span className="text-gray-500 font-black text-sm tabular-nums whitespace-nowrap mt-2 block">
                             {item.variants?.length === 0 ? formatPrice(item.price) : ''}
                         </span>
                         {showActions && (
@@ -177,7 +179,7 @@ const FoodItem = memo(({
         return (
             <div
                 onClick={() => { if (!isAdmin && showActions && cartQty === 0) onAdd(item); }}
-                className={`group relative bg-[var(--theme-bg-card)] rounded-xl border transition-all flex items-center p-2 gap-2.5 ${cartQty > 0 ? 'border-orange-400/50' : 'border-[var(--theme-border)] hover:border-orange-400/40 hover:shadow-md'} ${!isAdmin && cartQty === 0 ? 'cursor-pointer active:scale-[0.98]' : 'cursor-default'}`}
+                className={`group relative bg-[var(--theme-bg-card)] rounded-xl border transition-all flex items-center p-2 gap-2.5 ${cartQty > 0 ? 'border-gray-400/50' : 'border-[var(--theme-border)] hover:border-gray-400/40 hover:shadow-md'} ${!isAdmin && cartQty === 0 ? 'cursor-pointer active:scale-[0.98]' : 'cursor-default'}`}
             >
                 <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
                     {item.image
@@ -188,7 +190,7 @@ const FoodItem = memo(({
                 </div>
                 <div className="flex-1 min-w-0">
                     <h3 className="text-xs font-bold text-[var(--theme-text-main)] truncate">{item.name}</h3>
-                    <span className="text-orange-400 font-extrabold text-[10px] whitespace-nowrap">{formatPrice(item.price)}</span>
+                    <span className="text-gray-500 font-extrabold text-[10px] whitespace-nowrap">{formatPrice(item.price)}</span>
                 </div>
                 {!isAdmin && showActions && !item.variants?.length && (
                     <QtyControl qty={cartQty} onAdd={() => onAdd(item)} onRemove={() => onRemove(item._id)} size="sm" />
@@ -210,129 +212,110 @@ const FoodItem = memo(({
     /* ── GRID VIEW ──────────────────────────────────────────────────────── */
     return (
         <div
-            onClick={() => { if (!isAdmin && showActions && cartQty === 0) onAdd(item); }}
-            className={`group relative bg-[var(--theme-bg-card)] rounded-2xl border transition-all flex flex-col items-center animate-fade-in overflow-hidden ${cartQty > 0 ? 'border-orange-400/50 shadow-lg' : 'border-[var(--theme-border)] hover:border-orange-400/50 hover:shadow-xl'} ${!isAdmin && cartQty === 0 ? 'cursor-pointer active:scale-[0.97]' : 'cursor-default'}`}
+            className={`group relative bg-[var(--theme-bg-card)] rounded-3xl border transition-all flex flex-col items-center animate-fade-in overflow-hidden ${cartQty > 0 ? 'border-gray-400/50 shadow-lg' : 'border-[var(--theme-border)] hover:border-gray-400/50 hover:shadow-xl'}`}
         >
-            {/* Image */}
-            <div className="relative w-full aspect-[4/3] overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
+            {/* Image section */}
+            <div className="relative w-full aspect-[1.3] overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
                 {item.image
-                    ? <img src={item.image} alt={item.name} className="img-cover group-hover:scale-105 transition-transform duration-300" />
-                    : <div className="w-full h-full flex items-center justify-center text-4xl">🍔</div>
+                    ? <img src={item.image} alt={item.name} className="img-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+                    : <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400">🍔</div>
                 }
-                <div className={`absolute top-2 left-2 w-3 h-3 rounded-full border-2 border-white shadow-md ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                {item.availability === false && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold uppercase tracking-wider bg-red-500/90 px-2.5 py-1 rounded-full shadow">Unavailable</span>
-                    </div>
-                )}
-                <span
-                    className="absolute bottom-2 left-2 text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border backdrop-blur-sm"
-                    style={{
-                        backgroundColor: `${item.category?.color || '#3b82f6'}cc`,
-                        color: '#fff',
-                        borderColor: `${item.category?.color || '#3b82f6'}80`
-                    }}
-                >
-                    {item.category?.name || 'Uncategorized'}
-                </span>
                 
-                {/* cart state ornament (Skeleton style) */}
-                {cartQty > 0 && showActions && !isAdmin && (
-                    <div className="absolute top-2 right-2 w-6 h-6 bg-white border-2 border-orange-500 rounded-full flex items-center justify-center shadow-lg animate-scale-up z-10">
-                        <span className="text-[10px] font-black text-orange-500">{cartQty}</span>
+                {/* Veg/Non-Veg Badge */}
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/90 backdrop-blur shadow-sm border border-black/5">
+                    <div className={`w-2 h-2 rounded-sm ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    <span className="text-[7px] font-black uppercase tracking-widest text-gray-500">{isVeg ? 'VEG' : 'NON'}</span>
+                </div>
+
+                {/* Subcategory Label */}
+                <div className="absolute bottom-3 left-3">
+                    <span className="text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-gray-200 text-gray-800 shadow-sm border border-black/5">
+                        {item.category?.name || 'Item'}
+                    </span>
+                </div>
+                
+                {item.availability === false && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center">
+                        <span className="text-white text-[10px] font-black uppercase tracking-widest bg-red-600 px-3 py-1.5 rounded-xl">Sold Out</span>
                     </div>
                 )}
             </div>
 
             {/* Content Area */}
-            <div className="flex flex-col flex-1 p-4 gap-4 text-center">
-                {/* Title & Category Badge */}
-                <div className="text-center space-y-1 w-full overflow-hidden">
-                    <h3 className="text-xs font-black text-[var(--theme-text-main)] uppercase tracking-tight truncate leading-none">{item.name}</h3>
-                    <div className="flex justify-center">
-                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/5 text-orange-400 border border-orange-500/10 truncate max-w-[80px]">
-                            {item.category?.name || 'Item'}
-                        </span>
-                    </div>
+            <div className="flex flex-col flex-1 p-4 w-full text-center">
+                <div className="mb-4">
+                    <h3 className="text-sm font-black text-[var(--theme-text-main)] uppercase tracking-[0.02em] leading-tight mb-1">{item.name}</h3>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest opacity-60">{item.category?.name || 'Main Course'}</p>
                 </div>
 
-                {/* Portion selection - Full-width rows for 3-col density */}
-                {item.variants?.length > 0 && (
-                    <div className="flex flex-col gap-1.5 w-full py-1">
-                        {item.variants.map((v, i) => {
-                            const cartKey = `${item._id}_${v.name}`;
-                            const vQty = itemCart?.find(c => c.cartKey === cartKey)?.quantity || 0;
-                            const isSelected = selectedSize?.name === v.name;
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={(e) => { e.stopPropagation(); setSelectedSize(v); }}
-                                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl border-2 transition-all relative w-full ${isSelected ? 'border-orange-500/60 bg-orange-500/5 shadow-sm' : 'border-transparent bg-[var(--theme-bg-dark)] hover:border-black/5'}`}
-                                >
-                                    <div className="flex flex-col items-start leading-tight">
-                                        <span className={`text-[9px] font-black uppercase tracking-tight ${isSelected ? 'text-orange-500' : 'text-[var(--theme-text-muted)]'}`}>{v.name}</span>
-                                        <span className={`text-[10px] font-bold ${isSelected ? 'text-orange-600' : 'text-[var(--theme-text-main)] opacity-70'}`}>{formatPrice(v.price)}</span>
-                                    </div>
-                                    {vQty > 0 && (
-                                        <div className="w-4 h-4 rounded-full bg-orange-500 text-white text-[8px] font-black flex items-center justify-center border border-[var(--theme-bg-card)] shadow-sm">{vQty}</div>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Price display for simple items */}
-                {!item.variants?.length && (
-                    <div className="py-2">
-                        <span className="text-orange-500 font-black text-lg">{formatPrice(item.price)}</span>
-                    </div>
-                )}
-
-                {/* ACTIONS */}
-                <div className="mt-auto space-y-2">
+                {/* ACTIONS - Horizontal Pill Theme */}
+                <div className="mt-auto space-y-4">
                     {showActions && !isAdmin && (
                         <>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onAdd(item, selectedSize || null); }}
-                                className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg active:scale-95 transition-all shadow-orange-500/20"
-                            >
-                                Add Selection
-                            </button>
-                            
+                            {item.variants?.length > 0 ? (
+                                <div className="flex flex-col gap-4">
+                                    {/* Horizontal Variant Pills - Scrollable Rail */}
+                                    <div className="relative group/rail flex items-center pr-1">
+                                        <div className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none animate-pulse-slow">
+                                            <ChevronRight size={16} className="text-gray-900 drop-shadow-sm" />
+                                        </div>
+                                        
+                                        <div className="flex-1 flex items-center gap-1.5 bg-gray-50/80 dark:bg-white/5 p-1 rounded-2xl border border-[var(--theme-border)] overflow-x-auto hide-scrollbar snap-x snap-mandatory scroll-smooth min-h-[58px]">
+                                            {item.variants.map((v, i) => {
+                                                const isSelected = selectedSize?.name === v.name;
+                                                return (
+                                                    <button
+                                                        key={i}
+                                                        onClick={(e) => { e.stopPropagation(); setSelectedSize(v); }}
+                                                        className={`flex-shrink-0 w-24 flex flex-col items-center justify-center py-2 px-2 rounded-xl transition-all duration-300 snap-center border-2 ${
+                                                            isSelected 
+                                                                ? 'bg-white text-black border-black shadow-md scale-[1.02]' 
+                                                                : 'bg-white text-gray-400 border-gray-100 opacity-80 hover:border-gray-300'
+                                                        }`}
+                                                    >
+                                                        <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isSelected ? 'text-black/40' : 'text-gray-400'}`}>{v.name}</span>
+                                                        <span className={`text-[10px] sm:text-[11px] font-black mt-1 ${isSelected ? 'text-black' : 'text-gray-500'}`}>₹{v.price}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onAdd(item, selectedSize); }}
+                                        className="w-full py-3.5 bg-white hover:bg-gray-50 text-gray-900 text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-sm active:scale-[0.97] transition-all flex items-center justify-center gap-2 border-2 border-gray-900/10"
+                                    >
+                                        Add Item
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-4">
+                                    <span className="text-2xl font-black text-gray-900 leading-none">₹{item.price}</span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onAdd(item); }}
+                                        className="w-full py-3.5 bg-white hover:bg-gray-50 text-gray-900 text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-sm active:scale-[0.97] transition-all border-2 border-gray-900/10"
+                                    >
+                                        Add Item
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Cart quantity overlay footer if added */}
                             {cartQty > 0 && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const key = selectedSize ? `${item._id}_${selectedSize.name}` : item._id;
-                                        onRemove(key);
-                                    }}
-                                    className="w-full text-center py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--theme-text-muted)] hover:text-rose-500 transition-colors"
-                                >
-                                    - Remove {selectedSize?.name || ''}
-                                </button>
+                                <div className="flex items-center justify-center gap-2 pt-2 animate-fade-in">
+                                    <QtyControl qty={cartQty} onAdd={() => onAdd(item, selectedSize)} onRemove={() => onRemove(selectedSize ? `${item._id}_${selectedSize.name}` : item._id)} size="sm" />
+                                </div>
                             )}
                         </>
                     )}
 
                     {showActions && isAdmin && (
-                        <div className="flex items-center justify-center gap-2 pt-2 border-t border-[var(--theme-border)]">
-                            {onToggleAvailability && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onToggleAvailability(item); }}
-                                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all ${item.availability
-                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/25'
-                                        : 'bg-red-500/10 text-red-400 border-red-500/25 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/25'
-                                    }`}
-                                >
-                                    {item.availability ? 'Live' : 'Off'}
-                                </button>
-                            )}
-                            <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-[var(--theme-text-muted)] hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors">
-                                <Edit size={14} />
+                        <div className="flex items-center justify-center gap-2 pt-3 border-t border-[var(--theme-border)] mt-2">
+                            <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2.5 text-[var(--theme-text-muted)] hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all">
+                                <Edit size={16} />
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-2 text-[var(--theme-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                                <Trash2 size={14} />
+                            <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-2.5 text-[var(--theme-text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all">
+                                <Trash2 size={16} />
                             </button>
                         </div>
                     )}

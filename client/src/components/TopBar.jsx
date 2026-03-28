@@ -115,31 +115,16 @@ const TopBar = memo(({ onMenuClick }) => {
 
     return (
         <header
-            className="sticky top-0 z-30 flex items-center justify-between px-3 md:px-6 h-[70px] backdrop-blur-md border-b border-[var(--theme-border)] flex-shrink-0 pt-safe transition-all"
+            className="sticky top-0 z-30 flex flex-col justify-center px-3 md:px-6 min-h-[70px] md:h-[70px] backdrop-blur-md border-b border-[var(--theme-border)] flex-shrink-0 pt-safe transition-all"
             style={{ backgroundColor: 'var(--theme-topbar-bg)' }}
         >
-            {/* ── Left: Hamburger + Title ──────────────────────────────── */}
-            <div className="flex items-center gap-3 min-w-0">
-                {/* Hamburger – hidden on desktop */}
-                <button
-                    onClick={onMenuClick}
-                    className={`
-                        lg:hidden flex-shrink-0
-                        p-2 rounded-lg transition-colors
-                        min-h-[40px] min-w-[40px] flex items-center justify-center
-                        ${user.role === 'admin' ? 'text-rose-500 hover:text-rose-600 animate-chevron-flow-red' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}
-                    `}
-                    aria-label="Open menu"
-                >
-                    <Menu size={20} strokeWidth={user.role === 'admin' ? 3 : 2} />
-                </button>
-
-                <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2.5 min-w-0 group">
-                </div>
+            {/* ── Row 1: always visible ────────────────────────────────── */}
+            <div className="flex items-center w-full h-[54px] md:h-full">
+                <div id="topbar-portal" className="flex-1 flex items-center justify-start overflow-hidden"></div>
             </div>
 
-            {/* ── Center/Full: Portal for page-specific toolbars ────────── */}
-            <div id="topbar-portal" className="flex-1 flex items-center justify-start ml-2 overflow-x-auto hide-scrollbar"></div>
+            {/* ── Row 2: mobile-only second toolbar row ────────────────── */}
+            <div id="topbar-portal-row2" className="flex md:hidden items-center w-full pb-2 gap-2"></div>
         </header>
     );
 });

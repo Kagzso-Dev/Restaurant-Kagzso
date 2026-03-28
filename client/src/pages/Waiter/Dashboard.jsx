@@ -245,7 +245,11 @@ const TokenSquare = memo(({ order, onClick, isSelected }) => {
                         </div>
                     ))}
                     {activeItems.length > 1 && (
-                        <p className={`text-[7px] font-black pl-5 ${s.num} opacity-70`}>+{activeItems.length - 1} more</p>
+                        <div className="pl-[1.25rem] w-full text-left">
+                            <span className={`text-[7px] font-black ${s.num} opacity-70 uppercase tracking-tight`}>
+                                +{activeItems.length - 1} more
+                            </span>
+                        </div>
                     )}
                 </div>
             )}
@@ -416,14 +420,14 @@ const WaiterDashboard = () => {
                 </div>
             )}
 
-            {/* ── High-Density Wide Command Toolbar (Portaled to TopBar) ────────── */}
+            {/* ── Row 1: Filter + action buttons ── */}
             {document.getElementById('topbar-portal') && createPortal(
-                <div className="flex items-center justify-between w-full h-full animate-fade-in translate-y-0.5 pr-4">
-                    <div className="flex items-center gap-3">
-                        {/* 0. Status Toggle */}
+                <div className="flex items-center justify-between w-full h-full animate-fade-in translate-y-0.5 pr-2 md:pr-4">
+                    <div className="flex items-center gap-2 md:gap-3">
+                        {/* 0. Status Toggle — desktop only */}
                         <button
                             onClick={() => setShowCounters(prev => !prev)}
-                            className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] shadow-[0_2px_0_var(--theme-border)] transition-all duration-200 active:scale-95 active:translate-y-[1px] shrink-0"
+                            className="hidden md:flex relative items-center justify-center w-10 h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] shadow-[0_2px_0_var(--theme-border)] transition-all duration-200 active:scale-95 active:translate-y-[1px] shrink-0"
                             title={showCounters ? 'Collapse' : 'Expand'}
                         >
                             <div className={`flex items-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${showCounters ? 'scale-110' : 'scale-100'}`}>
@@ -443,42 +447,64 @@ const WaiterDashboard = () => {
                             </div>
                         </button>
 
-                        {/* 1. All | Dine-in | Takeaway - Enhanced Breath */}
-                        <div className="flex items-center p-1 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm shrink-0 min-w-[280px]">
+                        {/* Filter Pill */}
+                        <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm flex-1 md:flex-none md:w-[240px]">
                             {['all', 'dine-in', 'takeaway']
                                 .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
                                 .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
                                 .map(t => (
-                                    <button key={t} onClick={() => setFilterType(t)} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterType === t ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-md border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>{t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}</button>
+                                    <button
+                                        key={t}
+                                        onClick={() => setFilterType(t)}
+                                        className={`flex-1 py-1.5 md:px-3 md:py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-md border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)]'}`}
+                                    >
+                                        <span className="hidden sm:inline">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine-In' : 'Takeaway'}</span>
+                                        <span className="inline sm:hidden">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}</span>
+                                    </button>
                                 ))}
+                        </div>
+
+                        {/* Mobile-only: Stats & Grid toggles — icon only */}
+                        <div className="flex md:hidden items-center gap-1.5 shrink-0">
+                            <button
+                                onClick={() => setShowCounters(!showCounters)}
+                                className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/15 border-orange-500/40 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}
+                                title="Stats"
+                            >
+                                <Clock size={16} strokeWidth={2.5} />
+                            </button>
+                            <button
+                                onClick={() => setIsProductionMode(!isProductionMode)}
+                                className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}
+                                title={isProductionMode ? 'Grid view' : 'List view'}
+                            >
+                                {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
+                            </button>
                         </div>
                     </div>
 
-                    <div className="h-8 w-px bg-[var(--theme-border)] mx-4 opacity-50 flex-shrink-0" />
+                    <div className="hidden md:block h-8 w-px bg-[var(--theme-border)] mx-4 opacity-50 flex-shrink-0" />
 
-                    <div className="flex items-center gap-3">
-                        {/* 1. Production Mode Toggle - Compact Icon Switch */}
-                        <button 
-                            onClick={() => setIsProductionMode(!isProductionMode)} 
+                    <div className="flex items-center gap-2 md:gap-3">
+                        {/* 1. Production Mode Toggle — desktop only */}
+                        <button
+                            onClick={() => setIsProductionMode(!isProductionMode)}
                             className={`
-                                relative w-16 h-9 rounded-lg border transition-all p-1 flex items-center overflow-hidden active:scale-95 group
-                                ${isProductionMode 
-                                    ? 'bg-emerald-500/5 border-emerald-500/10' 
+                                hidden md:flex relative w-16 h-9 rounded-lg border transition-all p-1 items-center overflow-hidden active:scale-95 group
+                                ${isProductionMode
+                                    ? 'bg-emerald-500/5 border-emerald-500/10'
                                     : 'bg-orange-500/5 border-orange-500/10'}
                             `}
                         >
-                            {/* Icons in background */}
                             <div className="absolute inset-0 flex items-center justify-around px-1 pointer-events-none opacity-20">
                                 <List size={12} className={!isProductionMode ? 'text-orange-600' : 'text-gray-400'} />
                                 <Grid size={12} className={isProductionMode ? 'text-emerald-600' : 'text-gray-400'} />
                             </div>
-
-                            {/* Sliding Background Circle */}
-                            <div 
+                            <div
                                 className={`
                                     absolute top-1 w-7 h-7 rounded-md flex items-center justify-center shadow-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                                    ${isProductionMode 
-                                        ? 'left-[calc(100%-32px)] bg-emerald-600 rotate-[360deg]' 
+                                    ${isProductionMode
+                                        ? 'left-[calc(100%-32px)] bg-emerald-600 rotate-[360deg]'
                                         : 'left-1 bg-orange-600 rotate-0'}
                                 `}
                             >
@@ -486,13 +512,13 @@ const WaiterDashboard = () => {
                             </div>
                         </button>
 
-                        {/* Tables Toggle - Permanent Light Green Theme */}
+                        {/* Tables Toggle — desktop only */}
                         {settings?.tableMapEnabled !== false && (
-                            <button 
-                                onClick={() => setShowTables(t => !t)} 
-                                className={`flex items-center justify-center p-2 rounded-lg border transition-all active:translate-y-[1px] h-9 min-w-[40px] ${
-                                    showTables 
-                                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 shadow-inner' 
+                            <button
+                                onClick={() => setShowTables(t => !t)}
+                                className={`hidden md:flex items-center justify-center p-2 rounded-lg border transition-all active:translate-y-[1px] h-9 min-w-[40px] ${
+                                    showTables
+                                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 shadow-inner'
                                         : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60 hover:border-emerald-500/30'
                                 }`}
                                 title="Table Map"
@@ -501,38 +527,66 @@ const WaiterDashboard = () => {
                             </button>
                         )}
 
-                        {/* 3. Dine in | Take away - Compact Buttons */}
-                        <div className="flex gap-1.5 shrink-0">
+                        {/* Dine in | Take away — desktop only (mobile uses row 2) */}
+                        <div className="hidden md:flex gap-1.5 shrink-0">
                             {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
-                                <button onClick={() => navigate('/dine-in')} className="flex items-center justify-center gap-2 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all shadow-md active:scale-95 h-9 min-w-[90px]"><Utensils size={14} strokeWidth={3} /><span>Dine In</span></button>
+                                <button onClick={() => navigate('/dine-in')} className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all shadow-md active:scale-95 h-9 min-w-[90px]"><Utensils size={14} strokeWidth={3} />Dine In</button>
                             )}
                             {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
-                                <button onClick={() => navigate('/take-away')} className="flex items-center justify-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all shadow-md active:scale-95 h-9 min-w-[90px]"><Package size={14} strokeWidth={3} /><span>Takeaway</span></button>
+                                <button onClick={() => navigate('/take-away')} className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all shadow-md active:scale-95 h-9 min-w-[90px]"><Package size={14} strokeWidth={3} />Takeaway</button>
                             )}
                         </div>
 
-                        <div className="flex items-center gap-1.5">
-                            {/* 4. Refresh */}
-                            <button
-                                onClick={() => {
-                                    if (refreshing) return;
-                                    setRefreshing(true);
-                                    fetchOrders();
-                                    setTimeout(() => setRefreshing(false), 1000);
-                                }}
-                                className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all active:scale-95 ${
-                                    refreshing
-                                        ? 'border-orange-500/40 bg-orange-500/10 text-orange-500'
-                                        : 'border-[var(--theme-border)] bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
-                                }`}
-                                title="Refresh"
-                            >
-                                <RefreshCw size={13} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
-                            </button>
-                        </div>
+                        {/* Refresh — desktop only (mobile uses row 2) */}
+                        <button
+                            onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }}
+                            className={`hidden md:flex items-center justify-center w-9 h-9 rounded-lg border transition-all active:scale-95 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'border-[var(--theme-border)] bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                            title="Refresh"
+                        >
+                            <RefreshCw size={13} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
+                        </button>
                     </div>
-                </div>, 
+                </div>,
                 document.getElementById('topbar-portal')
+            )}
+
+            {/* ── Row 2 (mobile only): secondary controls ── */}
+            {document.getElementById('topbar-portal-row2') && createPortal(
+                <div className="flex items-center justify-between w-full gap-1.5 animate-fade-in px-1">
+                    {/* Tables Toggle */}
+                    {settings?.tableMapEnabled !== false && (
+                        <button
+                            onClick={() => setShowTables(t => !t)}
+                            className={`flex flex-1 min-w-0 items-center justify-center gap-1 h-8 rounded-lg border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 shadow-inner' : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60'}`}
+                        >
+                            <Armchair size={12} className="shrink-0" />
+                            <span className="text-[7px] font-black uppercase truncate">Tables</span>
+                        </button>
+                    )}
+
+                    {/* Dine In Action */}
+                    {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
+                        <button onClick={() => navigate('/dine-in')} className="flex-1 min-w-0 flex items-center justify-center gap-1 h-8 bg-orange-500 text-white rounded-lg font-black text-[7px] uppercase tracking-tighter active:scale-95">
+                            <Utensils size={10} strokeWidth={3} className="shrink-0" /> <span className="truncate">Dine In</span>
+                        </button>
+                    )}
+
+                    {/* Take Away Action */}
+                    {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
+                        <button onClick={() => navigate('/take-away')} className="flex-1 min-w-0 flex items-center justify-center gap-1 h-8 bg-blue-600 text-white rounded-lg font-black text-[7px] uppercase tracking-tighter active:scale-95">
+                            <Package size={10} strokeWidth={3} className="shrink-0" /> <span className="truncate">Takeaway</span>
+                        </button>
+                    )}
+
+                    {/* Refresh Action */}
+                    <button
+                        onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all active:scale-95 shrink-0 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'border-[var(--theme-border)] bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)]'}`}
+                    >
+                        <RefreshCw size={12} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
+                    </button>
+                </div>,
+                document.getElementById('topbar-portal-row2')
             )}
 
             {activeTab === 'active' && (
@@ -627,10 +681,10 @@ const WaiterDashboard = () => {
                     ) : (
                         <div className={`grid p-2 ${
                             isProductionMode
-                                ? 'gap-2 grid-cols-[repeat(auto-fill,minmax(140px,1fr))]'
+                                ? 'gap-3 grid-cols-[repeat(auto-fill,minmax(min(200px,calc(50%-0.5rem)),1fr))]'
                                 : selectedOrder
-                                    ? 'gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                                    : 'gap-2 sm:gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6'
+                                    ? 'gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
+                                    : 'gap-4 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
                         }`}>
                             {displayOrders.map(order => (
                                 isProductionMode
@@ -650,14 +704,20 @@ const WaiterDashboard = () => {
                 </div>
 
                 {/* ── Right panel ────────────────────────────────────── */}
+                {/* Mobile (<md): full-screen fixed overlay. Tablet/Desktop: side drawer. */}
                 <div
                     style={{ transition: 'flex 550ms cubic-bezier(0.4,0,0.2,1), width 550ms cubic-bezier(0.4,0,0.2,1), opacity 350ms cubic-bezier(0.4,0,0.2,1)' }}
-                    className={`flex-shrink-0 border-l border-[var(--theme-border)] sticky top-0 self-start h-[calc(100vh-110px)] overflow-y-auto overflow-x-hidden ${
+                    className={`flex-shrink-0 border-l border-[var(--theme-border)] overflow-y-auto overflow-x-hidden ${
                         selectedOrder
-                            ? isProductionMode
-                                ? 'w-[440px] xl:w-[500px] opacity-100 shadow-2xl'
-                                : 'w-[400px] xl:w-[440px] opacity-100 shadow-2xl'
-                            : 'w-0 opacity-0 overflow-hidden pointer-events-none'
+                            ? [
+                                'opacity-100 shadow-2xl',
+                                // Mobile: fixed overlay covers the full viewport
+                                'max-md:fixed max-md:inset-0 max-md:z-50 max-md:w-full max-md:h-screen max-md:border-l-0',
+                                // Tablet/Desktop: side drawer
+                                'md:sticky md:top-0 md:self-start md:h-[calc(100vh-110px)]',
+                                isProductionMode ? 'md:w-[440px] xl:w-[500px]' : 'md:w-[400px] xl:w-[440px]',
+                              ].join(' ')
+                            : 'w-0 opacity-0 overflow-hidden pointer-events-none md:sticky md:top-0 md:self-start md:h-[calc(100vh-110px)]'
                     }`}
                 >
                     {selectedOrder && (

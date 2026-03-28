@@ -37,17 +37,24 @@ const NewOrder = () => {
     const [isCartOpen, setIsCartOpen] = useState(false); // Mobile cart overlay toggle
     const [currentOrder, setCurrentOrder] = useState(null);
     const [userInteracted, setUserInteracted] = useState(false);
-    const [viewMode, setViewMode] = useState(() => settings?.menuView || 'grid');
+    const [viewMode, setViewMode] = useState(() => {
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        if (isMobile && settings?.mobileMenuView) return settings.mobileMenuView;
+        return settings?.menuView || 'grid'
+    });
 
 
     // Sync with global settings
     useEffect(() => {
+        const isMobile = window.innerWidth < 768;
+        const defaultView = (isMobile && settings?.mobileMenuView) ? settings.mobileMenuView : (settings?.menuView || 'grid');
+
         if (settings?.enforceMenuView) {
-            setViewMode(settings.menuView || 'grid');
-        } else if (!userInteracted && settings?.menuView) {
-            setViewMode(settings.menuView);
+            setViewMode(defaultView);
+        } else if (!userInteracted && (settings?.menuView || settings?.mobileMenuView)) {
+            setViewMode(defaultView);
         }
-    }, [settings?.menuView, settings?.enforceMenuView, userInteracted]);
+    }, [settings?.menuView, settings?.mobileMenuView, settings?.enforceMenuView, userInteracted]);
 
     // Manual override helper
     const handleViewToggle = (newMode) => {
@@ -395,8 +402,8 @@ const NewOrder = () => {
                                     </h2>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 w-full sm:flex-1">
-                                <div className="relative flex-1">
+                            <div className="flex items-center gap-2 w-full sm:flex-1 justify-end">
+                                <div className="relative flex-1 max-w-md">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" size={16} />
                                     <input
                                         type="text"
@@ -411,7 +418,21 @@ const NewOrder = () => {
                                         </button>
                                     )}
                                 </div>
-                                {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
+                                    <button
+                                        onClick={() => setIsCartOpen(!isCartOpen)}
+                                        className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all font-black text-sm border shadow-sm shrink-0 active:scale-95 ${isCartOpen ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}`}
+                                    >
+                                        <ShoppingCart size={18} />
+                                        <ChevronLeft size={16} className={`transition-transform duration-300 ${isCartOpen ? 'rotate-180' : ''}`} />
+                                        {cart.length > 0 && (
+                                            <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${isCartOpen ? 'bg-white text-orange-600 border-orange-500' : 'bg-orange-600 text-white border-[var(--theme-bg-card)]'}`}>
+                                                {cart.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -454,10 +475,10 @@ const NewOrder = () => {
                                         <p className="text-sm">Try a different category or search term</p>
                                     </div>
                                 ) : (
-                                    <div className={`grid gap-2 xs:gap-3 ${viewMode === 'grid'
-                                        ? 'grid-cols-2 xs:grid-cols-3'
+                                    <div className={`grid gap-2 sm:gap-4 ${viewMode === 'grid'
+                                        ? 'grid-cols-2 lg:grid-cols-3'
                                         : viewMode === 'compact'
-                                            ? 'grid-cols-3 xs:grid-cols-4 lg:grid-cols-6'
+                                            ? 'grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
                                             : 'grid-cols-1'
                                     }`}>
                                         {filteredItems.map(item => (
@@ -480,15 +501,18 @@ const NewOrder = () => {
 
                     {/* ── Panel 3: Cart / Sidebar Summary ────────────────── */}
                     <aside className={`
-                        fixed inset-0 z-40 md:relative md:inset-auto md:z-0 md:w-[300px] xl:w-[360px] flex-shrink-0
-                        transition-transform duration-300 ease-in-out
-                        ${isCartOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+                        fixed inset-0 z-40 md:relative md:inset-auto md:z-0 flex-shrink-0 md:self-start
+                        transition-all duration-300 ease-in-out overflow-hidden
+                        ${isCartOpen
+                            ? 'translate-x-0 w-full md:w-[300px] xl:w-[360px]'
+                            : 'translate-x-full md:translate-x-0 w-full md:w-0'
+                        }
                     `}>
                         {/* mobile backdrop */}
                         {isCartOpen && <div onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" />}
 
 
-                        <div className="relative h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
+                        <div className="relative h-full md:h-auto md:max-h-[calc(100dvh-2rem)] w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
 
                             {/* Cart Header */}
                             <div className="px-5 py-5 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">

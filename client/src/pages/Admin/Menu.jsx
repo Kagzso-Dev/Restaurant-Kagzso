@@ -20,16 +20,23 @@ const AdminMenu = () => {
         name: '', description: '', price: '', category: '', image: '', isVeg: true, availability: true, variants: [],
     });
     const [userInteracted, setUserInteracted] = useState(false);
-    const [viewMode, setViewMode] = useState(() => settings?.menuView || 'grid');
+    const [viewMode, setViewMode] = useState(() => {
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        if (isMobile && settings?.mobileMenuView) return settings.mobileMenuView;
+        return settings?.menuView || 'grid'
+    });
 
     // Sync with global settings
     useEffect(() => {
+        const isMobile = window.innerWidth < 768;
+        const defaultView = (isMobile && settings?.mobileMenuView) ? settings.mobileMenuView : (settings?.menuView || 'grid');
+
         if (settings?.enforceMenuView) {
-            setViewMode(settings.menuView || 'grid');
-        } else if (!userInteracted && settings?.menuView) {
-            setViewMode(settings.menuView);
+            setViewMode(defaultView);
+        } else if (!userInteracted && (settings?.menuView || settings?.mobileMenuView)) {
+            setViewMode(defaultView);
         }
-    }, [settings?.menuView, settings?.enforceMenuView, userInteracted]);
+    }, [settings?.menuView, settings?.mobileMenuView, settings?.enforceMenuView, userInteracted]);
 
     // Manual override helper
     const handleViewToggle = (newMode) => {

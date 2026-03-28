@@ -402,7 +402,7 @@ const CashierDashboard = () => {
                     {document.getElementById('topbar-portal') && createPortal(
                         <div className="flex items-center gap-3 w-full animate-fade-in px-4">
                             {/* Operational Filters - 3D Mechanical Switch */}
-                            <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 min-w-[320px]">
+                            <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 shrink-0">
                                 {['all', 'dine-in', 'takeaway'].map(t => (
                                     <button
                                         key={t}

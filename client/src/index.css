@@ -149,65 +149,98 @@
 
 
 
-/* ─── Base Reset ─────────────────────────────────────────────────────────── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
+/* ─── Responsive & Fluid Foundation (Modern Adaptive Design) ─────────── */
+:root {
+  /* Breakpoint Definitions */
+  --bp-mobile: 480px;
+  --bp-tablet: 1024px;
+  --bp-desktop: 1025px;
+  --bp-pos: 1366px;
+
+  /* Fluid Spacing & Typography using clamp() */
+  /* Scales based on viewport width: min(px) → fluid(vw) → max(px) */
+  --fluid-h1: clamp(1.75rem, 5vw, 3rem);
+  --fluid-h2: clamp(1.5rem, 4vw, 2.25rem);
+  --fluid-h3: clamp(1.25rem, 3vw, 1.75rem);
+  --fluid-body: clamp(0.875rem, 1.2vw, 1.125rem);
+  --fluid-small: clamp(0.75rem, 1vw, 0.875rem);
 }
 
-html {
-  overflow-x: hidden;
-  max-width: 100vw;
-  scroll-behavior: smooth;
-  height: 100%;
-  overscroll-behavior: none;
-  background-color: var(--theme-bg-dark);
-  color: var(--theme-text-main);
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  /* ── Fluid base font: 14px on mobile → scales with viewport → 18px on 1400px+ */
-  font-size: clamp(14px, 1.5vw, 18px);
+/* ── Fluid Typography Layer ── */
+h1 { font-size: var(--fluid-h1); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+h2 { font-size: var(--fluid-h2); font-weight: 700; line-height: 1.2; }
+h3 { font-size: var(--fluid-h3); font-weight: 700; line-height: 1.3; }
+p, li { line-height: calc(1em + 0.5rem); margin-bottom: 0.5rem; }
+
+/* ── Responsive Media Safeguards ── */
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
-body {
-  height: 100%;
+/* ── Global Layout Adaptability ── */
+.container-adaptive {
   width: 100%;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 5vw, 3rem);
+  max-width: var(--bp-pos);
+}
+
+/* ── Interactive & Touch Optimization ── */
+/* Enforce minimum 44px tappable area for all action buttons on touch devices */
+@media (max-width: 1024px) {
+  button, 
+  [role="button"],
+  .action-btn,
+  .cart-toggle {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 1rem;
+    transition: transform 0.1s ease-out;
+  }
+  
+  button:active {
+    transform: scale(0.96);
+  }
+}
+
+/* ── Prevent Layout Breaking ── */
+html, body, #root {
   max-width: 100vw;
   overflow-x: hidden;
-  overscroll-behavior: none;
-  font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
-  /* Inherits fluid font-size from html via clamp() */
-  font-size: inherit;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--theme-bg-dark);
-  color: var(--theme-text-main);
-  min-height: 100vh;
-  min-height: 100svh;
-  min-height: 100dvh;
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
 }
 
-/* ── React root: must fill the full dynamic viewport ────────────────────── */
-#root {
-  height: 100%;
-  min-height: 100vh;
-  min-height: 100svh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  isolation: isolate;
-  overflow-x: hidden;
+/* ── Default zoom 110% equivalent at 100% browser zoom ── */
+html {
+  zoom: 1.1;
 }
 
-/* ─── Touch-Friendly Interactive Elements ───────────────────────────────── */
+/* ── Tablet & Small Desktop Grid Adjustments ── */
+@media (min-width: 481px) and (max-width: 1024px) {
+  /* Ensure grids shift to 2-column if items contain details */
+  .grid-adaptive {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+/* ── POS / Large Screen Optimization ── */
+@media (min-width: 1366px) {
+  /* Increase core font size slightly for readability on high-mounted monitors */
+  html {
+    font-size: 18px;
+  }
+  
+  .sidebar-layout > aside {
+    width: 320px !important; /* Larger sidebar for bigger targets */
+  }
+}
+
+
+/* ─── Touch-Friendly Interactive Elements (Legacy Layer) ────────────────── */
 button,
 [role="button"],
 a {
@@ -1581,11 +1614,80 @@ main > div {
   outline: none;
 }
 
-/* ─── Print: hide non-essential UI elements ──────────────────────────────── */
+/* ─── Global Responsive Overrides (Pure Layout Phase) ───────────────────── */
+
+/* ── Mobile Layout (< 1024px) ── */
+@media (max-width: 1024px) {
+  /* Collapse Sidebar to prevent layout push */
+  .sidebar-layout > aside {
+    position: fixed;
+    left: -100%; /* Hide offscreen */
+    top: 0;
+    bottom: 0;
+    z-index: 50;
+    width: var(--sidebar-w);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* When sidebar 'open' state is implemented via class */
+  .sidebar-layout > aside.is-open {
+    left: 0;
+    box-shadow: var(--theme-shadow);
+  }
+
+  .sidebar-layout > .main-area {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding-inline: clamp(0.5rem, 3vw, 1.25rem) !important;
+  }
+
+  /* Adjust TopBar for mobile density */
+  .top-bar-sticky {
+    z-index: 45;
+    padding-inline: 1rem !important;
+  }
+
+  /* Ensure long titles don't break flex layouts */
+  .truncate-mobile {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ── Fluid Modal Adaptation ── */
+@media (max-width: 480px) {
+  .responsive-modal {
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    animation: drawerSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  
+  .responsive-modal-overlay {
+    backdrop-filter: blur(2px) !important;
+  }
+}
+
+/* ── Token Grid Optimization ── */
+.token-grid-adaptive {
+  display: grid;
+  gap: clamp(0.5rem, 2vw, 1.5rem);
+  grid-template-columns: repeat(auto-fill, minmax(clamp(160px, 20vw, 240px), 1fr));
+}
+
+/* ── Accessibility: Enforce Contrast in Transitions ── */
+.transition-theme * {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+}
+
+/* ── Print: Finalize ── */
 @media print {
-  nav, aside, header, .bottom-nav-safe,
-  button:not(.print-show),
-  .no-print {
+  nav, aside, header, .bottom-nav-safe, .no-print {
     display: none !important;
   }
-}
+}
+

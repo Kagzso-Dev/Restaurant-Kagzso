@@ -145,19 +145,26 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                     </h3>
                     <div className="flex items-center gap-1.5 shrink-0">
                         {hasNewItems && <span className="text-[8px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wide animate-pulse">+New</span>}
-                        {order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED') && (userRole === 'kitchen' || userRole === 'admin') && (
+                        {/* ALL Advancement Toggle - Jump to READY directly */}
+                        {order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED') && 
+                         order.orderStatus !== 'ready' && order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' &&
+                         (userRole === 'kitchen' || userRole === 'admin') && (
                             <button
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     if (isMarkingAll) return;
                                     setIsMarkingAll(true);
                                     try {
-                                        const pendingItems = order.items.filter(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED');
-                                        await Promise.all(pendingItems.map(item => {
-                                            const current = item.status?.toUpperCase() || 'PENDING';
-                                            const next = current === 'PENDING' ? 'ACCEPTED' : current === 'ACCEPTED' ? 'PREPARING' : 'READY';
-                                            return onUpdateItemStatus(order._id, item._id, next);
-                                        }));
+                                        const pendingItems = order.items.filter(i => 
+                                            i.status?.toUpperCase() !== 'READY' && 
+                                            i.status?.toUpperCase() !== 'CANCELLED'
+                                        );
+                                        // Directly mark all as READY in one batch
+                                        await Promise.all(pendingItems.map(item => 
+                                            onUpdateItemStatus(order._id, item._id, 'READY')
+                                        ));
+                                        // Also advance the whole order to READY
+                                        await onUpdateStatus(order._id, 'ready');
                                     } finally {
                                         setIsMarkingAll(false);
                                     }
@@ -168,7 +175,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                         ? 'bg-emerald-100/50 text-emerald-600/50 border-emerald-200/50 cursor-not-allowed' 
                                         : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 active:scale-95'
                                 }`}
-                                title="Advance all items"
+                                title="Mark all as ready"
                             >
                                 {isMarkingAll ? <Loader2 size={10} className="animate-spin" /> : <CheckCheck size={10} />} All
                             </button>
@@ -207,16 +214,9 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                             </div>
 
                             <span
-                                className={`flex-1 text-[11px] font-bold leading-tight cursor-pointer transition-opacity hover:opacity-70 mt-0.5
+                                className={`flex-1 text-[11px] font-bold leading-tight mt-0.5
                                     ${isCancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}
                                     ${loadingItems[item._id] ? 'opacity-50' : ''}`}
-                                onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (isCancelled || loadingItems[item._id] || isMarkingAll) return;
-                                    setLoadingItems(p => ({...p, [item._id]: true}));
-                                    try { await onUpdateItemStatus(order._id, item._id, nextStatus); }
-                                    finally { setLoadingItems(p => ({...p, [item._id]: false})); }
-                                }}
                             >
                                 {item.name}
                                 {item.variant?.name && <span className="ml-1 text-[8px] opacity-70">({item.variant.name})</span>}
@@ -224,22 +224,6 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                             </span>
 
                             <div className="flex items-center gap-1 shrink-0">
-                                {!isCancelled && (userRole === 'kitchen' || userRole === 'admin') && (
-                                    <button
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            if (loadingItems[item._id] || isMarkingAll) return;
-                                            setLoadingItems(p => ({...p, [item._id]: true}));
-                                            try { await onUpdateItemStatus(order._id, item._id, nextStatus); }
-                                            finally { setLoadingItems(p => ({...p, [item._id]: false})); }
-                                        }}
-                                        disabled={loadingItems[item._id] || isMarkingAll}
-                                        className="w-5 h-5 rounded-full flex items-center justify-center text-[var(--theme-text-subtle)] hover:text-emerald-500 hover:bg-emerald-500/10 transition-all border border-transparent hover:border-emerald-500/20"
-                                        title="Mark next status"
-                                    >
-                                        {loadingItems[item._id] ? <Loader2 size={12} className="animate-spin text-emerald-500" /> : <CheckCheck size={12} />}
-                                    </button>
-                                )}
                                 {canCancel && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onCancelItem(order, item); }}
@@ -517,43 +501,27 @@ const KitchenDashboard = () => {
     return (
         <div className="space-y-5 animate-fade-in pb-10 text-left">
 
-
-
             {/* ── TopBar Portal (Relocated Controls) ────────────────────── */}
             {document.getElementById('topbar-portal') && createPortal(
                 <div className="flex items-center justify-between w-full h-full animate-fade-in translate-y-0.5 pr-4">
                     <div className="flex items-center gap-3">
-                        {/* 0. Stats Toggle */}
-                        <button
-                            onClick={() => setShowTables(prev => !prev)}
-                            className={`relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-300 active:scale-95 active:translate-y-[1px] shrink-0 ${
-                                showTables
-                                    ? 'border-blue-500/40 bg-blue-500/10 text-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.25)]'
-                                    : 'border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_12px_rgba(239,68,68,0.2)] animate-pulse-red'
-                            }`}
+                        {/* 0. Stats Toggle - Triple Chevron Arrow View */}
+                        <button 
+                            onClick={() => setShowTables(!showTables)} 
+                            className={`p-2.5 bg-black/5 dark:bg-white/5 rounded-2xl border border-[var(--theme-border)] shadow-sm shrink-0 transition-all duration-300 group hover:bg-black/10 dark:hover:bg-white/10 ${showTables ? 'ring-2 ring-orange-500/20 shadow-inner' : ''}`}
                             title="Toggle Counters"
                         >
-                            <span className={`absolute inset-0 rounded-xl ring-1 animate-ping pointer-events-none ${showTables ? 'ring-blue-500/50' : 'ring-rose-500/50'}`} style={{ animationDuration: '2s' }} />
-                            <span className={`absolute inset-[3px] rounded-lg ring-1 animate-ping pointer-events-none ${showTables ? 'ring-blue-400/30' : 'ring-rose-400/30'}`} style={{ animationDuration: '1.3s', animationDelay: '0.4s' }} />
-                            <div className={`flex items-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${showTables ? 'scale-110' : 'scale-100'}`}>
-                                {showTables ? (
-                                    <div className="flex items-center -ml-0.5">
-                                        <ChevronLeft size={16} strokeWidth={3} className="animate-chevron-1" />
-                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-2" />
-                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-3" />
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center ml-0.5">
-                                        <ChevronRight size={16} strokeWidth={3} className="animate-chevron-r1" />
-                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-r2" />
-                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-r3" />
-                                    </div>
-                                )}
+                            <div className={`transition-transform duration-500 flex items-center justify-center ${showTables ? 'rotate-180' : 'rotate-0'}`}>
+                                <div className="flex items-center text-rose-500">
+                                    <ChevronLeft size={18} strokeWidth={3} className="-mr-2.5" />
+                                    <ChevronLeft size={18} strokeWidth={3} className="-mr-2.5" />
+                                    <ChevronLeft size={18} strokeWidth={3} />
+                                </div>
                             </div>
                         </button>
 
-                        {/* 1. All | Dine-in | Takeaway - Wide Format */}
-                        <div className="flex items-center p-1 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm shrink-0 min-w-[280px]">
+                        {/* 1. All | Dine-in | Takeaway - Capsule/Pill Switch */}
+                        <div className="flex items-center p-1 bg-black/5 dark:bg-white/5 rounded-full border border-[var(--theme-border)] shadow-inner shrink-0 leading-none">
                             {['all', 'dine-in', 'takeaway']
                                 .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
                                 .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
@@ -561,57 +529,54 @@ const KitchenDashboard = () => {
                                     <button 
                                         key={t} 
                                         onClick={() => setFilterType(t)} 
-                                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterType === t ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-md border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                                        className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                                            filterType === t 
+                                                ? 'bg-white dark:bg-[var(--theme-bg-card)] text-orange-500 shadow-md transform scale-[1.02]' 
+                                                : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                                        }`}
                                     >
-                                        {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
+                                        {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKE-AWAY'}
                                     </button>
                                 ))}
                         </div>
                     </div>
 
-                    <div className="h-8 w-px bg-[var(--theme-border)] mx-2 opacity-50 flex-shrink-0" />
-
                     <div className="ml-auto flex items-center gap-4">
-                        {/* View Mode Toggle - 3D Pill Handle */}
+                        {/* 2. View Mode Toggle - 3D Pill Handle */}
                         <button
                             onClick={() => { const next = !isCardView; setIsCardView(next); localStorage.setItem('kitchenCardView', next); }}
                             className={`
-                                relative flex items-center h-11 w-32 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
+                                relative flex items-center h-10 w-28 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
                                 ${isCardView 
                                     ? 'bg-blue-600/10 border-blue-500/20' 
                                     : 'bg-orange-500/10 border-orange-500/20'}
                             `}
                         >
-                            {/* Sliding Background Circle */}
                             <div 
                                 className={`
-                                    absolute top-1 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                    absolute top-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                                     ${isCardView 
                                         ? 'left-1 bg-blue-600 rotate-0' 
-                                        : 'left-[calc(100%-40px)] bg-orange-600 rotate-[360deg]'}
+                                        : 'left-[calc(100%-36px)] bg-orange-600 rotate-[360deg]'}
                                 `}
                             >
-                                {isCardView ? <Grid size={16} strokeWidth={3} className="text-white" /> : <List size={16} strokeWidth={3} className="text-white" />}
+                                {isCardView ? <Grid size={14} strokeWidth={3} className="text-white" /> : <List size={14} strokeWidth={3} className="text-white" />}
                             </div>
 
-                            {/* Labels */}
                             <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
-                                <span className={`text-[10px] font-black transition-all duration-300 ${isCardView ? 'opacity-100 translate-x-9 text-blue-600' : 'opacity-0 translate-x-3'}`}>TOKEN</span>
-                                <span className={`text-[10px] font-black transition-all duration-300 ${!isCardView ? 'opacity-100 -translate-x-9 text-orange-600' : 'opacity-0 -translate-x-3'}`}>CARD</span>
+                                <span className={`text-[9px] font-black transition-all duration-300 ${isCardView ? 'opacity-100 translate-x-7 text-blue-600' : 'opacity-0 translate-x-3'}`}>TOKEN</span>
+                                <span className={`text-[9px] font-black transition-all duration-300 ${!isCardView ? 'opacity-100 -translate-x-7 text-orange-600' : 'opacity-0 -translate-x-3'}`}>CARD</span>
                             </div>
                         </button>
 
-                        {/* 3. Refresh & Bell */}
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => { window.dispatchEvent(new CustomEvent('pos-refresh')); }}
-                                className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.15)] animate-pulse-red transition-all active:translate-y-[1px] active:scale-95"
-                                title="Refresh Live"
-                            >
-                                <span className="absolute inset-0 rounded-xl ring-1 ring-rose-500/40 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
-                                <RefreshCw size={16} strokeWidth={2.5} />
-                            </button>
-                        </div>
+                        {/* 3. Refresh Live */}
+                        <button
+                            onClick={() => { window.dispatchEvent(new CustomEvent('pos-refresh')); }}
+                            className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.15)] transition-all active:translate-y-[1px] active:scale-95"
+                            title="Refresh Live"
+                        >
+                            <RefreshCw size={16} strokeWidth={2.5} />
+                        </button>
                     </div>
                 </div>,
                 document.getElementById('topbar-portal')
@@ -650,7 +615,7 @@ const KitchenDashboard = () => {
 
             {/* ── KOT Grid ────────────────────────────────────────────── */}
             {loading ? (
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
                     {Array(8).fill(0).map((_, i) => <div key={i} className="skeleton rounded-xl h-48" />)}
                 </div>
             ) : displayOrders.length === 0 ? (
@@ -676,42 +641,34 @@ const KitchenDashboard = () => {
                     )}
                 </div>
             ) : (
-                <>
-
-
-                    {/* ── KOT Grid ────────────────────────────────────────────── */}
-                    <div className={`grid gap-3 sm:gap-4 p-4 ${
-                        isCardView 
-                            ? 'grid-cols-[repeat(auto-fill,minmax(110px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(130px,1fr))]' 
-                            : 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
-                    }`}>
-                        {displayOrders.map(order => (
-                            <div
-                                key={order._id}
-                                className="transition-transform"
-                            >
-                                {isCardView ? (
-                                    <KitchenTokenCard
+                <div className={`grid gap-4 p-4 ${
+                    isCardView
+                        ? 'grid-cols-[repeat(auto-fill,minmax(160px,1fr))]'
+                        : 'grid-cols-[repeat(auto-fill,minmax(240px,1fr))]'
+                }`}>
+                    {displayOrders.map(order => (
+                        <div key={order._id} className="h-full transition-transform">
+                            {isCardView ? (
+                                <KitchenTokenCard
+                                    order={order}
+                                    onClick={() => printBill(order, (p) => `₹${p}`, settings, true)}
+                                />
+                            ) : (
+                                <div onClick={() => printBill(order, (p) => `₹${p}`, settings, true)} className="cursor-pointer h-full">
+                                    <KotTicket
                                         order={order}
-                                        onClick={() => printBill(order, (p) => `₹${p}`, settings, true)}
+                                        onUpdateStatus={updateStatus}
+                                        onUpdateItemStatus={updateItemStatus}
+                                        onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
+                                        onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
+                                        userRole={user.role}
+                                        viewType="normal"
                                     />
-                                ) : (
-                                    <div onClick={() => printBill(order, (p) => `₹${p}`, settings, true)} className="cursor-pointer">
-                                        <KotTicket
-                                            order={order}
-                                            onUpdateStatus={updateStatus}
-                                            onUpdateItemStatus={updateItemStatus}
-                                            onCancel={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
-                                            onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
-                                            userRole={user.role}
-                                            viewType="normal"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
             )}
 
             <OrderDetailsModal

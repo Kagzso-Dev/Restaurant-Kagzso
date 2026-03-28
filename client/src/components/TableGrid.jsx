@@ -201,8 +201,8 @@ const TableGrid = ({
                             {/* Zone heading */}
                             <p className="text-sm font-semibold text-gray-700 mb-3">{zoneName}</p>
 
-                            {/* Table cards row */}
-                            <div className="flex flex-wrap gap-3">
+                            {/* Table cards row: Responsive Grid — Now 3 columns on Mobile */}
+                            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                                 {zoneTables.map(table => {
                                     const clickable = isClickable(table);
                                     return (

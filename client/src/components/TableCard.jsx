@@ -92,7 +92,7 @@ const TableCard = ({ table, onClick, clickable = false, actions, variant = 'grid
             onKeyDown={clickable ? (e) => e.key === 'Enter' && onClick?.() : undefined}
             className={`
                 relative flex flex-col items-center justify-center
-                w-28 h-32 sm:w-32 sm:h-36 rounded-[2rem] border-2 ${cfg.border} ${cfg.bg}
+                w-full aspect-[1/1.15] sm:max-w-[140px] rounded-[2rem] border-2 ${cfg.border} ${cfg.bg}
                 shadow-sm transition-all duration-300 group select-none
                 ${clickable ? `cursor-pointer hover:shadow-xl hover:-translate-y-1 active:scale-95 ${cfg.hoverBg}` : 'cursor-default'}
             `}

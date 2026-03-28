@@ -22,23 +22,30 @@ const DineIn = () => {
     const orderType = 'dine-in';
     const [selectedTable, setSelectedTable] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
-    const [categories, setCategories] = useState([]);
+    const [allCategories, setAllCategories] = useState([]);
     const [cart, setCart] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [userInteracted, setUserInteracted] = useState(false);
-    const [viewMode, setViewMode] = useState(() => settings?.menuView || 'grid');
+    const [viewMode, setViewMode] = useState(() => {
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        if (isMobile && settings?.mobileMenuView) return settings.mobileMenuView;
+        return settings?.menuView || 'grid'
+    });
 
     // Sync with global settings
     useEffect(() => {
+        const isMobile = window.innerWidth < 768;
+        const defaultView = (isMobile && settings?.mobileMenuView) ? settings.mobileMenuView : (settings?.menuView || 'grid');
+
         if (settings?.enforceMenuView) {
-            setViewMode(settings.menuView || 'grid');
-        } else if (!userInteracted && settings?.menuView) {
-            setViewMode(settings.menuView);
+            setViewMode(defaultView);
+        } else if (!userInteracted && (settings?.menuView || settings?.mobileMenuView)) {
+            setViewMode(defaultView);
         }
-    }, [settings?.menuView, settings?.enforceMenuView, userInteracted]);
+    }, [settings?.menuView, settings?.mobileMenuView, settings?.enforceMenuView, userInteracted]);
 
     // Manual override helper
     const handleViewToggle = (newMode) => {
@@ -56,7 +63,7 @@ const DineIn = () => {
                     api.get('/api/categories'),
                 ]);
                 setMenuItems(menuRes.data);
-                setCategories(catRes.data);
+                setAllCategories(catRes.data);
             } catch (err) {
                 console.error('DineIn: fetch error', err);
             } finally {
@@ -92,6 +99,18 @@ const DineIn = () => {
     };
 
     const clearCart = () => { if (window.confirm('Clear all items?')) setCart([]); };
+
+    const categories = useMemo(() => {
+        const seen = new Set();
+        const result = [];
+        [...allCategories, ...menuItems.map(i => i.category).filter(Boolean)].forEach(cat => {
+            if (!seen.has(cat._id)) {
+                seen.add(cat._id);
+                result.push(cat);
+            }
+        });
+        return result;
+    }, [allCategories, menuItems]);
 
     const filteredItems = useMemo(() =>
         menuItems.filter(item =>
@@ -132,7 +151,7 @@ const DineIn = () => {
     );
 
     return (
-        <div className="h-full flex flex-col relative overflow-hidden">
+        <div className="h-[100dvh] flex flex-col relative overflow-hidden">
 
             {/* ── STEP 2: TABLE SELECTION ─────────────────────────────── */}
             {step === 2 && (
@@ -160,10 +179,10 @@ const DineIn = () => {
 
             {/* ── STEP 3: MENU + CART ─────────────────────────────────── */}
             {step === 3 && (
-                <div className="flex flex-col md:flex-row h-full gap-5 animate-fade-in overflow-hidden">
+                <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-5 animate-fade-in overflow-hidden">
 
                     {/* Menu Panel */}
-                    <div className="flex-1 flex flex-col min-w-0 bg-[var(--theme-bg-card)] rounded-3xl border border-[var(--theme-border)] shadow-2xl overflow-hidden">
+                    <div className="flex-1 min-h-0 flex flex-col min-w-0 bg-[var(--theme-bg-card)] rounded-3xl border border-[var(--theme-border)] shadow-2xl overflow-hidden">
 
                         {/* Top Bar */}
                         <div className="px-5 py-4 border-b border-[var(--theme-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
@@ -174,7 +193,7 @@ const DineIn = () => {
                                 <div>
                                     <h2 className="text-lg font-bold text-[var(--theme-text-main)] flex items-center gap-2 truncate">
                                         Table {selectedTable?.number}
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-semibold border border-orange-500/20">
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/10 text-gray-500 font-semibold border border-gray-500/20">
                                             Dine-In
                                         </span>
                                     </h2>
@@ -188,7 +207,7 @@ const DineIn = () => {
                                         placeholder="Search items..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl pl-10 pr-4 py-2 border-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl pl-10 pr-4 py-2 border-none focus:ring-2 focus:ring-gray-500 text-sm"
                                     />
                                     {searchQuery && (
                                         <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
@@ -199,66 +218,73 @@ const DineIn = () => {
                                 {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
                                 <button
                                     onClick={() => setIsCartOpen(!isCartOpen)}
-                                    className={`hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all font-bold text-sm border
-                                        ${isCartOpen ? 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:bg-[var(--theme-bg-hover)]' : 'bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500 hover:text-white'}
+                                    className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all font-black text-sm border shadow-sm shrink-0 active:scale-95
+                                        ${isCartOpen 
+                                            ? 'bg-orange-500 text-white border-orange-600 shadow-md' 
+                                            : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}
                                     `}
                                 >
-                                    <ShoppingCart size={16} />
-                                    {isCartOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                                    <ShoppingCart size={18} />
+                                    <ChevronLeft size={16} className={`transition-transform duration-300 ${isCartOpen ? 'rotate-180' : ''}`} />
+                                    {cart.length > 0 && (
+                                        <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${isCartOpen ? 'bg-white text-orange-600 border-orange-500' : 'bg-orange-600 text-white border-[var(--theme-bg-card)]'}`}>
+                                            {cart.length}
+                                        </span>
+                                    )}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="flex-1 flex overflow-hidden">
-                            {/* Categories Rail */}
-                            <div className="w-14 xs:w-16 md:w-20 lg:w-16 xl:w-24 flex-shrink-0 border-r border-[var(--theme-border)] flex flex-col overflow-y-auto custom-scrollbar bg-black/5">
+                        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+                            {/* Categories Selection: Horizontal on Mobile, Vertical Rail on Desktop */}
+                            <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto custom-scrollbar bg-black/5 border-b md:border-b-0 md:border-r border-[var(--theme-border)] flex-shrink-0 w-full md:w-24 xl:w-28">
                                 <button
                                     onClick={() => setSelectedCategory(null)}
-                                    className={`flex flex-col items-center justify-center py-3 px-1 gap-1.5 transition-all border-l-4
+                                    className={`flex flex-shrink-0 flex-row md:flex-col items-center justify-center py-2 md:py-4 px-4 md:px-1 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4
                                         ${selectedCategory === null
-                                            ? 'bg-orange-500/10 text-orange-400 border-orange-500'
+                                            ? 'bg-gray-200 text-gray-900 border-gray-800 shadow-inner'
                                             : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] border-transparent'}`}
                                 >
                                     <Utensils size={18} />
-                                    <span className="text-[9px] font-bold uppercase tracking-tight text-center">All</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest">All</span>
                                 </button>
                                 {categories.map(cat => (
                                     <button
                                         key={cat._id}
                                         onClick={() => setSelectedCategory(cat._id)}
-                                        className="flex flex-col items-center justify-center py-3 px-1 gap-1.5 transition-all border-l-4"
+                                        className="flex flex-shrink-0 flex-row md:flex-col items-center justify-center py-2 md:py-4 px-4 md:px-1 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4"
                                         style={{
-                                            backgroundColor: selectedCategory === cat._id ? `${cat.color || '#f97316'}15` : 'transparent',
-                                            borderColor: selectedCategory === cat._id ? (cat.color || '#f97316') : 'transparent',
-                                            color: selectedCategory === cat._id ? (cat.color || '#f97316') : 'var(--theme-text-muted)'
+                                            backgroundColor: selectedCategory === cat._id ? `${cat.color || '#1f2937'}15` : 'transparent',
+                                            borderColor: selectedCategory === cat._id ? (cat.color || '#1f2937') : 'transparent',
+                                            color: selectedCategory === cat._id ? (cat.color || '#1f2937') : 'var(--theme-text-muted)'
                                         }}
                                     >
                                         <div
-                                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors flex-shrink-0"
+                                            className="w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[11px] md:text-[12px] font-black transition-colors flex-shrink-0"
                                             style={{
-                                                backgroundColor: selectedCategory === cat._id ? (cat.color || '#f97316') : 'var(--theme-bg-hover)',
+                                                backgroundColor: selectedCategory === cat._id ? (cat.color || '#1f2937') : 'var(--theme-bg-hover)',
                                                 color: selectedCategory === cat._id ? 'white' : 'var(--theme-text-muted)'
                                             }}
                                         >
                                             {cat.name.charAt(0)}
                                         </div>
-                                        <span className="text-[8px] xl:text-[9px] font-bold uppercase tracking-tight text-center leading-tight line-clamp-2 max-w-full">{cat.name}</span>
+                                        <span className="text-[9px] font-black uppercase tracking-tight text-center leading-tight whitespace-nowrap md:whitespace-normal line-clamp-1 md:line-clamp-2">{cat.name}</span>
                                     </button>
                                 ))}
                             </div>
 
                             {/* Items Grid */}
-                            <div className={`flex-1 overflow-y-auto p-2 md:p-3 xl:p-4 custom-scrollbar ${cart.length > 0 ? 'pb-28 lg:pb-4' : ''}`}>
+                            <div className={`flex-1 overflow-y-auto p-2 md:p-3 xl:p-4 custom-scrollbar`}>
                                 {filteredItems.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center h-64 text-gray-600">
                                         <SearchX size={48} className="mb-4 opacity-10" />
                                         <p className="font-medium text-lg">No items found</p>
                                     </div>
                                 ) : (
-                                    <div className={`grid gap-2 xs:gap-3 ${viewMode === 'grid'
-                                        ? 'grid-cols-2 xs:grid-cols-3'
+                                    <div className={`grid gap-2 sm:gap-4 ${viewMode === 'grid'
+                                        ? 'grid-cols-2 lg:grid-cols-3'
                                         : viewMode === 'compact'
-                                            ? 'grid-cols-3 xs:grid-cols-4 lg:grid-cols-6'
+                                            ? 'grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
                                             : 'grid-cols-1'
                                     }`}>
                                         {filteredItems.map(item => (
@@ -291,7 +317,7 @@ const DineIn = () => {
                         {isCartOpen && <div onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" />}
 
 
-                        <div className="relative h-fit max-h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
+                        <div className="relative h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
                             {/* Header */}
                             <div className="px-5 py-4 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
                                 <div>
@@ -365,28 +391,6 @@ const DineIn = () => {
                             </div>
                         </div>
                     </aside>
-                </div>
-            )}
-
-            {/* Mobile Cart Trigger */}
-            {step === 3 && cart.length > 0 && !isCartOpen && (
-                <div className="md:hidden fixed bottom-20 left-4 right-4 z-40 bg-orange-600 rounded-2xl shadow-2xl p-4 flex items-center justify-between animate-slide-up">
-                    <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <ShoppingCart size={24} className="text-white" />
-                            <span className="absolute -top-2 -right-2 w-5 h-5 bg-white text-orange-600 rounded-full flex items-center justify-center text-xs font-black">{cart.length}</span>
-                        </div>
-                        <div className="text-white">
-                            <p className="text-[10px] font-bold uppercase tracking-widest leading-none">Checkout</p>
-                            <p className="text-lg font-black leading-tight">{formatPrice(finalAmount)}</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setIsCartOpen(true)}
-                        className="bg-white text-orange-600 px-5 py-2.5 rounded-xl font-black text-sm active:scale-95 flex items-center gap-2"
-                    >
-                        View Order <ChevronRight size={18} />
-                    </button>
                 </div>
             )}
         </div>
