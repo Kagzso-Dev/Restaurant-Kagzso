@@ -3,7 +3,8 @@ import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
 import {
     TrendingUp, TrendingDown, ShoppingBag, Clock, DollarSign,
-    Download, RefreshCw, ChevronDown, FileText
+    Download, RefreshCw, ChevronDown, FileText,
+    Layers, Utensils, Package
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -46,24 +47,40 @@ const GrowthBadge = ({ growth, loading }) => {
 };
 
 /* ── Stat Card ───────────────────────────────────────────────────────────── */
-const StatCard = ({ title, value, subtitle, icon: Icon, color, badge, badgeLoading }) => (
-    <div className={`
-        bg-[var(--theme-bg-card)] p-5 rounded-2xl border border-[var(--theme-border)]
-        hover:border-${color}-500/30 transition-all duration-300
-        hover:shadow-lg group animate-fade-in
-    `}>
-        <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl bg-${color}-500/10`}>
-                <Icon size={20} className={`text-${color}-400`} />
+const StatCard = ({ title, value, subtitle, icon: Icon, color, badge }) => {
+    // Dynamic Tailwind class helper (since color is a string variable)
+    const colorMap = {
+        orange: 'bg-orange-500/10 text-orange-500 border-orange-500/20 shadow-orange-500/5',
+        blue:   'bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-blue-500/5',
+        amber:  'bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-amber-500/5',
+        emerald:'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-emerald-500/5',
+    };
+    const c = colorMap[color] || colorMap.orange;
+
+    return (
+        <div className="bg-[var(--theme-bg-card)] p-6 rounded-[2rem] border border-[var(--theme-border)] hover:border-orange-500/30 transition-all duration-500 hover:shadow-2xl hover:shadow-black/5 group cursor-default">
+            <div className="flex items-start justify-between mb-6">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${c} transition-transform group-hover:scale-110 duration-500`}>
+                    <Icon size={22} strokeWidth={2.5} />
+                </div>
+                <div className="flex flex-col items-end">
+                    {badge}
+                </div>
             </div>
-            {/* Badge slot — can be a ReactNode (GrowthBadge) or string */}
-            {badge}
+            <div>
+                <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-black tracking-[0.2em] mb-1 opacity-60">
+                    {title}
+                </p>
+                <div className="flex items-baseline gap-2">
+                    <h3 className="text-3xl md:text-4xl font-black text-[var(--theme-text-main)] tracking-tighter">
+                        {value}
+                    </h3>
+                </div>
+                {subtitle && <p className="text-xs text-[var(--theme-text-subtle)] mt-2 font-medium opacity-80">{subtitle}</p>}
+            </div>
         </div>
-        <p className="text-xs text-[var(--theme-text-muted)] uppercase font-bold tracking-widest mb-1">{title}</p>
-        <p className="text-2xl md:text-3xl font-bold text-[var(--theme-text-main)] truncate">{value}</p>
-        {subtitle && <p className="text-xs text-[var(--theme-text-subtle)] mt-1">{subtitle}</p>}
-    </div>
-);
+    );
+};
 
 /* ── Status Badge ────────────────────────────────────────────────────────── */
 const statusColors = {
@@ -277,9 +294,10 @@ const AdminDashboard = () => {
                 <div className="flex gap-2 flex-wrap">
                     <button
                         onClick={handleRefresh}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] border border-[var(--theme-border)] rounded-xl text-sm font-medium transition-colors min-h-[44px]"
                         disabled={refreshing}
+                        className="relative flex items-center gap-2 px-4 py-2.5 border border-rose-500/40 bg-rose-500/10 text-rose-500 rounded-xl text-sm font-bold animate-pulse-red transition-all min-h-[44px] active:scale-95 disabled:opacity-60"
                     >
+                        <span className="absolute inset-0 rounded-xl ring-1 ring-rose-500/40 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
                         <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
                         <span className="hidden sm:inline">Refresh</span>
                     </button>
@@ -356,21 +374,25 @@ const AdminDashboard = () => {
                 <div className="px-5 py-4 border-b border-[var(--theme-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h2 className="text-base font-bold text-[var(--theme-text-main)]">Recent Orders</h2>
-                        <p className="text-xs text-[var(--theme-text-subtle)] mt-0.5">{orders.length} total records</p>
                     </div>
-                    <div className="flex bg-[var(--theme-bg-hover)] p-1 rounded-xl border border-[var(--theme-border)]">
-                        {['all', 'dine-in', 'takeaway'].map((type) => (
+                    <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner">
+                        {[
+                            { id: 'all',      icon: <Layers size={13} />,   label: 'All' },
+                            { id: 'dine-in',  icon: <Utensils size={13} />, label: 'Dine In' },
+                            { id: 'takeaway', icon: <Package size={13} />,  label: 'Takeaway' }
+                        ].map((btn) => (
                             <button
-                                key={type}
-                                onClick={() => setFilterType(type)}
+                                key={btn.id}
+                                onClick={() => setFilterType(btn.id)}
                                 className={`
-                                    px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all
-                                    ${filterType === type 
-                                        ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' 
-                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                                    flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
+                                    ${filterType === btn.id 
+                                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
+                                        : 'text-[var(--theme-text-muted)] hover:text-orange-500 hover:bg-orange-500/5'}
                                 `}
                             >
-                                {type.replace('-', ' ')}
+                                {btn.icon}
+                                <span className="hidden xs:inline">{btn.label}</span>
                             </button>
                         ))}
                     </div>
@@ -403,32 +425,47 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--theme-border)]">
-                                {paginated.map(order => (
-                                    <tr key={order._id} className="hover:bg-[var(--theme-bg-hover)] transition-colors">
-                                        <td className="px-3 sm:px-5 py-3 font-semibold text-[var(--theme-text-main)] whitespace-nowrap text-xs sm:text-sm">
-                                            {order.orderNumber}
-                                        </td>
-                                        <td className="px-3 sm:px-5 py-3 hidden xs:table-cell">
-                                            <span className={`badge ${order.orderType === 'dine-in' ? 'badge-accepted' : 'badge-preparing'}`}>
-                                                {order.orderType}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 sm:px-5 py-3 hidden sm:table-cell text-xs sm:text-sm">
-                                            {order.items?.length || 0} items
-                                        </td>
-                                        <td className="px-3 sm:px-5 py-3">
-                                            <span className={`px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase whitespace-nowrap ${statusColors[order.orderStatus] || ''}`}>
-                                                {order.orderStatus}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 sm:px-5 py-3 whitespace-nowrap hidden md:table-cell text-xs sm:text-sm">
-                                            {new Date(order.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-3 sm:px-5 py-3 text-right font-bold text-[var(--theme-text-main)] whitespace-nowrap text-xs sm:text-sm">
-                                            {formatPrice(order.finalAmount)}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {paginated.map(order => {
+                                    const isRecent = (Date.now() - new Date(order.createdAt)) < 3600000;
+                                    const isActive = ['pending', 'accepted', 'preparing', 'ready'].includes(order.orderStatus?.toLowerCase());
+                                    
+                                    return (
+                                        <tr key={order._id} className="group hover:bg-[var(--theme-bg-hover)] transition-all duration-200">
+                                            <td className="px-5 py-4 font-black text-[var(--theme-text-main)] whitespace-nowrap text-xs sm:text-sm tracking-tight">
+                                                <div className="flex items-center gap-2">
+                                                    {isRecent && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />}
+                                                    {order.orderNumber.replace('ORD-', '#')}
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-4 hidden xs:table-cell">
+                                                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border ${
+                                                    order.orderType === 'dine-in' 
+                                                        ? 'bg-emerald-500/5 text-emerald-500 border-emerald-500/20' 
+                                                        : 'bg-blue-500/5 text-blue-500 border-blue-500/20'
+                                                }`}>
+                                                    {order.orderType}
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-4 hidden sm:table-cell text-xs sm:text-sm font-bold text-[var(--theme-text-muted)]">
+                                                {order.items?.length || 0} <span className="text-[10px] uppercase tracking-wide opacity-50 ml-0.5">items</span>
+                                            </td>
+                                            <td className="px-5 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    {isActive && <div className="w-1 h-1 rounded-full bg-orange-500 animate-ping" />}
+                                                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColors[order.orderStatus?.toLowerCase()] || ''}`}>
+                                                        {order.orderStatus}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-4 whitespace-nowrap hidden md:table-cell text-[10px] sm:text-xs font-bold text-[var(--theme-text-subtle)] uppercase tracking-tight">
+                                                {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                            <td className="px-5 py-4 text-right font-black text-orange-500 whitespace-nowrap text-xs sm:text-sm tracking-tighter">
+                                                {formatPrice(order.finalAmount)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}

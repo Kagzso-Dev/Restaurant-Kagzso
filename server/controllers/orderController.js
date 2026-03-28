@@ -5,6 +5,7 @@ const PaymentAudit = require('../models/PaymentAudit');
 const { createAndEmitNotification } = require('./notificationController');
 const { invalidateCache }           = require('../utils/cache');
 const { updateDailyAnalytics }      = require('../utils/analytics');
+const logger                 = require('../utils/logger');
 
 // Helper: extract raw table ID from either the populated object or plain value
 const rawTableId = (tableId) =>
@@ -52,8 +53,17 @@ const getOrders = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error('[getOrders] MySQL query error:', error.message);
-        res.status(500).json({ message: error.message });
+        logger.error('[getOrders] Fatal error:', {
+            message: error.message,
+            stack: error.stack,
+            query: req.query,
+            user: { id: req.userId, role: req.role }
+        });
+        res.status(500).json({ 
+            success: false,
+            message: error.message || 'Internal Server Error during order retrieval',
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 

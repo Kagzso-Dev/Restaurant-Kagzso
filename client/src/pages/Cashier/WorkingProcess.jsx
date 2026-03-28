@@ -1,31 +1,37 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
 import logoImg from '../../assets/logo.png';
-import { Printer, ChefHat, List, Grid } from 'lucide-react';
+import { Printer, ChefHat, List, Grid, RefreshCw, Clock, CheckCircle, Play, Timer } from 'lucide-react';
 
 const WorkingProcess = () => {
     const [orders, setOrders] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [loading, setLoading] = useState(false);
     const { user, socket, formatPrice, settings } = useContext(AuthContext);
 
     const [filterType, setFilterType] = useState('all');
     const [statusFilter, setStatusFilter] = useState(null);
     const [isGridView, setIsGridView] = useState(false);
 
-    useEffect(() => {
-        const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
+        setLoading(true);
+        try {
             const res = await api.get('/api/orders', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
-            // Filter active working process orders
             const ordersArray = res.data.orders || [];
             setOrders(ordersArray.filter(o => ['pending', 'preparing', 'accepted', 'ready'].includes(o.orderStatus)));
-        };
-
-        if (user) {
-            fetchOrders();
+        } catch (err) {
+            console.error('Error fetching orders:', err);
+        } finally {
+            setLoading(false);
         }
+    }, [user]);
+
+    useEffect(() => {
+        if (user) fetchOrders();
 
         if (socket) {
             socket.on('new-order', (newOrder) => {
@@ -54,19 +60,19 @@ const WorkingProcess = () => {
                 socket.off('order-updated');
             }
         };
-    }, [user, socket, selectedOrder]);
+    }, [user, socket, fetchOrders, selectedOrder]);
 
     const enabledOrders = orders
         .filter(o => settings?.takeawayEnabled !== false || o.orderType !== 'takeaway')
-        .filter(o => settings?.dineInEnabled   !== false || o.orderType !== 'dine-in');
+        .filter(o => settings?.dineInEnabled !== false || o.orderType !== 'dine-in');
 
     const currentTypeOrders = enabledOrders.filter(o => filterType === 'all' || o.orderType === filterType);
 
     const counts = {
-        pending:  currentTypeOrders.filter(o => o.orderStatus === 'pending').length,
+        pending: currentTypeOrders.filter(o => o.orderStatus === 'pending').length,
         accepted: currentTypeOrders.filter(o => o.orderStatus === 'accepted').length,
-        preparing:currentTypeOrders.filter(o => o.orderStatus === 'preparing').length,
-        ready:    currentTypeOrders.filter(o => o.orderStatus === 'ready').length,
+        preparing: currentTypeOrders.filter(o => o.orderStatus === 'preparing').length,
+        ready: currentTypeOrders.filter(o => o.orderStatus === 'ready').length,
     };
 
     const displayOrders = enabledOrders.filter(o => {
@@ -85,10 +91,10 @@ const WorkingProcess = () => {
     const printKOT = () => {
         if (!selectedOrder) return;
         const statusColors = {
-            pending:   '#f59e0b',
-            accepted:  '#3b82f6',
+            pending: '#f59e0b',
+            accepted: '#3b82f6',
             preparing: '#8b5cf6',
-            ready:     '#10b981',
+            ready: '#10b981',
             cancelled: '#ef4444',
         };
 
@@ -173,63 +179,118 @@ const WorkingProcess = () => {
 
     const getStatusColor = (status) => {
         switch (status?.toLowerCase()) {
-            case 'pending':   return 'text-[var(--status-pending)] bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]';
-            case 'accepted':  return 'text-[var(--status-accepted)] bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]';
+            case 'pending': return 'text-[var(--status-pending)] bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]';
+            case 'accepted': return 'text-[var(--status-accepted)] bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]';
             case 'preparing': return 'text-[var(--status-preparing)] bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]';
-            case 'ready':     return 'text-[var(--status-ready)] bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]';
-            default:          return 'text-gray-400 bg-gray-900/30 border-gray-700/30';
+            case 'ready': return 'text-[var(--status-ready)] bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]';
+            default: return 'text-gray-400 bg-gray-900/30 border-gray-700/30';
         }
     };
 
     return (
-        <div className="flex flex-col space-y-4 animate-fade-in">
-            {/* ── Tabs & Counters ─────────────────────────────────────── */}
-            <div className="flex flex-col gap-4 bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-2xl border border-[var(--theme-border)] shadow-sm">
-                <div className="flex items-center gap-1.5 p-1 bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] w-full">
-                    {['all', 'dine-in', 'takeaway']
-                        .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
-                        .filter(t => t !== 'dine-in'  || settings?.dineInEnabled   !== false)
-                        .map(t => (
+        <div className="flex flex-col animate-fade-in">
+            {/* ── TopBar Portal ────────────────────────────────────────── */}
+            {document.getElementById('topbar-portal') && createPortal(
+                <div className="flex items-center gap-3 w-full animate-fade-in px-4">
+                    {/* Operational Filters - 3D Mechanical Switch */}
+                    <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 min-w-[320px]">
+                        {['all', 'dine-in', 'takeaway']
+                            .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
+                            .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
+                            .map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`flex-1 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center ${
+                                    filterType === t
+                                        ? 'bg-orange-500 text-white shadow-[0_2px_4px_rgba(249,115,22,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] scale-[1.02] border-t border-white/20 active:translate-y-[1px] active:shadow-none'
+                                        : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
+                                }`}
+                            >
+                                {t === 'all' ? 'ALL' : t.replace('-', ' ')}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Dashboard Status Counters - 3D Mechanical Pills */}
+                    <div className="flex items-center gap-1.5 bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 shrink-0">
+                        {[
+                            { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Q', icon: Clock },
+                            { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'A', icon: CheckCircle },
+                            { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]',  label: 'C', icon: Timer },
+                            { key: 'ready',     count: counts.ready,     dot: 'bg-[var(--status-ready)]',      label: 'R', icon: Play },
+                        ].map((stat) => {
+                            const isActive = statusFilter === stat.key;
+                            // Dynamic active styles based on status key
+                            const activeStyles = {
+                                pending:   'bg-orange-500/20 border-orange-500/40 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.15)] scale-105',
+                                accepted:  'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] scale-105',
+                                preparing: 'bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-[0_0_15px_rgba(139,92,246,0.15)] scale-105',
+                                ready:     'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] scale-105'
+                            };
+
+                            return (
+                                <button
+                                    key={stat.key}
+                                    onClick={() => setStatusFilter(f => f === stat.key ? null : stat.key)}
+                                    className={`px-4 rounded-xl flex items-center gap-2 h-9 border transition-all duration-300 ${
+                                        isActive
+                                            ? `${activeStyles[stat.key]} border-current active:translate-y-[0.5px]`
+                                            : 'bg-transparent border-transparent text-[var(--theme-text-muted)] hover:bg-white/5'
+                                    }`}
+                                >
+                                    <span className={`w-2.5 h-2.5 rounded-full ${stat.dot} ${isActive ? 'shadow-[0_0_12px_currentColor] scale-110' : 'opacity-60 shadow-none'}`} />
+                                    <span className={`text-sm font-black transition-colors ${isActive ? 'text-white' : 'text-inherit'}`}>
+                                        {stat.count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="h-8 w-px bg-[var(--theme-border)] mx-2 opacity-50 flex-shrink-0" />
+
+                    <div className="ml-auto flex items-center gap-4">
+                        {/* View Mode Toggle moved to right TopBar point */}
+
+                        {/* View Mode Toggle moved to right TopBar point */}
                         <button
-                            key={t}
-                            onClick={() => setFilterType(t)}
+                            onClick={() => setIsGridView(v => !v)}
                             className={`
-                                flex-1 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap
-                                ${filterType === t
-                                    ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
-                                    : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}
+                                relative flex items-center h-10 w-28 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
+                                ${isGridView 
+                                    ? 'bg-blue-500/10 border-blue-500/20' 
+                                    : 'bg-orange-500/10 border-orange-500/20'}
                             `}
                         >
-                            {t === 'all' ? 'ALL' : t.replace('-', ' ').toUpperCase()}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-                    {[
-                        { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Pending',  activeText: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)] border-[var(--status-pending-border)]',   hover: 'hover:border-[var(--status-pending-border)]' },
-                        { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'Accepted', activeText: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)] border-[var(--status-accepted-border)]',  hover: 'hover:border-[var(--status-accepted-border)]' },
-                        { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]',  label: 'Cooking',  activeText: 'text-[var(--status-preparing)]', activeBg: 'bg-[var(--status-preparing-bg)] border-[var(--status-preparing-border)]', hover: 'hover:border-[var(--status-preparing-border)]' },
-                        { key: 'ready',     count: counts.ready,     dot: 'bg-[var(--status-ready)]',      label: 'Ready',    activeText: 'text-[var(--status-ready)]',     activeBg: 'bg-[var(--status-ready-bg)] border-[var(--status-ready-border)]',     hover: 'hover:border-[var(--status-ready-border)]' },
-                    ].map(({ key, count, dot, label, activeText, activeBg, hover }) => (
-                        <button
-                            key={key}
-                            onClick={() => setStatusFilter(f => f === key ? null : key)}
-                            className={`rounded-xl p-2 sm:p-3 flex flex-col items-center justify-center transition-all border active:scale-95 ${statusFilter === key ? activeBg : `bg-[var(--theme-bg-card)] border-[var(--theme-border)] ${hover}`}`}
-                        >
-                            <p className={`text-lg sm:text-2xl font-black tabular-nums ${statusFilter === key ? activeText : 'text-[var(--theme-text-main)]'}`}>{count}</p>
-                            <div className="flex items-center gap-1 mt-1">
-                                <span className={`w-1 h-1 rounded-full ${dot}`} />
-                                <p className={`text-[8px] sm:text-[10px] uppercase font-bold tracking-tighter sm:tracking-wider ${statusFilter === key ? activeText : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                            <div 
+                                className={`
+                                    absolute top-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                    ${isGridView 
+                                        ? 'left-[calc(100%-36px)] bg-blue-600 rotate-[360deg]' 
+                                        : 'left-1 bg-orange-600 rotate-0'}
+                                `}
+                            >
+                                {isGridView ? <Grid size={14} strokeWidth={3} className="text-white" /> : <List size={14} strokeWidth={3} className="text-white" />}
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+                                <span className={`text-[10px] font-black transition-all duration-300 ${isGridView ? 'opacity-0 -translate-x-2' : 'opacity-100 translate-x-7 text-orange-600'}`}>LIST</span>
+                                <span className={`text-[10px] font-black transition-all duration-300 ${!isGridView ? 'opacity-0 translate-x-2' : 'opacity-100 -translate-x-7 text-blue-600'}`}>GRID</span>
                             </div>
                         </button>
-                    ))}
-                </div>
+                        
+                        <button
+                            onClick={fetchOrders}
+                            className="w-10 h-10 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/50 rounded-xl flex items-center justify-center transition-all active:translate-y-[1px] active:shadow-inner"
+                        >
+                            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                        </button>
+                    </div>
+                </div>,
+                document.getElementById('topbar-portal')
+            )}
 
-
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 h-auto md:h-[calc(100dvh-280px)] min-h-0 md:min-h-[420px]">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 h-auto md:h-[calc(100dvh-120px)] min-h-0 md:min-h-[420px]">
                 {/* Left: Active Orders List — 2/5 of available width */}
                 <div className="md:col-span-2 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] overflow-hidden flex flex-col min-h-[300px] md:min-h-0">
                     <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-bg-hover)] flex justify-between items-center">
@@ -237,22 +298,6 @@ const WorkingProcess = () => {
                             <h2 className="text-lg font-bold text-[var(--theme-text-main)]">Active Orders</h2>
                             <span className="bg-orange-600/20 text-orange-400 text-xs px-2 py-1 rounded-full font-bold">{displayOrders.length}</span>
                         </div>
-                        {/* Grid / List toggle */}
-                        <button
-                            onClick={() => setIsGridView(v => !v)}
-                            className={`flex items-center gap-1.5 pl-1.5 pr-3 h-8 rounded-full border transition-all duration-300 active:scale-95 ${
-                                isGridView
-                                    ? 'bg-blue-500/10 border-blue-500/25'
-                                    : 'bg-orange-500/10 border-orange-500/25'
-                            }`}
-                        >
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-sm ${isGridView ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'}`}>
-                                {isGridView ? <Grid size={10} strokeWidth={2.5} /> : <List size={10} strokeWidth={2.5} />}
-                            </div>
-                            <span className={`text-[9px] font-black uppercase tracking-widest ${isGridView ? 'text-blue-600' : 'text-orange-500'}`}>
-                                {isGridView ? 'Grid' : 'List'}
-                            </span>
-                        </button>
                     </div>
                     <div className={`overflow-y-auto flex-1 p-3 custom-scrollbar ${isGridView ? 'grid grid-cols-2 gap-3 content-start' : 'space-y-2.5'}`}>
                         {displayOrders.map(order => {
@@ -263,50 +308,53 @@ const WorkingProcess = () => {
                                 <button
                                     key={order._id}
                                     onClick={() => setSelectedOrder(order)}
-                                    className={`w-full min-h-[100px] h-[100px] sm:min-h-[120px] sm:h-[120px] max-w-[150px] mx-auto rounded-2xl border-2 flex flex-col items-center justify-between p-2.5 sm:p-3 transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm overflow-hidden ${
-                                        selectedOrder?._id === order._id ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-                                    } ${order.orderStatus === 'ready' ? 'animate-pulse' : ''} ${getStatusColor(order.orderStatus)}`}
+                                    className={`w-full min-h-[100px] h-[100px] sm:min-h-[120px] sm:h-[120px] max-w-[150px] mx-auto rounded-2xl border-2 flex flex-col items-center justify-center p-2.5 sm:p-3 transition-all hover:scale-[1.02] active:scale-95 shadow-sm overflow-hidden ${
+                                        selectedOrder?._id === order._id 
+                                            ? 'ring-4 ring-offset-2 ring-current z-10 scale-105 shadow-xl shadow-current/20' 
+                                            : 'opacity-80 hover:opacity-100'
+                                        } ${order.orderStatus === 'ready' ? 'animate-pulse' : ''} ${getStatusColor(order.orderStatus)}`}
                                 >
                                     {/* Top Row: Type & Status */}
                                     <div className="flex items-start justify-between w-full shrink-0">
-                                        <span className="text-[9px] uppercase font-black opacity-50 tracking-wider">
+                                        <span className="text-[9px] uppercase font-black opacity-60 tracking-wider">
                                             {order.orderType === 'dine-in' ? 'Dine' : 'Take'}
                                         </span>
-                                        <span className="text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-current/30 bg-white/10 shrink-0">
+                                        <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-current transition-colors ${selectedOrder?._id === order._id ? 'bg-white text-black' : 'bg-white/10'}`}>
                                             {order.orderStatus}
                                         </span>
                                     </div>
-                                    
+
                                     {/* Centered Large Label */}
                                     <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0">
                                         <span className="text-lg sm:text-xl font-black leading-[1.1] tracking-tight text-center px-1 break-words w-full truncate">
                                             {tokenLabel}
                                         </span>
                                     </div>
-                                    
+
                                     {/* Bottom aesthetic indicator bar */}
-                                    <div className="w-1/3 h-1 rounded-full bg-current opacity-20 shrink-0 mt-auto" />
+                                    <div className="w-1/3 h-1 rounded-full bg-current opacity-25 shrink-0 mt-auto" />
                                 </button>
                             ) : (
-                            <div
-                                key={order._id}
-                                onClick={() => setSelectedOrder(order)}
-                                className={`p-4 rounded-xl border transition-all cursor-pointer group ${selectedOrder?._id === order._id
-                                    ? 'bg-blue-600/10 border-blue-500 shadow-lg shadow-blue-500/10'
-                                    : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] hover:bg-[var(--theme-bg-hover)] hover:border-[var(--theme-text-muted)]'
-                                    }`}
-                            >
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-bold text-[var(--theme-text-main)] text-md">{order.orderNumber}</h3>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${getStatusColor(order.orderStatus)}`}>
-                                        {order.orderStatus}
-                                    </span>
+                                <div
+                                    key={order._id}
+                                    onClick={() => setSelectedOrder(order)}
+                                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer group flex flex-col ${
+                                        selectedOrder?._id === order._id
+                                            ? `${getStatusColor(order.orderStatus)} ring-4 ring-offset-2 ring-current z-10 scale-[1.01] shadow-xl`
+                                            : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] hover:bg-[var(--theme-bg-hover)]'
+                                        }`}
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className={`font-black text-md ${selectedOrder?._id === order._id ? 'text-inherit' : 'text-[var(--theme-text-main)]'}`}>{order.orderNumber}</h3>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-black border border-current ${selectedOrder?._id === order._id ? 'bg-white text-black' : getStatusColor(order.orderStatus)}`}>
+                                            {order.orderStatus}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <p className="text-sm font-black uppercase tracking-tight">{tokenLabel}</p>
+                                        <p className="text-[10px] font-bold opacity-60">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between items-end">
-                                    <p className="text-sm font-black text-[var(--theme-text-main)] group-hover:text-blue-500 transition-colors uppercase tracking-tight">{tokenLabel}</p>
-                                    <p className="text-sm font-semibold text-[var(--theme-text-muted)]">{new Date(order.createdAt).toLocaleTimeString()}</p>
-                                </div>
-                            </div>
                             );
                         })}
                         {orders.length === 0 && (
@@ -340,9 +388,9 @@ const WorkingProcess = () => {
                                             <p><span className="font-bold">Order:</span> {selectedOrder.orderNumber}</p>
                                             <p><span className="font-bold">Time:</span> {new Date(selectedOrder.createdAt).toLocaleTimeString()}</p>
                                         </div>
-                                            <div className="text-right">
-                                                <p><span className="font-bold text-lg">{selectedOrder.orderType === 'dine-in' ? `Table ${selectedOrder.tableId?.number || selectedOrder.tableId || '?'}` : `Token ${selectedOrder.tokenNumber || '?'}`}</span></p>
-                                            </div>
+                                        <div className="text-right">
+                                            <p><span className="font-bold text-lg">{selectedOrder.orderType === 'dine-in' ? `Table ${selectedOrder.tableId?.number || selectedOrder.tableId || '?'}` : `Token ${selectedOrder.tokenNumber || '?'}`}</span></p>
+                                        </div>
                                     </div>
 
                                     {/* Items */}
@@ -363,14 +411,13 @@ const WorkingProcess = () => {
                                                     </td>
                                                     <td className="py-3 text-center font-bold text-lg">{item.quantity}</td>
                                                     <td className="py-3 text-right">
-                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold border transition-colors ${
-                                                            item.status?.toLowerCase() === 'pending'   ? 'border-[var(--status-pending)] text-[var(--status-pending)]' :
-                                                            item.status?.toLowerCase() === 'accepted'  ? 'border-[var(--status-accepted)] text-[var(--status-accepted)]' :
-                                                            item.status?.toLowerCase() === 'preparing' ? 'border-[var(--status-preparing)] text-[var(--status-preparing)]' :
-                                                            item.status?.toLowerCase() === 'ready'     ? 'border-[var(--status-ready)] text-[var(--status-ready)]' :
-                                                            item.status?.toUpperCase() === 'CANCELLED' ? 'border-red-600 text-red-600 line-through' :
-                                                            'border-gray-400 text-gray-600'
-                                                        }`}>
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold border transition-colors ${item.status?.toLowerCase() === 'pending' ? 'border-[var(--status-pending)] text-[var(--status-pending)]' :
+                                                                item.status?.toLowerCase() === 'accepted' ? 'border-[var(--status-accepted)] text-[var(--status-accepted)]' :
+                                                                    item.status?.toLowerCase() === 'preparing' ? 'border-[var(--status-preparing)] text-[var(--status-preparing)]' :
+                                                                        item.status?.toLowerCase() === 'ready' ? 'border-[var(--status-ready)] text-[var(--status-ready)]' :
+                                                                            item.status?.toUpperCase() === 'CANCELLED' ? 'border-red-600 text-red-600 line-through' :
+                                                                                'border-gray-400 text-gray-600'
+                                                            }`}>
                                                             {item.status}
                                                         </span>
                                                     </td>
@@ -382,12 +429,11 @@ const WorkingProcess = () => {
                                     {/* Order Status */}
                                     <div className="border-t-2 border-black pt-4 text-center relative z-10">
                                         <p className="text-xs font-bold uppercase mb-2">Order Status</p>
-                                        <div className={`text-xl font-black uppercase tracking-widest py-2 border-2 transition-colors ${
-                                            selectedOrder.orderStatus === 'ready'     ? 'border-[var(--status-ready)] text-[var(--status-ready)]' :
-                                            selectedOrder.orderStatus === 'preparing' ? 'border-[var(--status-preparing)] text-[var(--status-preparing)]' :
-                                            selectedOrder.orderStatus === 'accepted'  ? 'border-[var(--status-accepted)] text-[var(--status-accepted)]' :
-                                            'border-[var(--status-pending)] text-[var(--status-pending)]'
-                                        }`}>
+                                        <div className={`text-xl font-black uppercase tracking-widest py-2 border-2 transition-colors ${selectedOrder.orderStatus === 'ready' ? 'border-[var(--status-ready)] text-[var(--status-ready)]' :
+                                                selectedOrder.orderStatus === 'preparing' ? 'border-[var(--status-preparing)] text-[var(--status-preparing)]' :
+                                                    selectedOrder.orderStatus === 'accepted' ? 'border-[var(--status-accepted)] text-[var(--status-accepted)]' :
+                                                        'border-[var(--status-pending)] text-[var(--status-pending)]'
+                                            }`}>
                                             {selectedOrder.orderStatus}
                                         </div>
                                     </div>

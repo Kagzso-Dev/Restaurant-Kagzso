@@ -87,7 +87,7 @@ const TopBar = memo(({ onMenuClick }) => {
         if (!segments.length) return 'Dashboard';
         const last = segments[segments.length - 1];
         const titles = {
-            admin: 'Dashboard', kitchen: 'Kitchen Display', cashier: 'Cashier POS',
+            admin: 'Dashboard', kitchen: 'Kitchen Display', cashier: 'Cashier Point',
             waiter: user?.role === 'cashier' ? 'Token View' : 'Waiter Mode',
             menu: 'Menu Items', tables: 'Table Map',
             categories: 'Categories', orders: 'Order History', settings: 'Settings',
@@ -115,7 +115,7 @@ const TopBar = memo(({ onMenuClick }) => {
 
     return (
         <header
-            className="sticky top-0 z-30 flex items-center justify-between px-3 md:px-6 h-16 backdrop-blur-md border-b border-[var(--theme-border)] flex-shrink-0 pt-safe transition-all"
+            className="sticky top-0 z-30 flex items-center justify-between px-3 md:px-6 h-[70px] backdrop-blur-md border-b border-[var(--theme-border)] flex-shrink-0 pt-safe transition-all"
             style={{ backgroundColor: 'var(--theme-topbar-bg)' }}
         >
             {/* ── Left: Hamburger + Title ──────────────────────────────── */}
@@ -123,180 +123,23 @@ const TopBar = memo(({ onMenuClick }) => {
                 {/* Hamburger – hidden on desktop */}
                 <button
                     onClick={onMenuClick}
-                    className="
+                    className={`
                         lg:hidden flex-shrink-0
-                        p-2 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]
-                        hover:bg-[var(--theme-bg-hover)] transition-colors
-                        min-h-[44px] min-w-[44px] flex items-center justify-center
-                    "
+                        p-2 rounded-lg transition-colors
+                        min-h-[40px] min-w-[40px] flex items-center justify-center
+                        ${user.role === 'admin' ? 'text-rose-500 hover:text-rose-600 animate-chevron-flow-red' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)]'}
+                    `}
                     aria-label="Open menu"
                 >
-                    <Menu size={22} />
+                    <Menu size={20} strokeWidth={user.role === 'admin' ? 3 : 2} />
                 </button>
 
-                <div className="min-w-0">
-                    <h1 className="text-base sm:text-lg font-bold text-[var(--theme-text-main)] truncate leading-tight">
-                        {pageTitle}
-                    </h1>
-                    {/* Status Badge – mobile+ */}
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                        <div className={`w-1.5 h-1.5 rounded-full ${serverStatus === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
-                        <p className="text-[9px] sm:text-xs text-[var(--theme-text-subtle)] font-bold uppercase tracking-wider truncate">
-                            {serverStatus === 'online' ? 'Live' : 'Offline'} • {user?.username}
-                        </p>
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2.5 min-w-0 group">
                 </div>
             </div>
 
-            {/* ── Right: Search + Notifications + User ─────────────────── */}
-            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-                {/* ── Search Box (desktop only, hidden on kitchen view) ── */}
-                {showSearch && (
-                    <div ref={searchRef} className="hidden md:block relative">
-                        <div className={`
-                            flex items-center bg-[var(--theme-bg-hover)] rounded-xl px-3 py-2
-                            border transition-all gap-2
-                            ${showDropdown ? 'border-orange-500/50 shadow-lg shadow-orange-500/5' : 'border-[var(--theme-border)] focus-within:border-orange-500/50'}
-                        `}>
-                            {searching
-                                ? <Loader2 size={15} className="text-orange-400 flex-shrink-0 animate-spin" />
-                                : <Search size={15} className="text-[var(--theme-text-muted)] flex-shrink-0" />
-                            }
-                            <input
-                                type="text"
-                                value={query}
-                                onChange={e => setQuery(e.target.value)}
-                                onKeyDown={e => e.key === 'Escape' && handleClearSearch()}
-                                placeholder="Order #, Name, Table..."
-                                className="
-                                    bg-transparent text-sm text-[var(--theme-text-main)] placeholder-[var(--theme-text-subtle)]
-                                    focus:outline-none w-36 md:w-44 lg:w-52
-                                    border-none p-0 min-h-0
-                                "
-                                aria-label="Search orders"
-                                id="topbar-search"
-                            />
-                            {query && (
-                                <button
-                                    onClick={handleClearSearch}
-                                    className="text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-colors flex-shrink-0"
-                                    aria-label="Clear search"
-                                >
-                                    <X size={13} />
-                                </button>
-                            )}
-                        </div>
-
-                        {/* ── Results Dropdown ───────────────────── */}
-                        {showDropdown && (
-                            <div className="
-                                absolute top-full right-0 mt-2 w-80
-                                bg-[var(--theme-bg-card)] border border-[var(--theme-border)] rounded-2xl
-                                shadow-2xl shadow-black/40 overflow-hidden z-50
-                                animate-fade-in
-                            ">
-                                {results.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-8 text-[var(--theme-text-muted)] gap-2">
-                                        <ShoppingBag size={28} className="opacity-30" />
-                                        <p className="text-sm">No orders found for "{query}"</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="px-4 py-2.5 border-b border-[var(--theme-border)] flex items-center justify-between">
-                                            <p className="text-xs text-[var(--theme-text-muted)] font-semibold uppercase tracking-wider">
-                                                {results.length} result{results.length !== 1 ? 's' : ''}
-                                            </p>
-                                            <p className="text-[10px] text-[var(--theme-text-subtle)]">Press Esc to close</p>
-                                        </div>
-                                        <div className="max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--theme-border)]">
-                                            {results.map(order => (
-                                                <button
-                                                    key={order._id}
-                                                    onClick={() => handleResultClick(order)}
-                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--theme-bg-hover)] transition-colors group"
-                                                >
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <span className="text-sm font-bold text-[var(--theme-text-main)] group-hover:text-orange-400 transition-colors">
-                                                            {order.orderNumber}
-                                                        </span>
-                                                        <span className={`text-[10px] font-bold uppercase ${statusColor(order.orderStatus)}`}>
-                                                            {order.orderStatus}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <p className="text-xs text-[var(--theme-text-muted)]">
-                                                            {order.orderType === 'dine-in'
-                                                                ? `Table ${order.tableId?.number ?? '–'}`
-                                                                : `Token ${order.tokenNumber}`
-                                                            }
-                                                            {order.customerInfo?.name && ` • ${order.customerInfo.name}`}
-                                                        </p>
-                                                        <p className="text-xs font-semibold text-[var(--theme-text-main)]">
-                                                            {typeof formatPrice === 'function' ? formatPrice(order.finalAmount) : `₹${order.finalAmount}`}
-                                                        </p>
-                                                    </div>
-                                                    <p className="text-[10px] text-[var(--theme-text-subtle)] mt-0.5">
-                                                        {new Date(order.createdAt).toLocaleString()}
-                                                    </p>
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <div className="px-4 py-2 border-t border-[var(--theme-border)] bg-[var(--theme-bg-hover)]">
-                                            <p className="text-[10px] text-[var(--theme-text-subtle)] text-center">
-                                                Showing top {results.length} results — refine your search for more
-                                            </p>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Refresh button — waiter / kitchen / cashier only */}
-                {['waiter', 'kitchen', 'cashier'].includes(user?.role) && (
-                    <button
-                        onClick={() => {
-                            if (refreshing) return;
-                            setRefreshing(true);
-                            window.dispatchEvent(new CustomEvent('pos-refresh'));
-                            setTimeout(() => setRefreshing(false), 1000);
-                        }}
-                        className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all active:scale-95 ${
-                            refreshing
-                                ? 'border-orange-500/40 bg-orange-500/10 text-orange-500'
-                                : 'border-[var(--theme-border)] bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/30'
-                        }`}
-                        title="Refresh"
-                    >
-                        <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
-                    </button>
-                )}
-
-                {/* Notifications Bell */}
-                <NotificationBell />
-
-                {/* User avatar – tablet+ */}
-                <div className="hidden md:flex items-center gap-3">
-                    {/* Status Badge */}
-                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${serverStatus === 'online' ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' : 'bg-red-500/5 border-red-500/20 text-red-500 animate-pulse'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${serverStatus === 'online' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider">
-                            {serverStatus === 'online' ? 'Live' : 'Offline'}
-                        </span>
-                    </div>
-
-                    <div className="h-8 w-px bg-[var(--theme-border)]"></div>
-
-                    <div className="hidden sm:flex flex-col items-end min-w-0">
-                        <span className="text-sm font-bold text-[var(--theme-text-main)] truncate max-w-[120px]">{user.name}</span>
-                        <span className="text-[10px] font-bold text-orange-500 uppercase tracking-tighter">{user.role}</span>
-                    </div>
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-lg">
-                        {user?.username?.charAt(0).toUpperCase()}
-                    </div>
-                </div>
-            </div>
+            {/* ── Center/Full: Portal for page-specific toolbars ────────── */}
+            <div id="topbar-portal" className="flex-1 flex items-center justify-start ml-2 overflow-x-auto hide-scrollbar"></div>
         </header>
     );
 });

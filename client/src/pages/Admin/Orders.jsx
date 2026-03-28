@@ -59,105 +59,113 @@ const CalendarRangePicker = ({ fromDate, toDate, onApply, onClear }) => {
     const isSingle = (ds) => ds === fromDate && (!toDate || toDate === fromDate);
 
     const fmtLabel = (ymd) => {
-        if (!ymd) return '—';
+        if (!ymd) return 'Select Date';
         const [y, m, d] = ymd.split('-');
         return `${d} ${MONTHS[parseInt(m) - 1].slice(0, 3)} ${y}`;
     };
 
     return (
-        <div className="w-72 select-none">
+        <div className="w-full max-w-[280px] mx-auto select-none space-y-4">
             {/* Month header */}
-            <div className="flex items-center justify-between mb-3">
-                <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-colors">
-                    <ChevronLeft size={15} />
+            <div className="flex items-center justify-between px-1">
+                <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--theme-bg-deep)] hover:bg-orange-500/10 text-[var(--theme-text-muted)] hover:text-orange-500 transition-all border border-[var(--theme-border)] active:scale-95 shadow-sm">
+                    <ChevronLeft size={14} strokeWidth={2.5} />
                 </button>
-                <span className="text-sm font-bold text-[var(--theme-text-main)]">{MONTHS[vm]} {vy}</span>
+                <div className="flex flex-col items-center">
+                    <span className="text-[11px] font-black text-[var(--theme-text-main)] uppercase tracking-[0.1em]">{MONTHS[vm]}</span>
+                    <span className="text-[9px] font-bold text-orange-500 opacity-80">{vy}</span>
+                </div>
                 <button
                     onClick={nextMonth}
                     disabled={vy === new Date().getFullYear() && vm === new Date().getMonth()}
-                    className="p-1.5 rounded-lg hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-[var(--theme-bg-deep)] hover:bg-orange-500/10 text-[var(--theme-text-muted)] hover:text-orange-500 transition-all border border-[var(--theme-border)] active:scale-95 disabled:opacity-20 shadow-sm"
                 >
-                    <ChevronRight size={15} />
+                    <ChevronRight size={14} strokeWidth={2.5} />
                 </button>
             </div>
 
-            {/* Day-of-week labels */}
-            <div className="grid grid-cols-7 mb-1">
-                {DAYS_SHORT.map(d => (
-                    <div key={d} className="text-center text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] py-1">{d}</div>
-                ))}
-            </div>
+            {/* Calendar Grid */}
+            <div className="p-0.5 rounded-xl bg-[var(--theme-bg-deep)]/50 border border-[var(--theme-border)] shadow-inner">
+                <div className="grid grid-cols-7 gap-px mb-1">
+                    {DAYS_SHORT.map(d => (
+                        <div key={d} className="text-center text-[8px] font-black uppercase tracking-widest text-orange-500/60 py-1.5">{d}</div>
+                    ))}
+                </div>
 
-            {/* Day cells */}
-            <div className="grid grid-cols-7">
-                {cells.map((d, i) => {
-                    if (!d) return <div key={`e-${i}`} />;
-                    const ds = dayStr(d);
-                    const future = ds > today;
-                    const from = isFrom(ds);
-                    const to = isTo(ds);
-                    const single = isSingle(ds);
-                    const rangeStart = isRangeStart(ds);
-                    const rangeEnd = isRangeEnd(ds);
-                    const inRange = isInRange(ds);
-                    const isToday = ds === today;
+                <div className="grid grid-cols-7 gap-y-0.5 relative">
+                    {cells.map((d, i) => {
+                        if (!d) return <div key={`e-${i}`} />;
+                        const ds = dayStr(d);
+                        const future = ds > today;
+                        const from = isFrom(ds);
+                        const to = isTo(ds);
+                        const single = isSingle(ds);
+                        const rangeStart = isRangeStart(ds);
+                        const rangeEnd = isRangeEnd(ds);
+                        const inRange = isInRange(ds);
+                        const isToday = ds === today;
 
-                    return (
-                        <div
-                            key={ds}
-                            className={`relative flex items-center justify-center h-8
-                                ${inRange ? 'bg-orange-500/10' : ''}
-                                ${rangeStart ? 'bg-orange-500/10 rounded-l-full' : ''}
-                                ${rangeEnd ? 'bg-orange-500/10 rounded-r-full' : ''}
-                            `}
-                        >
-                            <button
-                                onClick={() => !future && handleDayClick(d)}
-                                onMouseEnter={() => setHoverDate(ds)}
-                                onMouseLeave={() => setHoverDate('')}
-                                className={`
-                                    w-7 h-7 rounded-full text-xs font-semibold transition-all duration-100 flex items-center justify-center
-                                    ${future ? 'opacity-25 cursor-not-allowed text-[var(--theme-text-muted)]' : 'cursor-pointer'}
-                                    ${(from || to || single) && !future
-                                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/40 font-black'
-                                        : !future ? 'hover:bg-orange-500/20 text-[var(--theme-text-main)]' : ''}
-                                    ${isToday && !(from || to || single) ? 'ring-1 ring-orange-400 text-orange-500 font-bold' : ''}
+                        return (
+                            <div
+                                key={ds}
+                                className={`relative flex items-center justify-center h-8 transition-colors
+                                    ${inRange ? 'bg-orange-500/10' : ''}
+                                    ${rangeStart ? 'bg-orange-500/15 rounded-l-full' : ''}
+                                    ${rangeEnd ? 'bg-orange-500/15 rounded-r-full' : ''}
                                 `}
                             >
-                                {d}
-                            </button>
-                        </div>
-                    );
-                })}
+                                <button
+                                    onClick={() => !future && handleDayClick(d)}
+                                    onMouseEnter={() => setHoverDate(ds)}
+                                    onMouseLeave={() => setHoverDate('')}
+                                    className={`
+                                        w-7 h-7 rounded-lg text-[10px] font-bold transition-all duration-150 flex items-center justify-center relative
+                                        ${future ? 'opacity-20 cursor-not-allowed text-[var(--theme-text-muted)]' : 'cursor-pointer'}
+                                        ${(from || to || single) && !future
+                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20 font-black'
+                                            : !future ? 'hover:bg-orange-500/10 text-[var(--theme-text-main)]' : ''}
+                                        ${isToday && !(from || to || single) ? 'text-orange-500' : ''}
+                                    `}
+                                >
+                                    {isToday && !(from || to || single) && (
+                                        <span className="absolute -top-0.5 -right-0.5 w-1 h-1 bg-orange-500 rounded-full animate-pulse" />
+                                    )}
+                                    {d}
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
-            {/* Selected range display */}
-            <div className="mt-3 pt-3 border-t border-[var(--theme-border)] grid grid-cols-2 gap-2">
-                <div className="bg-[var(--theme-bg-deep)] rounded-xl px-3 py-2">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-0.5">From</p>
-                    <p className="text-xs font-bold text-orange-500">{fmtLabel(fromDate)}</p>
+            {/* Info display and Actions */}
+            <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-[var(--theme-bg-deep)] rounded-xl p-2 border border-[var(--theme-border)] shadow-sm">
+                        <p className="text-[8px] font-black uppercase tracking-[0.1em] text-[var(--theme-text-muted)] mb-0.5">Start</p>
+                        <p className={`text-[9.5px] font-black ${fromDate ? 'text-orange-500' : 'text-[var(--theme-text-muted)]'}`}>{fmtLabel(fromDate)}</p>
+                    </div>
+                    <div className="bg-[var(--theme-bg-deep)] rounded-xl p-2 border border-[var(--theme-border)] shadow-sm">
+                        <p className="text-[8px] font-black uppercase tracking-[0.1em] text-[var(--theme-text-muted)] mb-0.5">End</p>
+                        <p className={`text-[9.5px] font-black ${toDate ? 'text-orange-500' : 'text-[var(--theme-text-muted)]'}`}>{fmtLabel(toDate)}</p>
+                    </div>
                 </div>
-                <div className="bg-[var(--theme-bg-deep)] rounded-xl px-3 py-2">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-0.5">To</p>
-                    <p className="text-xs font-bold text-orange-500">{fmtLabel(toDate)}</p>
-                </div>
-            </div>
 
-            {/* Actions */}
-            <div className="flex gap-2 mt-3">
-                <button
-                    onClick={onClear}
-                    className="flex-1 h-9 rounded-xl border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-muted)] hover:text-red-500 hover:border-red-500/40 transition-all"
-                >
-                    Clear
-                </button>
-                <button
-                    onClick={() => fromDate && onApply(fromDate, toDate, true)}
-                    disabled={!fromDate}
-                    className="flex-1 h-9 rounded-xl bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-white text-xs font-bold shadow-md shadow-orange-500/30 transition-all"
-                >
-                    Apply
-                </button>
+                <div className="flex gap-2 pt-1">
+                    <button
+                        onClick={onClear}
+                        className="flex-1 h-9 rounded-xl border border-[var(--theme-border)] text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] hover:text-red-500 hover:bg-red-500/5 transition-all active:scale-95"
+                    >
+                        Reset
+                    </button>
+                    <button
+                        onClick={() => fromDate && onApply(fromDate, toDate, true)}
+                        disabled={!fromDate}
+                        className="flex-1 h-9 rounded-xl bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest shadow-md shadow-orange-500/10 hover:bg-orange-400 disabled:opacity-30 disabled:shadow-none transition-all active:scale-95"
+                    >
+                        Apply
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -345,16 +353,15 @@ const AdminOrders = () => {
         : DATE_RANGES.find(r => r.value === dateRange)?.label || 'Today';
 
     return (
-        <div className="flex h-[calc(100dvh-70px)] overflow-hidden animate-fade-in text-[var(--theme-text-main)]">
+        <div className="flex h-screen w-full overflow-hidden animate-fade-in text-[var(--theme-text-main)]">
 
         {/* ── Left: Orders list (independent scroll) ──────────────────── */}
-        <div className="flex-1 min-w-0 overflow-y-auto custom-scrollbar p-4 sm:p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-3xl shadow-xl border border-[var(--theme-border)]">
-                <div>
-                    <h2 className="text-2xl font-black text-[var(--theme-text-main)]">Order History</h2>
-                    <p className="text-sm text-[var(--theme-text-muted)] mt-1">
+        <div className="flex-1 w-full min-w-0 overflow-y-auto custom-scrollbar p-3 sm:p-6 space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-3xl shadow-xl border border-[var(--theme-border)] w-full">
+                <div className="shrink-0">
+                    <h2 className="text-xl sm:text-2xl font-black text-[var(--theme-text-main)] whitespace-nowrap">Order History</h2>
+                    <p className="text-xs sm:text-sm text-[var(--theme-text-muted)] mt-1 whitespace-nowrap">
                         Showing orders for: <span className="font-bold text-orange-500">{activeLabel}</span>
-                        {' '}— <span className="font-semibold">{filteredOrders.length}</span> order{filteredOrders.length !== 1 ? 's' : ''}
                     </p>
                 </div>
 
@@ -427,19 +434,21 @@ const AdminOrders = () => {
                                     className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" 
                                     onClick={() => setShowDatePicker(false)} 
                                 />
-                                <div className="relative z-10 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] rounded-3xl shadow-2xl p-6 animate-slide-up sm:animate-fade-in max-w-[340px] w-full mx-auto">
-                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-[var(--theme-border)]">
-                                        <h3 className="text-sm font-black text-[var(--theme-text-main)] uppercase tracking-widest">Select Date Range</h3>
+                                <div className="relative z-10 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] rounded-2xl shadow-2xl p-4 animate-fade-in max-w-[280px] w-full mx-auto">
+                                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--theme-border)]">
+                                        <h3 className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Select Date Range</h3>
                                         <button onClick={() => setShowDatePicker(false)} className="p-1 rounded-lg hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)]">
-                                            <X size={18} />
+                                            <X size={14} />
                                         </button>
                                     </div>
-                                    <CalendarRangePicker
-                                        fromDate={fromDate}
-                                        toDate={toDate}
-                                        onApply={applyDateRange}
-                                        onClear={clearCustomDate}
-                                    />
+                                    <div className="scale-90 origin-top -mt-2">
+                                        <CalendarRangePicker
+                                            fromDate={fromDate}
+                                            toDate={toDate}
+                                            onApply={applyDateRange}
+                                            onClear={clearCustomDate}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}

@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import BottomNav from './BottomNav';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 
 /**
  * Responsive Layout
@@ -16,6 +16,7 @@ import { Outlet, Navigate } from 'react-router-dom';
  */
 const Layout = () => {
     const { user, loading } = useContext(AuthContext);
+    const location = useLocation();
 
     // Controls whether the sidebar drawer is open on mobile
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -23,7 +24,8 @@ const Layout = () => {
     // Check initial window width to determine if sidebar should be collapsed
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1025);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth >= 768 && window.innerWidth < 1025);
+    // User requested "Default Off" for sidebar across all pages
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth >= 768);
 
     const openDrawer = useCallback(() => {
         setDrawerOpen(true);
@@ -57,7 +59,7 @@ const Layout = () => {
 
                 if (width >= 1025) {
                     closeDrawer();
-                    setSidebarCollapsed(false);
+                    // Do not force expanded on desktop, keep user preference or default to collapsed
                 } else if (tabletRange) {
                     setSidebarCollapsed(true);
                 } else {
@@ -129,7 +131,12 @@ const Layout = () => {
             {/* ── Main Content Area ────────────────────────────────────── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Top Bar with hamburger menu trigger */}
-                <TopBar onMenuClick={handleMenuClick} sidebarCollapsed={sidebarCollapsed} />
+                {!(location.pathname.startsWith('/admin') || 
+                   location.pathname === '/dine-in' || 
+                   location.pathname === '/take-away' ||
+                   location.pathname === '/waiter/new-order') && (
+                    <TopBar onMenuClick={handleMenuClick} sidebarCollapsed={sidebarCollapsed} />
+                )}
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-y-auto overflow-x-hidden pt-safe">

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useContext, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { AuthContext } from '../context/AuthContext';
 import { NotificationContext } from '../context/NotificationContext';
-import { Bell, Check, CheckCheck, Volume2, VolumeX, Megaphone, ShoppingBag, CreditCard, ChefHat, AlertTriangle, X } from 'lucide-react';
+import { Bell, Check, CheckCheck, Volume2, VolumeX, Megaphone, ShoppingBag, CreditCard, ChefHat, AlertTriangle, X, Trash2, ArrowRight } from 'lucide-react';
 
 // ── Notification type metadata ───────────────────────────────────────────────
 const typeConfig = {
@@ -41,15 +42,138 @@ const timeAgo = (dateStr) => {
     return `${years}y ago`;
 };
 
+// ── Notification Row (shared between dropdown & full panel) ──────────────────
+const NotifRow = ({ notif, onRead, onDelete, showDelete = false }) => {
+    const config = typeConfig[notif.type] || typeConfig.SYSTEM_ALERT;
+    const Icon = config.icon;
+    return (
+        <div
+            className={`flex items-start gap-3 px-4 py-3 group hover:bg-[var(--theme-bg-hover)] transition-colors ${notif.isRead ? 'opacity-50' : ''}`}
+            onClick={() => !notif.isRead && onRead(notif._id)}
+        >
+            <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center border ${config.bg} ${config.border} ${config.color}`}>
+                <Icon size={16} />
+            </div>
+            <div className="flex-1 min-w-0 cursor-pointer">
+                <div className="flex justify-between items-start gap-2">
+                    <p className={`text-xs font-bold truncate ${notif.isRead ? 'text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}`}>{notif.title}</p>
+                    <span className="text-[10px] text-[var(--theme-text-subtle)] shrink-0">{timeAgo(notif.createdAt)}</span>
+                </div>
+                <p className="text-[11px] text-[var(--theme-text-subtle)] mt-0.5 line-clamp-2">{notif.message}</p>
+                <span className={`inline-block mt-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${config.bg} ${config.color}`}>{config.label}</span>
+            </div>
+            {showDelete && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(notif._id); }}
+                    className="shrink-0 p-1.5 rounded-lg text-[var(--theme-text-subtle)] hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                >
+                    <Trash2 size={13} />
+                </button>
+            )}
+        </div>
+    );
+};
+
+// ── Full Notifications Panel (portal) ────────────────────────────────────────
+const NotificationsPanel = ({ onClose }) => {
+    const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, deleteNotification } = useContext(NotificationContext);
+    const [filter, setFilter] = useState('all');
+
+    const filtered = notifications.filter(n => {
+        if (filter === 'unread') return !n.isRead;
+        return true;
+    });
+
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+            {/* Panel */}
+            <div className="relative ml-auto w-full max-w-md h-full bg-[var(--theme-bg-card)] border-l border-[var(--theme-border)] shadow-2xl flex flex-col animate-slide-in-right">
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--theme-border)] bg-[var(--theme-bg-hover)] shrink-0">
+                    <div className="flex items-center gap-2">
+                        <Bell size={18} className="text-orange-400" />
+                        <h2 className="font-bold text-base">All Notifications</h2>
+                        {unreadCount > 0 && (
+                            <span className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-black rounded-full">{unreadCount}</span>
+                        )}
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Actions bar */}
+                <div className="flex items-center justify-between px-5 py-2 border-b border-[var(--theme-border)] shrink-0">
+                    {/* Filter tabs */}
+                    <div className="flex gap-1">
+                        {['all', 'unread'].map(f => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`px-3 py-1 text-[11px] font-bold rounded-lg capitalize transition-colors ${filter === f ? 'bg-orange-500/15 text-orange-400' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                            >
+                                {f}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-1">
+                        {unreadCount > 0 && (
+                            <button onClick={markAllAsRead} className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-orange-400 hover:bg-orange-500/10 rounded-lg">
+                                <CheckCheck size={12} /> Read All
+                            </button>
+                        )}
+                        {notifications.length > 0 && (
+                            <button onClick={clearAll} className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-red-400 hover:bg-red-500/10 rounded-lg">
+                                <Trash2 size={12} /> Clear All
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* List */}
+                <div className="flex-1 overflow-y-auto divide-y divide-[var(--theme-border)]">
+                    {filtered.length === 0 ? (
+                        <div className="py-20 text-center text-[var(--theme-text-muted)] opacity-60">
+                            <Bell size={40} className="mx-auto mb-3 opacity-20" />
+                            <p className="text-sm font-medium">{filter === 'unread' ? 'No unread notifications' : 'No notifications'}</p>
+                        </div>
+                    ) : (
+                        filtered.map(notif => (
+                            <NotifRow
+                                key={notif._id}
+                                notif={notif}
+                                onRead={markAsRead}
+                                onDelete={deleteNotification}
+                                showDelete
+                            />
+                        ))
+                    )}
+                </div>
+
+                {/* Footer count */}
+                {filtered.length > 0 && (
+                    <div className="px-5 py-3 border-t border-[var(--theme-border)] shrink-0 text-center text-[10px] text-[var(--theme-text-subtle)]">
+                        {filtered.length} notification{filtered.length !== 1 ? 's' : ''}
+                    </div>
+                )}
+            </div>
+        </div>,
+        document.body
+    );
+};
+
 const NotificationBell = () => {
-    const { role } = useContext(AuthContext);
+    useContext(AuthContext);
     const { notifications, unreadCount, markAsRead, markAllAsRead } = useContext(NotificationContext);
     const [isOpen, setIsOpen] = useState(false);
+    const [showPanel, setShowPanel] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(() => {
         try { return localStorage.getItem('notif_sound') !== 'off'; } catch { return true; }
     });
     const dropdownRef = useRef(null);
-    const lastProcessedId = useRef(null);
 
     useEffect(() => {
         const handleClick = (e) => {
@@ -61,6 +185,9 @@ const NotificationBell = () => {
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
 
+    // Close dropdown when panel opens
+    const openPanel = () => { setIsOpen(false); setShowPanel(true); };
+
     const toggleSound = () => {
         const next = !soundEnabled;
         setSoundEnabled(next);
@@ -68,6 +195,7 @@ const NotificationBell = () => {
     };
 
     return (
+        <>
         <div ref={dropdownRef} className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -100,40 +228,32 @@ const NotificationBell = () => {
                         </div>
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto divide-y divide-[var(--theme-border)]">
+                    <div className="max-h-[340px] overflow-y-auto divide-y divide-[var(--theme-border)]">
                         {notifications.length === 0 ? (
                             <div className="py-12 text-center text-[var(--theme-text-muted)] opacity-60">
                                 <Bell size={32} className="mx-auto mb-2 opacity-20" />
                                 <p className="text-sm font-medium">No notifications</p>
                             </div>
                         ) : (
-                            notifications.map(notif => {
-                                const config = typeConfig[notif.type] || typeConfig.SYSTEM_ALERT;
-                                const Icon = config.icon;
-                                return (
-                                    <div 
-                                        key={notif._id} 
-                                        className={`flex items-start gap-4 px-4 py-3 cursor-pointer group hover:bg-[var(--theme-bg-hover)] ${notif.isRead ? 'opacity-50' : ''}`}
-                                        onClick={() => !notif.isRead && markAsRead(notif._id)}
-                                    >
-                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${config.bg} ${config.border} ${config.color}`}>
-                                            <Icon size={16} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start gap-2">
-                                                <p className={`text-xs font-bold truncate ${notif.isRead ? 'text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}`}>{notif.title}</p>
-                                                <span className="text-[10px] text-[var(--theme-text-subtle)] flex-shrink-0">{timeAgo(notif.createdAt)}</span>
-                                            </div>
-                                            <p className="text-[11px] text-[var(--theme-text-subtle)] mt-0.5 line-clamp-2">{notif.message}</p>
-                                        </div>
-                                    </div>
-                                );
-                            })
+                            notifications.slice(0, 5).map(notif => (
+                                <NotifRow key={notif._id} notif={notif} onRead={markAsRead} />
+                            ))
                         )}
                     </div>
+
+                    {/* View All footer */}
+                    <button
+                        onClick={openPanel}
+                        className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-bold text-orange-400 hover:bg-orange-500/10 border-t border-[var(--theme-border)] transition-colors"
+                    >
+                        View All Notifications <ArrowRight size={12} />
+                    </button>
                 </div>
             )}
         </div>
+
+        {showPanel && <NotificationsPanel onClose={() => setShowPanel(false)} />}
+        </>
     );
 };
 

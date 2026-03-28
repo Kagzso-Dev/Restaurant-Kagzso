@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import {
     Search, ShoppingCart, ArrowLeft, ArrowRight,
-    Utensils, ChevronRight, SearchX, Trash2, Plus, Minus
+    Utensils, ChevronRight, ChevronLeft, SearchX, Trash2, Plus, Minus
 } from 'lucide-react';
 import TableGrid from '../../components/TableGrid';
 import ViewToggle from '../../components/ViewToggle';
@@ -197,6 +197,15 @@ const DineIn = () => {
                                     )}
                                 </div>
                                 {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
+                                <button
+                                    onClick={() => setIsCartOpen(!isCartOpen)}
+                                    className={`hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all font-bold text-sm border
+                                        ${isCartOpen ? 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:bg-[var(--theme-bg-hover)]' : 'bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500 hover:text-white'}
+                                    `}
+                                >
+                                    <ShoppingCart size={16} />
+                                    {isCartOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                                </button>
                             </div>
                         </div>
 
@@ -272,14 +281,17 @@ const DineIn = () => {
 
                     {/* Cart Panel */}
                     <aside className={`
-                        fixed inset-0 z-40 md:relative md:inset-auto md:z-0 md:w-[300px] xl:w-[360px] flex-shrink-0
-                        transition-transform duration-300 ease-in-out
-                        ${isCartOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+                        fixed inset-0 z-40 md:relative md:inset-auto md:z-0 flex-shrink-0
+                        transition-all duration-300 ease-in-out overflow-hidden
+                        ${isCartOpen 
+                            ? 'translate-x-0 w-full md:w-[300px] xl:w-[360px]' 
+                            : 'translate-x-full md:translate-x-0 w-full md:w-0'
+                        }
                     `}>
                         {isCartOpen && <div onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" />}
 
 
-                        <div className="relative h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col" style={{ maxHeight: '100dvh' }}>
+                        <div className="relative h-fit max-h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
                             {/* Header */}
                             <div className="px-5 py-4 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
                                 <div>

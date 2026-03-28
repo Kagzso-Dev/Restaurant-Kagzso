@@ -122,7 +122,7 @@ const Order = {
         queries.push(Query.offset(parseInt(skip)));
 
         const response = await databases.listDocuments(databaseId, COLLECTIONS.orders, queries);
-        if (response.total === 0) return [];
+        if (response.documents.length === 0) return [];
 
         const orderIds = response.documents.map(r => r.$id);
         const Table = require('./Table');
@@ -357,7 +357,7 @@ const Order = {
             ]
         );
         
-        if (response.total === 0) return [];
+        if (response.documents.length === 0) return [];
         
         const orderIds = response.documents.map(r => r.$id);
         const Table = require('./Table');

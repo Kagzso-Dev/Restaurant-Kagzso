@@ -1,24 +1,15 @@
-import { useContext } from 'react';
+import { useContext, useState, useMemo, useCallback, useRef } from 'react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { CalendarPlus, X, LayoutGrid, List } from 'lucide-react';
-import { useState } from 'react';
+import { CalendarPlus, X, ChevronDown, Pencil, Check } from 'lucide-react';
 import TableCard, { STATUS_CONFIG } from './TableCard';
 import { useTablesData } from '../hooks/useTablesData';
 
-/**
- * TableGrid — Waiter-facing table grid.
- *
- * Uses the shared `useTablesData` hook (same API endpoint as Admin).
- * Uses the shared `TableCard` component (same STATUS_CONFIG as Admin).
- *
- * Props:
- *   onSelectTable       – called when a clickable table card is tapped
- *   allowedStatuses     – statuses that trigger onSelectTable (default: ['available'])
- *   showCleanAction     – show "Mark Clean" button below cleaning-status cards
- *   onReserve           – (tableId) => void — override for reserve action
- *   onCancelReservation – (tableId) => void — override for cancel-reservation action
- */
+// ── Zone storage helpers (localStorage) ──────────────────────────────────────
+const ZONE_KEY = 'kagzso_table_zones';
+const loadZones = () => { try { return JSON.parse(localStorage.getItem(ZONE_KEY) || '{}'); } catch { return {}; } };
+const saveZones = (z) => { try { localStorage.setItem(ZONE_KEY, JSON.stringify(z)); } catch { } };
+
 const TableGrid = ({
     onSelectTable,
     allowedStatuses = ['available'],
@@ -26,82 +17,100 @@ const TableGrid = ({
     onReserve,
     onCancelReservation,
 }) => {
-    const [viewType, setViewType] = useState('grid');
     const { tables, setTables } = useTablesData();
     const { user } = useContext(AuthContext);
 
-    // ── Handlers ────────────────────────────────────────────────────────────
+    // ── Zone state ────────────────────────────────────────────────────────────
+    const [zones, setZones] = useState(loadZones);          // { tableId: zoneName }
+    const [activeZoneTab, setActiveZoneTab] = useState('All tables');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [editingZone, setEditingZone] = useState(null);   // tableId being reassigned
+    const [zoneInput, setZoneInput] = useState('');
+    const filterRef = useRef(null);
 
-    const handleTableClick = async (table) => {
-        // Waiter taps an available table → auto-reserve then open order
+    // ── Derive zone names ─────────────────────────────────────────────────────
+    const zoneNames = useMemo(() => {
+        const names = new Set(Object.values(zones));
+        return ['All tables', ...Array.from(names).sort()];
+    }, [zones]);
+
+    // ── Filtered tables ───────────────────────────────────────────────────────
+    const filtered = useMemo(() => {
+        return tables.filter(t => {
+            const inZone = activeZoneTab === 'All tables' || (zones[t._id] || 'Other') === activeZoneTab;
+            const inStatus = statusFilter === 'all' || t.status === statusFilter;
+            return inZone && inStatus;
+        });
+    }, [tables, zones, activeZoneTab, statusFilter]);
+
+    // ── Tables grouped by zone ────────────────────────────────────────────────
+    const grouped = useMemo(() => {
+        const map = {};
+        filtered.forEach(t => {
+            const z = zones[t._id] || 'Other';
+            if (!map[z]) map[z] = [];
+            map[z].push(t);
+        });
+        // Sort zone keys alphabetically
+        return Object.fromEntries(Object.entries(map).sort(([a], [b]) => a.localeCompare(b)));
+    }, [filtered, zones]);
+
+    // ── Zone assignment ───────────────────────────────────────────────────────
+    const assignZone = useCallback((tableId, zoneName) => {
+        const trimmed = zoneName.trim();
+        setZones(prev => {
+            const next = { ...prev };
+            if (!trimmed || trimmed === 'Other') {
+                delete next[tableId];
+            } else {
+                next[tableId] = trimmed;
+            }
+            saveZones(next);
+            return next;
+        });
+        setEditingZone(null);
+        setZoneInput('');
+    }, []);
+
+    // ── Table action handlers ─────────────────────────────────────────────────
+    const handleTableClick = useCallback(async (table) => {
         if (table.status === 'available' && user.role === 'waiter') {
             try {
-                const res = await api.put(
-                    `/api/tables/${table._id}/reserve`,
-                    {},
-                    { headers: { Authorization: `Bearer ${user.token}` } }
-                );
-                setTables((prev) => prev.map((t) => (t._id === table._id ? res.data : t)));
+                const res = await api.put(`/api/tables/${table._id}/reserve`, {}, { headers: { Authorization: `Bearer ${user.token}` } });
+                setTables(prev => prev.map(t => t._id === table._id ? res.data : t));
                 onSelectTable?.(res.data);
-            } catch (error) {
-                alert(error.response?.data?.message || 'Failed to reserve table');
-            }
+            } catch (err) { alert(err.response?.data?.message || 'Failed to reserve table'); }
             return;
         }
-        if (allowedStatuses.includes(table.status)) {
-            onSelectTable?.(table);
-        }
-    };
+        if (allowedStatuses.includes(table.status)) onSelectTable?.(table);
+    }, [user, allowedStatuses, onSelectTable, setTables]);
 
-    const handleCleanTable = async (e, table) => {
+    const handleCleanTable = useCallback(async (e, table) => {
         e.stopPropagation();
         try {
-            await api.put(
-                `/api/tables/${table._id}/clean`,
-                {},
-                { headers: { Authorization: `Bearer ${user.token}` } }
-            );
-            setTables((prev) =>
-                prev.map((t) =>
-                    t._id === table._id ? { ...t, status: 'available', lockedBy: null } : t
-                )
-            );
-        } catch (error) {
-            alert(error.response?.data?.message || 'Failed to mark table as clean');
-        }
-    };
+            await api.put(`/api/tables/${table._id}/clean`, {}, { headers: { Authorization: `Bearer ${user.token}` } });
+            setTables(prev => prev.map(t => t._id === table._id ? { ...t, status: 'available', lockedBy: null } : t));
+        } catch (err) { alert(err.response?.data?.message || 'Failed to mark table as clean'); }
+    }, [user, setTables]);
 
-    const handleReserveClick = async (e, table) => {
+    const handleReserveClick = useCallback(async (e, table) => {
         e.stopPropagation();
         if (onReserve) { onReserve(table._id); return; }
         try {
-            const res = await api.put(
-                `/api/tables/${table._id}/reserve`,
-                {},
-                { headers: { Authorization: `Bearer ${user.token}` } }
-            );
-            setTables((prev) => prev.map((t) => (t._id === table._id ? res.data : t)));
-        } catch (error) {
-            alert(error.response?.data?.message || 'Failed to reserve table');
-        }
-    };
+            const res = await api.put(`/api/tables/${table._id}/reserve`, {}, { headers: { Authorization: `Bearer ${user.token}` } });
+            setTables(prev => prev.map(t => t._id === table._id ? res.data : t));
+        } catch (err) { alert(err.response?.data?.message || 'Failed to reserve'); }
+    }, [user, onReserve, setTables]);
 
-    const handleCancelReservationClick = async (e, table) => {
+    const handleCancelReservation = useCallback(async (e, table) => {
         e.stopPropagation();
         if (onCancelReservation) { onCancelReservation(table._id); return; }
         try {
-            const res = await api.put(
-                `/api/tables/${table._id}/release`,
-                {},
-                { headers: { Authorization: `Bearer ${user.token}` } }
-            );
-            setTables((prev) => prev.map((t) => (t._id === table._id ? res.data : t)));
-        } catch (error) {
-            alert(error.response?.data?.message || 'Failed to cancel reservation');
-        }
-    };
-
-    // ── Helpers ──────────────────────────────────────────────────────────────
+            const res = await api.put(`/api/tables/${table._id}/release`, {}, { headers: { Authorization: `Bearer ${user.token}` } });
+            setTables(prev => prev.map(t => t._id === table._id ? res.data : t));
+        } catch (err) { alert(err.response?.data?.message || 'Failed to release'); }
+    }, [user, onCancelReservation, setTables]);
 
     const isClickable = (table) => {
         if (table.status === 'available') return true;
@@ -109,117 +118,147 @@ const TableGrid = ({
         return allowedStatuses.includes(table.status);
     };
 
-    /** Build the action icon(s) for a given table (shown on card hover) */
     const getActions = (table) => {
-        // Only show action icons when at least one handler is wired up
         if (onReserve === undefined && onCancelReservation === undefined) return null;
-        // Only on available + reserved — never on occupied / billing / cleaning
         if (table.status !== 'available' && table.status !== 'reserved') return null;
-
         return (
             <>
                 {table.status === 'available' && (
-                    <span
-                        role="button"
-                        onClick={(e) => handleReserveClick(e, table)}
-                        title="Reserve Table"
-                        className="w-7 h-7 flex items-center justify-center
-                            bg-emerald-500/20 hover:bg-emerald-500
-                            text-emerald-400 hover:text-white
-                            rounded-full transition-all duration-200
-                            border border-emerald-500/30 shadow-sm cursor-pointer"
-                    >
-                        <CalendarPlus size={12} />
+                    <span role="button" onClick={(e) => handleReserveClick(e, table)} title="Reserve"
+                        className="w-6 h-6 flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-white rounded-full transition-all border border-emerald-500/30 cursor-pointer">
+                        <CalendarPlus size={11} />
                     </span>
                 )}
                 {table.status === 'reserved' && (
-                    <span
-                        role="button"
-                        onClick={(e) => handleCancelReservationClick(e, table)}
-                        title="Cancel Reservation"
-                        className="w-7 h-7 flex items-center justify-center
-                            bg-red-500/20 hover:bg-red-500
-                            text-red-400 hover:text-white
-                            rounded-full transition-all duration-200
-                            border border-red-500/30 shadow-sm cursor-pointer"
-                    >
-                        <X size={12} />
+                    <span role="button" onClick={(e) => handleCancelReservation(e, table)} title="Cancel Reservation"
+                        className="w-6 h-6 flex items-center justify-center bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white rounded-full transition-all border border-red-500/30 cursor-pointer">
+                        <X size={11} />
                     </span>
                 )}
             </>
         );
     };
 
-    // ── Render ───────────────────────────────────────────────────────────────
-
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div>
-            {/* Status Tabs (Like Floor selection in mockup) */}
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-[var(--theme-bg-dark)] p-2 rounded-2xl border border-[var(--theme-border)]">
-                <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-1 mr-2">
-                    {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
-                        const count = tables.filter((t) => t.status === key).length;
-                        return (
-                            <div 
-                                key={key} 
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-tight transition-all shrink-0 ${cfg.bg} ${cfg.border} ${cfg.text}`}
-                            >
-                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                                <span className="opacity-80">{cfg.label}</span>
-                                <span className="opacity-40">{count}</span>
-                            </div>
-                        );
-                    })}
+        <div className="font-sans">
+            {/* ── Top bar: Zone tabs + Filter dropdown ──────────────────────── */}
+            <div className="flex items-center justify-between border-b border-gray-200 mb-5">
+                {/* Zone tabs */}
+                <div className="flex items-center gap-0 overflow-x-auto no-scrollbar">
+                    {zoneNames.map(z => (
+                        <button
+                            key={z}
+                            onClick={() => setActiveZoneTab(z)}
+                            className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-all duration-150 ${
+                                activeZoneTab === z
+                                    ? 'border-red-500 text-red-500'
+                                    : 'border-transparent text-gray-500 hover:text-gray-800'
+                            }`}
+                        >
+                            {z}
+                        </button>
+                    ))}
                 </div>
 
-                <div className="flex items-center bg-[var(--theme-bg-dark)] p-1 rounded-xl border border-[var(--theme-border)]">
+                {/* Filter By dropdown */}
+                <div className="relative shrink-0 ml-4" ref={filterRef}>
                     <button
-                        onClick={() => setViewType('grid')}
-                        className={`p-1.5 rounded-lg transition-all ${viewType === 'grid' ? 'bg-orange-500 text-white shadow-md' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
-                        title="Grid View"
+                        onClick={() => setFilterOpen(o => !o)}
+                        className="flex items-center gap-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 bg-white hover:bg-gray-50 transition-all shadow-sm"
                     >
-                        <LayoutGrid size={16} />
+                        <span className="text-xs text-gray-400 font-semibold">Filter By</span>
+                        <span className="text-gray-800 font-semibold capitalize">
+                            {statusFilter === 'all' ? 'All Tables' : STATUS_CONFIG[statusFilter]?.label}
+                        </span>
+                        <ChevronDown size={14} className={`transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    <button
-                        onClick={() => setViewType('list')}
-                        className={`p-1.5 rounded-lg transition-all ${viewType === 'list' ? 'bg-orange-500 text-white shadow-md' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
-                        title="List View"
-                    >
-                        <List size={16} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Table Grid */}
-            <div className={viewType === 'grid' 
-                ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-4"
-                : "flex flex-col gap-3"
-            }>
-                {tables.map((table) => {
-                    const clickable = isClickable(table);
-                    return (
-                        <div key={table._id} className="flex flex-col gap-2">
-                            <TableCard
-                                table={table}
-                                variant={viewType}
-                                clickable={clickable}
-                                onClick={() => clickable && handleTableClick(table)}
-                                actions={getActions(table)}
-                            />
-                            {/* Mark Clean button — below the card for cleaning tables */}
-                            {showCleanAction && table.status === 'cleaning' && (
+                    {filterOpen && (
+                        <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                            {['all', ...Object.keys(STATUS_CONFIG)].map(s => (
                                 <button
-                                    onClick={(e) => handleCleanTable(e, table)}
-                                    className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500
-                                        text-white text-xs font-bold rounded-lg transition-colors"
+                                    key={s}
+                                    onClick={() => { setStatusFilter(s); setFilterOpen(false); }}
+                                    className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${statusFilter === s ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
                                 >
-                                    ✓ Mark Clean
+                                    {s === 'all' ? 'All Tables' : STATUS_CONFIG[s]?.label}
                                 </button>
-                            )}
+                            ))}
                         </div>
-                    );
-                })}
+                    )}
+                </div>
             </div>
+
+            {/* ── Table groups ──────────────────────────────────────────────── */}
+            {Object.keys(grouped).length === 0 ? (
+                <div className="py-12 text-center text-gray-400">
+                    <p className="text-sm font-medium">No tables found</p>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {Object.entries(grouped).map(([zoneName, zoneTables]) => (
+                        <div key={zoneName}>
+                            {/* Zone heading */}
+                            <p className="text-sm font-semibold text-gray-700 mb-3">{zoneName}</p>
+
+                            {/* Table cards row */}
+                            <div className="flex flex-wrap gap-3">
+                                {zoneTables.map(table => {
+                                    const clickable = isClickable(table);
+                                    return (
+                                        <div key={table._id} className="flex flex-col gap-1.5 relative group/zone">
+                                            <TableCard
+                                                table={table}
+                                                variant="grid"
+                                                clickable={clickable}
+                                                onClick={() => clickable && handleTableClick(table)}
+                                                actions={getActions(table)}
+                                            />
+
+                                            {/* Mark Clean */}
+                                            {showCleanAction && table.status === 'cleaning' && (
+                                                <button onClick={(e) => handleCleanTable(e, table)}
+                                                    className="w-full py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] font-black uppercase rounded-lg transition-colors">
+                                                    ✓ Clean
+                                                </button>
+                                            )}
+
+                                            {/* Zone assign button (admin) */}
+                                            {user?.role === 'admin' && (
+                                                editingZone === table._id ? (
+                                                    <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                                        <input
+                                                            autoFocus
+                                                            value={zoneInput}
+                                                            onChange={e => setZoneInput(e.target.value)}
+                                                            onKeyDown={e => { if (e.key === 'Enter') assignZone(table._id, zoneInput); if (e.key === 'Escape') { setEditingZone(null); setZoneInput(''); } }}
+                                                            placeholder="Zone name"
+                                                            className="flex-1 text-[9px] border border-gray-300 rounded px-1.5 py-1 outline-none focus:border-red-400 w-[55px]"
+                                                        />
+                                                        <button onClick={() => assignZone(table._id, zoneInput)} className="w-5 h-5 flex items-center justify-center bg-emerald-500 text-white rounded">
+                                                            <Check size={10} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={e => { e.stopPropagation(); setEditingZone(table._id); setZoneInput(zones[table._id] || ''); }}
+                                                        className="opacity-0 group-hover/zone:opacity-100 flex items-center gap-0.5 text-[9px] text-gray-400 hover:text-red-500 transition-all font-medium"
+                                                    >
+                                                        <Pencil size={9} /> {zones[table._id] ? 'Zone' : 'Set zone'}
+                                                    </button>
+                                                )
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Click-outside to close filter */}
+            {filterOpen && <div className="fixed inset-0 z-40" onClick={() => setFilterOpen(false)} />}
         </div>
     );
 };

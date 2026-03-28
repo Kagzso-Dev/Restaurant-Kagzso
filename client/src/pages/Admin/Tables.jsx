@@ -1,7 +1,7 @@
 import { useState, useContext, useMemo } from 'react';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
-import { Trash2, Plus, RotateCcw, X, Table2, LayoutGrid, List } from 'lucide-react';
+import { Trash2, Plus, RotateCcw, X, Table2 } from 'lucide-react';
 
 // ── Shared components — single source of truth ────────────────────────────
 import TableCard, { STATUS_CONFIG } from '../../components/TableCard';
@@ -177,27 +177,8 @@ const AdminTables = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl border border-[var(--theme-border)] shadow-sm">
                 <div>
                     <h1 className="text-xl font-bold text-[var(--theme-text-main)]">Table Map</h1>
-                    <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
-                        {tables.length} tables &middot; <span className="text-emerald-500 font-semibold">{statusCounts['available'] || 0} available</span>
-                    </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center bg-[var(--theme-bg-dark)] p-1 rounded-xl border border-[var(--theme-border)] mr-2">
-                        <button
-                            onClick={() => setViewType('grid')}
-                            className={`p-2 rounded-lg transition-all ${viewType === 'grid' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
-                            title="Grid View"
-                        >
-                            <LayoutGrid size={18} />
-                        </button>
-                        <button
-                            onClick={() => setViewType('list')}
-                            className={`p-2 rounded-lg transition-all ${viewType === 'list' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
-                            title="List View"
-                        >
-                            <List size={18} />
-                        </button>
-                    </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-orange-500/20 min-h-[44px]"

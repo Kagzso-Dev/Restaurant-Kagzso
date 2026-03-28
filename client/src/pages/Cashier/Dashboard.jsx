@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useLocation } from 'react-router-dom';
 import api from '../../api';
@@ -15,8 +16,57 @@ import {
 
 /* ── Order List Item ──────────────────────────────────────────────────────── */
 const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'normal' }) => {
-    const isCompact = viewType === 'compact';
+    const isGrid = viewType === 'compact';
     const isList = viewType === 'list';
+    
+    // Determine status metadata for vibrant grid tokens
+    const statusMeta = {
+        pending:   { bg: 'bg-rose-50 border-rose-200',   text: 'text-rose-600',   dot: 'bg-rose-500',   label: 'bg-rose-100 text-rose-700' },
+        accepted:  { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-600',  dot: 'bg-amber-500',  label: 'bg-amber-100 text-amber-700' },
+        preparing: { bg: 'bg-indigo-50 border-indigo-200',text: 'text-indigo-600', dot: 'bg-indigo-500', label: 'bg-indigo-100 text-indigo-700' },
+        ready:     { bg: 'bg-emerald-50 border-emerald-300',text: 'text-emerald-700',dot: 'bg-emerald-500',label: 'bg-emerald-100 text-emerald-800' },
+        completed: { bg: 'bg-gray-100 border-gray-300',   text: 'text-gray-800',   dot: 'bg-gray-600',   label: 'bg-gray-200 text-gray-800' }
+    }[order.orderStatus?.toLowerCase()] || { bg: 'bg-gray-50 border-gray-100', text: 'text-gray-400', dot: 'bg-gray-300', label: 'bg-gray-100 text-gray-500' };
+
+    if (isGrid) {
+        return (
+            <button
+                onClick={onClick}
+                className={`
+                    w-full aspect-[4/4] p-3 rounded-2xl border-2 flex flex-col transition-all duration-300 group
+                    ${statusMeta.bg} ${selected ? 'ring-4 ring-orange-500 scale-[1.05] shadow-2xl z-10' : 'hover:-translate-y-1 shadow-md hover:shadow-xl'}
+                `}
+            >
+                <div className="flex items-center justify-between w-full mb-1">
+                    <div className="flex items-center gap-1.5">
+                        <div className={`w-2 h-2 rounded-full ${statusMeta.dot} ${['pending', 'ready'].includes(order.orderStatus?.toLowerCase()) ? 'animate-pulse' : ''}`} />
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${statusMeta.text}`}>
+                            {order.orderStatus}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex-1 flex flex-col items-center justify-center -space-y-1">
+                    <p className={`text-4xl font-black tracking-tighter ${statusMeta.text} group-hover:scale-110 transition-transform duration-300 leading-none`}>
+                        {order.orderType === 'dine-in' ? `${order.tableId?.number || order.tableId || '?'}` : `${order.tokenNumber}`}
+                    </p>
+                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400 opacity-60">
+                        {order.orderType === 'dine-in' ? 'Table' : 'Token'}
+                    </p>
+                </div>
+
+                <div className="mt-auto w-full border-t border-black/5 pt-2 flex flex-col items-center">
+                    <p className={`text-[11px] font-black tracking-tight ${statusMeta.text}`}>
+                        {formatPrice(order.finalAmount)}
+                    </p>
+                    <p className="text-[7px] font-bold text-gray-400 opacity-40 leading-none mt-0.5">
+                        {order.orderNumber.replace('ORD-', '#')}
+                    </p>
+                </div>
+            </button>
+        );
+    }
+
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)] text-[var(--theme-text-main)]';
     return (
         <button
@@ -24,7 +74,7 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
             className={`
                 w-full text-left transition-all duration-200 group token-tap rounded-2xl
                 ${tColor}
-                ${isList ? 'p-3.5 border-l-8' : (isCompact ? 'p-3 border-l-[6px]' : 'p-5 border-l-[10px]')}
+                ${isList ? 'p-3.5 border-l-8' : 'p-5 border-l-[10px]'}
                 ${order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
                   order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
                   order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
@@ -36,7 +86,7 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
             <div className={`flex flex-1 ${isList ? 'flex-row items-center justify-between gap-4' : 'flex-col'}`}>
                 <div className={`flex items-center gap-3 ${isList ? 'flex-1' : 'justify-between mb-2'}`}>
                     <div className="flex flex-col">
-                        <h3 className={`font-extrabold text-inherit tracking-tight truncate pr-2 ${isCompact ? 'text-[10px]' : (isList ? 'text-sm' : 'text-base')}`}>
+                        <h3 className={`font-extrabold text-inherit tracking-tight truncate pr-2 ${isList ? 'text-sm' : 'text-base'}`}>
                             {order.orderNumber}
                         </h3>
                         {isList && (
@@ -51,7 +101,7 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
                 <div className={`flex items-center gap-4 ${isList ? 'shrink-0' : 'justify-between mt-1 items-end'}`}>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1.5">
-                            <span className={`inline-flex items-center justify-center min-w-[32px] h-7 font-black text-inherit px-2.5 bg-black/10 rounded-lg border border-current/20 shadow-sm ${isCompact || isList ? 'text-[9px]' : 'text-[11px]'}`}>
+                            <span className={`inline-flex items-center justify-center min-w-[32px] h-7 font-black text-inherit px-2.5 bg-black/10 rounded-lg border border-current/20 shadow-sm ${isList ? 'text-[9px]' : 'text-[11px]'}`}>
                                 {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
                             </span>
                             {!isList && (
@@ -63,7 +113,7 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
                     </div>
                     
                     <div className="flex items-center gap-3">
-                        <p className={`font-black text-inherit text-right whitespace-nowrap ${isCompact ? 'text-xs' : (isList ? 'text-sm' : 'text-base')}`}>
+                        <p className={`font-black text-inherit text-right whitespace-nowrap ${isList ? 'text-sm' : 'text-base'}`}>
                             {formatPrice(order.finalAmount)}
                         </p>
                         <div className={`${isList ? 'block' : 'hidden'}`}>
@@ -72,7 +122,7 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
                     </div>
                 </div>
 
-                {!isCompact && !isList && (
+                {!isList && (
                     <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
                         <div className="flex items-center gap-1.5 text-[9px] text-inherit opacity-60 font-bold uppercase">
                             <Clock size={12} />
@@ -348,7 +398,80 @@ const CashierDashboard = () => {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-5 md:h-[calc(100dvh-180px)]">
+                    {/* ── TopBar Portal ────────────────────────────────────────── */}
+                    {document.getElementById('topbar-portal') && createPortal(
+                        <div className="flex items-center gap-3 w-full animate-fade-in px-4">
+                            {/* Operational Filters - 3D Mechanical Switch */}
+                            <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 min-w-[320px]">
+                                {['all', 'dine-in', 'takeaway'].map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setFilterType(t)}
+                                        className={`flex-1 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center ${
+                                            filterType === t
+                                                ? 'bg-orange-500 text-white shadow-[0_2px_4px_rgba(249,115,22,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] scale-[1.02] border-t border-white/20 active:translate-y-[1px] active:shadow-none'
+                                                : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
+                                        }`}
+                                    >
+                                        {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="h-8 w-px bg-[var(--theme-border)] mx-2 opacity-50 flex-shrink-0" />
+
+                            {/* Right Commands - Consolidated Status & View Controls */}
+                            <div className="ml-auto flex items-center gap-4">
+                                <div className="flex flex-col items-end pr-4 border-r border-[var(--theme-border)]">
+                                    <span className="text-[11px] font-black text-orange-400 tracking-tight leading-none uppercase">
+                                        {orders.filter(o => filterType === 'all' || o.orderType === filterType).length} Pending
+                                    </span>
+                                    <span className="text-[8px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest mt-0.5">
+                                        Point View
+                                    </span>
+                                </div>
+
+                                {/* View Mode Toggle moved from left to right point */}
+                                <button
+                                    onClick={() => { const next = !isCardView; setIsCardView(next); localStorage.setItem('cashierCardView', next); }}
+                                    className={`
+                                        relative flex items-center h-10 w-28 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
+                                        ${isCardView 
+                                            ? 'bg-emerald-500/10 border-emerald-500/20' 
+                                            : 'bg-orange-500/10 border-orange-500/20'}
+                                    `}
+                                >
+                                    <div 
+                                        className={`
+                                            absolute top-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                            ${isCardView 
+                                                ? 'left-[calc(100%-36px)] bg-emerald-600 rotate-[360deg]' 
+                                                : 'left-1 bg-orange-600 rotate-0'}
+                                        `}
+                                    >
+                                        {isCardView ? <Grid size={14} strokeWidth={3} className="text-white" /> : <List size={14} strokeWidth={3} className="text-white" />}
+                                    </div>
+                                    <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+                                        <span className={`text-[10px] font-black transition-all duration-300 ${!isCardView ? 'opacity-100 translate-x-7 text-orange-600' : 'opacity-0 translate-x-3'}`}>LIST</span>
+                                        <span className={`text-[10px] font-black transition-all duration-300 ${isCardView ? 'opacity-100 -translate-x-7 text-emerald-600' : 'opacity-0 -translate-x-3'}`}>GRID</span>
+                                    </div>
+                                </button>
+                                
+                                <button
+                                    onClick={fetchOrders}
+                                    className="relative w-10 h-10 border border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.15)] rounded-xl flex items-center justify-center animate-pulse-red transition-all active:translate-y-[1px] active:scale-95"
+                                >
+                                    <span className="absolute inset-0 rounded-xl ring-1 ring-rose-500/40 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
+                                    <RefreshCw size={16} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
+                                </button>
+                                
+
+                            </div>
+                        </div>,
+                        document.getElementById('topbar-portal')
+                    )}
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-5 md:h-[calc(100dvh-110px)]">
 
                     {/* ── Left: Order List ──────────────── */}
                     <div className={`
@@ -356,60 +479,11 @@ const CashierDashboard = () => {
                         overflow-hidden flex flex-col
                         ${showInvoice ? 'hidden md:flex' : 'flex'}
                     `}>
-                        <div className="px-4 py-3 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
-                            <div>
-                                <h2 className="text-base font-bold text-[var(--theme-text-main)]">
-                                    {isHistoryMode ? 'Order History' : 'Pending Orders'}
-                                </h2>
-                                <p className="text-xs text-[var(--theme-text-subtle)]">
-                                    {isHistoryMode ? `${orders.length} past transactions` : `${orders.length} awaiting payment`}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => { const v = !isCardView; setIsCardView(v); localStorage.setItem('cashierCardView', v); }}
-                                    className={`relative flex items-center gap-1.5 pl-1.5 pr-3 h-9 rounded-full border transition-all duration-300 shadow-sm active:scale-95 ${isCardView ? 'bg-blue-500/10 border-blue-500/25' : 'bg-orange-500/10 border-orange-500/25'}`}
-                                >
-                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${isCardView ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white'}`}>
-                                        {isCardView ? <Grid size={11} strokeWidth={2.5} /> : <List size={11} strokeWidth={2.5} />}
-                                    </div>
-                                    <span className={`text-[9px] font-black uppercase tracking-widest ${isCardView ? 'text-blue-600' : 'text-orange-500'}`}>
-                                        {isCardView ? 'Card' : 'List'}
-                                    </span>
-                                </button>
-                                <button
-                                    onClick={fetchOrders}
-                                    className="p-2.5 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl transition-all active:scale-95 border border-[var(--theme-border)] shadow-sm"
-                                    title="Refresh Orders"
-                                >
-                                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                                </button>
-                                <span className="bg-orange-500/20 text-orange-400 text-xs px-2.5 py-1 rounded-full font-bold border border-orange-500/20">
-                                    {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* ALL / DINE IN / TAKEAWAY filter */}
-                        <div className="px-3 pt-3 flex-shrink-0">
-                            <div className="flex items-center gap-1 p-1 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] w-full">
-                                {['all', 'dine-in', 'takeaway'].map(t => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setFilterType(t)}
-                                        className={`flex-1 px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide whitespace-nowrap transition-all ${
-                                            filterType === t
-                                                ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]'
-                                                : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
-                                        }`}
-                                    >
-                                        {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5 custom-scrollbar">
+                        
+                        <div className={`
+                            flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar
+                            ${isCardView ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 self-start' : 'space-y-2.5'}
+                        `}>
                             {loading ? (
                                 Array(4).fill(0).map((_, i) => <div key={i} className="skeleton h-20 rounded-xl" />)
                             ) : orders.filter(o => filterType === 'all' || o.orderType === filterType).length === 0 ? (
@@ -427,7 +501,7 @@ const CashierDashboard = () => {
                                             selected={selectedOrder?._id === order._id}
                                             onClick={() => handleSelect(order)}
                                             formatPrice={formatPrice}
-                                            viewType={isCardView ? 'normal' : 'list'}
+                                            viewType={isCardView ? 'compact' : 'list'}
                                         />
                                     ))
                             )}

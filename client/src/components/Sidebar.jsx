@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
     LogOut, LayoutDashboard, Monitor, Utensils, ChefHat,
     Layers, Coffee, Grid, Settings, ClipboardList, ChevronLeft,
-    ChevronRight, X, TrendingUp, Bell, History
+    ChevronRight, X, TrendingUp, Bell, History, XCircle, CheckCircle2, Armchair
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -29,7 +29,10 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
 
     if (!user) return null;
 
-    const isActive = (path) => location.pathname === path;
+    const isActive = (path) => {
+        if (path.includes('?')) return location.pathname + location.search === path;
+        return location.pathname === path && !location.search;
+    };
 
     const handleNav = (path) => {
         navigate(path);
@@ -96,35 +99,35 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
         >
 
             {/* ── Header ─────────────────────────────────────────────── */}
-            <div className={`flex items-center border-b border-[var(--theme-border)] flex-shrink-0 pt-safe ${collapsed ? 'justify-center p-4' : 'px-5 py-5 space-x-3'}`}>
-                {/* Logo / Brand */}
+            {/* ── Header ─────────────────────────────────────────────── */}
+            <div className={`flex items-center border-b border-[var(--theme-border)] flex-shrink-0 pt-safe relative h-[70px] justify-center`}>
+                
+                {/* Centered Logo & Brand Group */}
                 <div
                     onClick={() => handleNav('/')}
-                    className="
-                        cursor-pointer w-11 h-11 flex-shrink-0 rounded-xl
-                        bg-white p-1.5 flex items-center justify-center
-                        shadow-lg hover:scale-105 transition-transform border border-[var(--theme-border)]
-                    "
+                    className={`flex items-center cursor-pointer group ${collapsed ? '' : 'space-x-3'}`}
                 >
-                    <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
-                </div>
-
-                {!collapsed && (
-                    <div className="flex-1 min-w-0">
-                        <h1 className="text-sm font-black tracking-widest text-[var(--theme-text-main)] truncate leading-tight uppercase">
-                            KAGZSO
-                        </h1>
-                        <p className="text-[9px] text-[var(--theme-text-subtle)] font-bold uppercase tracking-widest mt-0.5">
-                            Management POS
-                        </p>
+                    <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-white p-1.5 flex items-center justify-center shadow-sm border border-[var(--theme-border)] group-hover:scale-105 group-hover:shadow-md transition-all">
+                        <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
                     </div>
-                )}
+
+                    {!collapsed && (
+                        <div className="flex flex-col justify-center text-left">
+                            <h1 className="text-[13px] sm:text-sm font-black tracking-widest text-[var(--theme-text-main)] truncate leading-tight uppercase">
+                                KAGZSO
+                            </h1>
+                            <p className="text-[8px] sm:text-[9px] text-[var(--theme-text-subtle)] font-bold uppercase tracking-widest mt-0.5">
+                                Management
+                            </p>
+                        </div>
+                    )}
+                </div>
 
                 {/* Close button – visible only on mobile drawer (<768px) */}
                 {!collapsed && onClose && (
                     <button
                         onClick={onClose}
-                        className="md:hidden flex-shrink-0 p-1.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-lg tap-scale"
+                        className="absolute right-4 md:hidden flex-shrink-0 p-1.5 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-lg tap-scale"
                         aria-label="Close menu"
                     >
                         <X size={18} />
@@ -169,7 +172,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                         <NavItem to="/admin/menu" icon={Coffee} label="Menu Items" />
                         <NavItem to="/admin/categories" icon={Layers} label="Categories" />
                         {settings?.tableMapEnabled !== false && (
-                            <NavItem to="/admin/tables" icon={Grid} label="Table Map" />
+                            <NavItem to="/admin/tables" icon={Armchair} label="Table Map" />
                         )}
                         <SectionLabel>System</SectionLabel>
                         <NavItem to="/admin/settings" icon={Settings} label="Settings" />
@@ -182,13 +185,17 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                         <SectionLabel>Operations</SectionLabel>
 
                         {user.role === 'kitchen' && (
-                            <NavItem to="/kitchen" icon={ChefHat} label="Kitchen Display" color="text-orange-400" />
+                            <>
+                                <NavItem to="/kitchen?tab=active" icon={ChefHat} label="Active" color="text-orange-400" />
+                                <NavItem to="/kitchen?tab=completed" icon={CheckCircle2} label="Completed" color="text-emerald-400" />
+                                <NavItem to="/kitchen?tab=cancelled" icon={XCircle} label="Cancelled" color="text-red-400" />
+                            </>
                         )}
 
                         {user.role === 'cashier' && (
                             <>
                                 <NavItem to="/cashier" icon={Monitor} label="Cashier Point" color="text-green-400" />
-                                <NavItem to="/waiter" icon={Grid} label="Token View" color="text-yellow-400" />
+                                <NavItem to="/waiter" icon={Armchair} label="Order View" color="text-yellow-400" />
                                 <NavItem to="/cashier/working-process" icon={ClipboardList} label="Working Process" color="text-blue-400" />
                                 <NavItem to="/cashier/kitchen-view" icon={ChefHat} label="Kitchen View" color="text-orange-400" />
                                 <NavItem to="/cashier/history" icon={History} label="Order History" color="text-purple-400" />
@@ -211,10 +218,30 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
             {onToggleCollapse && (
                 <button
                     onClick={onToggleCollapse}
-                    className="hidden md:flex items-center justify-center p-3 border-t border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] transition-colors flex-shrink-0"
+                    className={`hidden md:flex items-center justify-center p-4 border-t border-b border-[var(--theme-border)] hover:bg-[var(--theme-bg-hover)] transition-all duration-150 active:translate-y-[2px] active:shadow-inner flex-shrink-0 group relative overflow-hidden ${
+                         user.role === 'admin' ? 'text-rose-500 hover:text-rose-600' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                    }`}
                     title={collapsed ? 'Expand' : 'Collapse'}
+                    style={{ perspective: '1000px' }}
                 >
-                    {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                     {user.role === 'admin' && <span className="absolute inset-0 bg-rose-500 opacity-0 group-hover:opacity-[0.03] transition-opacity" />}
+                    <div className={`flex items-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
+                        ${user.role === 'admin' ? 'animate-chevron-flow-red' : ''} 
+                        ${collapsed ? 'rotate-[360deg] scale-110 pl-2' : 'rotate-0 scale-100 pl-2'}`}>
+                        {collapsed ? (
+                            <div className="flex items-center">
+                                <ChevronRight size={20} strokeWidth={3} className="animate-chevron-r1" />
+                                <ChevronRight size={20} strokeWidth={3} className="animate-chevron-r2 -ml-3 opacity-60" />
+                                <ChevronRight size={20} strokeWidth={3} className="animate-chevron-r3 -ml-3 opacity-30" />
+                            </div>
+                        ) : (
+                            <div className="flex items-center">
+                                <ChevronLeft size={20} strokeWidth={3} className="animate-chevron-1" />
+                                <ChevronLeft size={20} strokeWidth={3} className="animate-chevron-2 -ml-3 opacity-60" />
+                                <ChevronLeft size={20} strokeWidth={3} className="animate-chevron-3 -ml-3 opacity-30" />
+                            </div>
+                        )}
+                    </div>
                 </button>
             )}
 
