@@ -198,56 +198,66 @@ const TokenSquare = memo(({ order, onClick, isSelected }) => {
             {/* Status accent bar */}
             <div className={`h-1 w-full shrink-0 ${s.bar} ${isReady ? 'animate-pulse' : ''}`} />
 
-            {/* Header row */}
-            <div className="flex items-center justify-between px-1.5 pt-1.5 pb-0.5 shrink-0">
-                <div className="flex items-center gap-1">
-                    <div className={`w-3.5 h-3.5 rounded flex items-center justify-center ${s.badge} border`}>
-                        {isDine ? <Utensils size={7} /> : <Package size={7} />}
-                    </div>
-                    <span className="text-[8px] font-black text-gray-400 tracking-tight">
-                        {order.orderNumber.replace('ORD-', '#')}
+            {/* Metric Top Section (Value on Top, Label Below) */}
+            <div className="flex flex-col items-center pt-2.5 pb-2">
+                {/* 1. Status Row */}
+                <div className="flex items-center gap-1 mb-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${s.bar}`} />
+                    <span className={`text-[7px] font-black uppercase tracking-widest ${s.num}`}>{order.orderStatus}</span>
+                </div>
+
+                {/* 2. Primary Identifier (Table/Token) - FORCED BLACK */}
+                <div className="flex flex-col items-center justify-center">
+                    <span className={`text-2xl font-black leading-none tracking-tighter text-black group-hover:scale-110 transition-transform duration-200`}>
+                        {identifier}
+                    </span>
+                    <span className="text-[7px] font-black uppercase tracking-[0.2rem] text-black mt-1">
+                        {isDine ? 'TABLE' : 'TOKEN'}
                     </span>
                 </div>
-                <span className={`text-[7px] font-black uppercase tracking-wider px-1 py-0.5 rounded-full border ${s.badge}`}>
-                    {order.orderStatus}
-                </span>
             </div>
 
-            {/* Big identifier */}
-            <div className="flex flex-col items-center justify-center py-0.5 px-1.5">
-                <span className={`text-xl sm:text-2xl font-black leading-none tracking-tighter ${s.num} drop-shadow-sm group-hover:scale-105 transition-transform duration-200`}>
-                    {identifier}
-                </span>
-                <span className="text-[6.5px] font-black uppercase tracking-[0.2em] text-gray-400 mt-0.5">
-                    {isDine ? 'Table' : 'Token'}
-                </span>
+            {/* Middle Section: Financial & Order Info - FORCED BLACK */}
+            <div className="grid grid-cols-2 border-t border-black/[0.04] bg-black/[0.01]">
+                <div className="flex flex-col items-center py-1.5 border-r border-black/[0.04]">
+                    <span className="text-[10px] font-black text-black tracking-tight leading-none">
+                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(order.finalAmount)}
+                    </span>
+                    <span className="text-[6px] font-black text-black uppercase tracking-widest mt-0.5">AMOUNT</span>
+                </div>
+                <div className="flex flex-col items-center py-1.5">
+                    <span className="text-[10px] font-black text-black tracking-tight leading-none">
+                        #{order.orderNumber.replace('ORD-', '')}
+                    </span>
+                    <span className="text-[6px] font-black text-black uppercase tracking-widest mt-0.5">ORDER</span>
+                </div>
             </div>
 
             {/* Item list */}
             {activeItems.length > 0 && (
-                <div className="px-1.5 pb-1 space-y-0.5 border-t border-black/[0.04] pt-1 mt-0.5">
+                <div className="px-2 pb-1.5 space-y-0.5 border-t border-black/[0.04] pt-1.5">
                     {activeItems.slice(0, 1).map((item, i) => (
-                        <div key={i} className="flex items-center gap-1 text-[8.5px] font-bold text-gray-950 leading-tight">
-                            <span className={`w-3 h-3 rounded flex items-center justify-center text-[7px] font-black shrink-0 ${s.badge} border`}>
+                        <div key={i} className="flex items-center gap-1 text-[9px] font-bold text-gray-950 leading-tight">
+                            <span className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[7px] font-black shrink-0 ${s.badge} border`}>
                                 {item.quantity}
                             </span>
                             <span className="truncate">{item.name}{item.variant ? ` · ${item.variant.name}` : ''}</span>
                         </div>
                     ))}
                     {activeItems.length > 1 && (
-                        <p className={`text-[7px] font-black pl-4 ${s.num} opacity-70`}>+{activeItems.length - 1} more</p>
+                        <p className={`text-[7px] font-black pl-5 ${s.num} opacity-70`}>+{activeItems.length - 1} more</p>
                     )}
                 </div>
             )}
 
             {/* Footer bar */}
-            <div className="flex items-center justify-between px-1.5 py-1 border-t border-black/[0.04] bg-black/[0.02] shrink-0">
-                <span className="flex items-center gap-1 text-[7.5px] font-black text-gray-400">
-                    <ShoppingBag size={7} />
+            <div className="flex items-center justify-between px-2 py-1.5 border-t border-black/[0.04] bg-black/[0.025] shrink-0">
+                <span className="flex items-center gap-1 text-[8px] font-black text-gray-400">
+                    <ShoppingBag size={8} />
                     {itemCount}
                 </span>
-                <span className={`flex items-center gap-1 text-[7.5px] font-black ${(Date.now() - new Date(order.createdAt)) > 600000 ? 'text-red-500' : 'text-gray-400'}`}>
-                    <Clock size={7} />
+                <span className={`flex items-center gap-1 text-[8px] font-black ${(Date.now() - new Date(order.createdAt)) > 600000 ? 'text-red-500' : 'text-gray-400'}`}>
+                    <Clock size={8} />
                     {elapsed}
                 </span>
             </div>
@@ -413,27 +423,21 @@ const WaiterDashboard = () => {
                         {/* 0. Status Toggle */}
                         <button
                             onClick={() => setShowCounters(prev => !prev)}
-                            className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_12px_rgba(239,68,68,0.2)] animate-pulse-red transition-all duration-200 active:scale-95 active:translate-y-[1px] shrink-0"
+                            className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] shadow-[0_2px_0_var(--theme-border)] transition-all duration-200 active:scale-95 active:translate-y-[1px] shrink-0"
                             title={showCounters ? 'Collapse' : 'Expand'}
                         >
-                            {/* Outer ping ring */}
-                            <span className="absolute inset-0 rounded-xl ring-1 ring-rose-500/50 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
-                            {/* Inner ping ring */}
-                            <span className="absolute inset-[3px] rounded-lg ring-1 ring-rose-400/30 animate-ping pointer-events-none" style={{ animationDuration: '1.3s', animationDelay: '0.4s' }} />
-
-                            {/* Flowing chevrons */}
                             <div className={`flex items-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${showCounters ? 'scale-110' : 'scale-100'}`}>
                                 {showCounters ? (
-                                    <div className="flex items-center -ml-0.5">
+                                    <div className="flex items-center -ml-0.5 text-blue-500">
                                         <ChevronLeft size={16} strokeWidth={3} className="animate-chevron-1" />
-                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-2" />
-                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-3" />
+                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 opacity-60 animate-chevron-2" />
+                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 opacity-30 animate-chevron-3" />
                                     </div>
                                 ) : (
-                                    <div className="flex items-center ml-0.5">
+                                    <div className="flex items-center ml-0.5 text-rose-500">
                                         <ChevronRight size={16} strokeWidth={3} className="animate-chevron-r1" />
-                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-r2" />
-                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-r3" />
+                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 opacity-60 animate-chevron-r2" />
+                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 opacity-30 animate-chevron-r3" />
                                     </div>
                                 )}
                             </div>
@@ -482,17 +486,18 @@ const WaiterDashboard = () => {
                             </div>
                         </button>
 
-                        {/* Tables Toggle - Compact */}
+                        {/* Tables Toggle - Permanent Light Green Theme */}
                         {settings?.tableMapEnabled !== false && (
                             <button 
                                 onClick={() => setShowTables(t => !t)} 
                                 className={`flex items-center justify-center p-2 rounded-lg border transition-all active:translate-y-[1px] h-9 min-w-[40px] ${
                                     showTables 
-                                        ? 'bg-lime-500/10 border-lime-500/30 text-lime-500 shadow-inner' 
-                                        : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:border-lime-500/20'
+                                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 shadow-inner' 
+                                        : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60 hover:border-emerald-500/30'
                                 }`}
+                                title="Table Map"
                             >
-                                <Armchair size={16} className={`transition-transform duration-300 ${showTables ? 'scale-110 drop-shadow-[0_0_8px_rgba(132,204,22,0.3)]' : 'scale-100'}`} />
+                                <Armchair size={16} className={`transition-transform duration-300 ${showTables ? 'scale-110 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'scale-100'}`} />
                             </button>
                         )}
 
@@ -515,11 +520,13 @@ const WaiterDashboard = () => {
                                     fetchOrders();
                                     setTimeout(() => setRefreshing(false), 1000);
                                 }}
-                                className="relative flex items-center justify-center w-9 h-9 rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.15)] animate-pulse-red transition-all active:scale-95"
-                                title="Refresh Live"
+                                className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all active:scale-95 ${
+                                    refreshing
+                                        ? 'border-orange-500/40 bg-orange-500/10 text-orange-500'
+                                        : 'border-[var(--theme-border)] bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                                }`}
+                                title="Refresh"
                             >
-                                <span className="absolute inset-0 rounded-lg ring-1 ring-rose-500/40 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
-                                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_4px_rgba(239,68,68,0.8)] animate-pulse pointer-events-none" />
                                 <RefreshCw size={13} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
                             </button>
                         </div>
@@ -551,10 +558,10 @@ const WaiterDashboard = () => {
                                 >
                                     <p className={`text-base sm:text-xl font-black tabular-nums transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-main)]'}`}>{count}</p>
                                     <div className="flex items-center gap-1 mt-1">
-                                        <div className={`flex items-center -ml-1 ${statusFilter === key ? activeColor : dot.replace('bg-', 'text-')}`}>
-                                            <ChevronRight size={10} strokeWidth={4} className="animate-chevron-r1" />
-                                            <ChevronRight size={10} strokeWidth={4} className="-ml-1.5 animate-chevron-r2" />
-                                            <ChevronRight size={10} strokeWidth={4} className="-ml-1.5 animate-chevron-r3" />
+                                        <div className={`flex items-center -ml-0.5 scale-[1.02] ${statusFilter === key ? activeColor : dot.replace('bg-', 'text-')}`}>
+                                            <ChevronRight size={13} strokeWidth={4} className="animate-chevron-r1" />
+                                            <ChevronRight size={13} strokeWidth={4} className="-ml-1.5 opacity-60 animate-chevron-r2" />
+                                            <ChevronRight size={13} strokeWidth={4} className="-ml-1.5 opacity-20 animate-chevron-r3" />
                                         </div>
                                         <p className={`text-[8px] sm:text-[10px] ml-0.5 uppercase font-bold tracking-wider transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
                                     </div>

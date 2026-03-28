@@ -470,6 +470,8 @@ svg {
   animation: pulse-red 1.8s ease-in-out infinite;
 }
 
+.bg-rose-500\/8 { background-color: rgb(244 63 94 / 0.08); }
+
 .animate-pulse-subtle {
   animation: pulse-subtle 2s ease-in-out infinite;
 }

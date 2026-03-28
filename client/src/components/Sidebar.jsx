@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     LogOut, LayoutDashboard, Monitor, Utensils, ChefHat,
-    Layers, Coffee, Grid, Settings, ClipboardList, ChevronLeft,
+    Layers, Coffee, Settings, ClipboardList, ChevronLeft,
     ChevronRight, X, TrendingUp, Bell, History, XCircle, CheckCircle2, Armchair
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
@@ -218,27 +218,23 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
             {onToggleCollapse && (
                 <button
                     onClick={onToggleCollapse}
-                    className={`hidden md:flex items-center justify-center p-4 border-t border-b border-[var(--theme-border)] hover:bg-[var(--theme-bg-hover)] transition-all duration-150 active:translate-y-[2px] active:shadow-inner flex-shrink-0 group relative overflow-hidden ${
-                         user.role === 'admin' ? 'text-rose-500 hover:text-rose-600' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
-                    }`}
+                    className="hidden md:flex items-center justify-center p-4 border-t border-b border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] transition-all duration-200 active:scale-95 flex-shrink-0 relative overflow-hidden"
                     title={collapsed ? 'Expand' : 'Collapse'}
-                    style={{ perspective: '1000px' }}
                 >
-                     {user.role === 'admin' && <span className="absolute inset-0 bg-rose-500 opacity-0 group-hover:opacity-[0.03] transition-opacity" />}
-                    <div className={`flex items-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
-                        ${user.role === 'admin' ? 'animate-chevron-flow-red' : ''} 
-                        ${collapsed ? 'rotate-[360deg] scale-110 pl-2' : 'rotate-0 scale-100 pl-2'}`}>
+                    <div className={`flex items-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${collapsed ? 'scale-110' : 'scale-100'}`}>
                         {collapsed ? (
-                            <div className="flex items-center">
+                            /* >> collapsed — RED flowing arrows */
+                            <div className="flex items-center text-rose-500">
                                 <ChevronRight size={20} strokeWidth={3} className="animate-chevron-r1" />
-                                <ChevronRight size={20} strokeWidth={3} className="animate-chevron-r2 -ml-3 opacity-60" />
-                                <ChevronRight size={20} strokeWidth={3} className="animate-chevron-r3 -ml-3 opacity-30" />
+                                <ChevronRight size={20} strokeWidth={3} className="-ml-3 opacity-60 animate-chevron-r2" />
+                                <ChevronRight size={20} strokeWidth={3} className="-ml-3 opacity-30 animate-chevron-r3" />
                             </div>
                         ) : (
-                            <div className="flex items-center">
+                            /* << expanded — BLUE flowing arrows */
+                            <div className="flex items-center text-blue-500">
                                 <ChevronLeft size={20} strokeWidth={3} className="animate-chevron-1" />
-                                <ChevronLeft size={20} strokeWidth={3} className="animate-chevron-2 -ml-3 opacity-60" />
-                                <ChevronLeft size={20} strokeWidth={3} className="animate-chevron-3 -ml-3 opacity-30" />
+                                <ChevronLeft size={20} strokeWidth={3} className="-ml-3 opacity-60 animate-chevron-2" />
+                                <ChevronLeft size={20} strokeWidth={3} className="-ml-3 opacity-30 animate-chevron-3" />
                             </div>
                         )}
                     </div>

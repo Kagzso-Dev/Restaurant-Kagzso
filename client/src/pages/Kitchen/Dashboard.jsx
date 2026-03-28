@@ -524,31 +524,30 @@ const KitchenDashboard = () => {
                 <div className="flex items-center justify-between w-full h-full animate-fade-in translate-y-0.5 pr-4">
                     <div className="flex items-center gap-3">
                         {/* 0. Stats Toggle */}
-                        <button 
-                            onClick={() => setShowTables(prev => !prev)} 
-                            className={`relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-150 active:translate-y-[2px] active:shadow-none shrink-0 group/toggle
-                                ${user.role === 'admin' 
-                                    ? 'bg-rose-500/5 border-rose-500/30 text-rose-500 hover:text-rose-600 shadow-[0_2px_0_rgba(244,63,94,0.1)]' 
-                                    : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-400 shadow-[0_2px_0_var(--theme-border)]'}
-                            `}
-                            style={{ perspective: '1000px' }}
+                        <button
+                            onClick={() => setShowTables(prev => !prev)}
+                            className={`relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-300 active:scale-95 active:translate-y-[1px] shrink-0 ${
+                                showTables
+                                    ? 'border-blue-500/40 bg-blue-500/10 text-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.25)]'
+                                    : 'border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_12px_rgba(239,68,68,0.2)] animate-pulse-red'
+                            }`}
                             title="Toggle Counters"
                         >
-                            <div className={`flex items-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
-                                ${user.role === 'admin' ? 'animate-chevron-flow-red' : ''} 
-                                ${showTables ? 'scale-110 rotate-[360deg]' : 'scale-100 opacity-60'}`}>
+                            <span className={`absolute inset-0 rounded-xl ring-1 animate-ping pointer-events-none ${showTables ? 'ring-blue-500/50' : 'ring-rose-500/50'}`} style={{ animationDuration: '2s' }} />
+                            <span className={`absolute inset-[3px] rounded-lg ring-1 animate-ping pointer-events-none ${showTables ? 'ring-blue-400/30' : 'ring-rose-400/30'}`} style={{ animationDuration: '1.3s', animationDelay: '0.4s' }} />
+                            <div className={`flex items-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${showTables ? 'scale-110' : 'scale-100'}`}>
                                 {showTables ? (
-                                     <div className="flex items-center -ml-0.5">
-                                         <ChevronLeft size={18} strokeWidth={user.role === 'admin' ? 3 : 2} />
-                                         <ChevronLeft size={18} strokeWidth={user.role === 'admin' ? 3 : 2} className="-ml-3 opacity-60" />
-                                         <ChevronLeft size={18} strokeWidth={user.role === 'admin' ? 3 : 2} className="-ml-3 opacity-30" />
-                                     </div>
+                                    <div className="flex items-center -ml-0.5">
+                                        <ChevronLeft size={16} strokeWidth={3} className="animate-chevron-1" />
+                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-2" />
+                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-3" />
+                                    </div>
                                 ) : (
-                                     <div className="flex items-center ml-0.5">
-                                         <ChevronRight size={18} strokeWidth={user.role === 'admin' ? 3 : 2} />
-                                         <ChevronRight size={18} strokeWidth={user.role === 'admin' ? 3 : 2} className="-ml-3 opacity-60" />
-                                         <ChevronRight size={18} strokeWidth={user.role === 'admin' ? 3 : 2} className="-ml-3 opacity-30" />
-                                     </div>
+                                    <div className="flex items-center ml-0.5">
+                                        <ChevronRight size={16} strokeWidth={3} className="animate-chevron-r1" />
+                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-r2" />
+                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 animate-chevron-r3" />
+                                    </div>
                                 )}
                             </div>
                         </button>
@@ -637,10 +636,10 @@ const KitchenDashboard = () => {
                         >
                             <p className={`text-lg sm:text-2xl font-black tabular-nums ${statusFilter === key ? activeColor : 'text-[var(--theme-text-main)]'}`}>{count}</p>
                             <div className="flex items-center gap-1 mt-1">
-                                <div className={`flex items-center -ml-1 ${statusFilter === key ? activeColor : dot.replace('bg-', 'text-')}`}>
-                                    <ChevronRight size={10} strokeWidth={4} />
-                                    <ChevronRight size={10} strokeWidth={4} className="-ml-1.5 opacity-60" />
-                                    <ChevronRight size={10} strokeWidth={4} className="-ml-1.5 opacity-20" />
+                                <div className={`flex items-center -ml-0.5 scale-[1.01] ${statusFilter === key ? activeColor : dot.replace('bg-', 'text-')}`}>
+                                    <ChevronRight size={12} strokeWidth={4} className="animate-chevron-r1" />
+                                    <ChevronRight size={12} strokeWidth={4} className="-ml-1.5 opacity-60 animate-chevron-r2" />
+                                    <ChevronRight size={12} strokeWidth={4} className="-ml-1.5 opacity-20 animate-chevron-r3" />
                                 </div>
                                 <p className={`text-[8px] sm:text-[10px] ml-0.5 uppercase font-bold tracking-wider ${statusFilter === key ? activeColor : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
                             </div>
