@@ -155,23 +155,25 @@ const updateOrderStatus = async (req, res) => {
         if (status === 'completed' && order.paymentStatus === 'paid') updates.kotStatus = 'Closed';
         if (status === 'preparing' && !order.prepStartedAt) updates.prepStartedAt = new Date().toISOString();
         if (status === 'ready' && !order.readyAt) updates.readyAt = new Date().toISOString();
+        if (status === 'ready') updates.isPartiallyReady = false;
         if (status === 'completed' && !order.completedAt) updates.completedAt = new Date().toISOString();
 
 
-        const updatedOrder = await Order.updateById(req.params.id, updates);
-
-        // Sync items status for Accepted/Preparing/Ready actions
+        // 1. If we are marking as Accepted/Preparing/Ready, sync all items FIRST
         if (['accepted', 'preparing', 'ready'].includes(status)) {
             const itemStatus = status.toUpperCase();
-            const activeItems = (order.items || []).filter(i => i.status !== 'CANCELLED');
-            
+            // Filter out items that are already cancelled
+            const activeItems = (order.items || []).filter(i => i.status?.toUpperCase() !== 'CANCELLED');
             
             await Promise.all(activeItems.map(item => {
                 return Order.updateItemStatus(order._id, item._id, itemStatus);
             }));
         }
 
-        // Table lifecycle: completed + paid → cleaning
+        // 2. Perform the main order status update
+        const updatedOrder = await Order.updateById(req.params.id, updates);
+
+        // 3. Table lifecycle: completed + paid → cleaning
         if (status === 'completed' &&
             order.paymentStatus === 'paid' &&
             order.orderType === 'dine-in' &&
@@ -229,14 +231,29 @@ const updateItemStatus = async (req, res) => {
 
         const updatedOrder = await Order.updateItemStatus(id, itemId, status);
         
-        // Auto-Ready: check if all active items are now READY
-        const activeItems = updatedOrder.items.filter(i => i.status !== 'CANCELLED');
-        const allReady    = activeItems.length > 0 && activeItems.every(i => i.status?.toUpperCase() === 'READY');
+        // Dynamic Status Calculation (Min-Status Logic)
+        const activeItems = updatedOrder.items.filter(i => i.status?.toUpperCase() !== 'CANCELLED');
+        const itemStatuses = activeItems.map(i => (i.status || 'PENDING').toUpperCase());
         
-        if (allReady && updatedOrder.orderStatus !== 'ready') {
-            const finalOrder = await Order.updateById(id, { 
-                orderStatus: 'ready',
-                readyAt: new Date()
+        let newOrderStatus = updatedOrder.orderStatus;
+        
+        if (activeItems.length === 0) {
+            newOrderStatus = 'cancelled';
+        } else if (itemStatuses.some(s => s === 'PENDING')) {
+            newOrderStatus = 'pending';
+        } else if (itemStatuses.some(s => s === 'ACCEPTED')) {
+            newOrderStatus = 'accepted';
+        } else if (itemStatuses.some(s => s === 'PREPARING')) {
+            newOrderStatus = 'preparing';
+        } else if (itemStatuses.every(s => s === 'READY')) {
+            newOrderStatus = 'ready';
+        }
+
+        if (newOrderStatus !== updatedOrder.orderStatus) {
+            const finalOrder = await Order.updateById(id, {
+                orderStatus: newOrderStatus,
+                // When order becomes fully ready, clear the partial-ready flag
+                ...(newOrderStatus === 'ready' && { readyAt: new Date().toISOString(), isPartiallyReady: false }),
             });
             req.app.get('io').to('restaurant_main').emit('order-updated', finalOrder);
             return res.json(finalOrder);
@@ -268,9 +285,11 @@ const processPayment = async (req, res) => {
         if (order.paymentStatus === 'paid') {
             return res.json({ success: true, message: 'Payment already processed', order });
         }
-        if (order.orderStatus !== 'ready') {
+        if (order.orderStatus !== 'ready' || order.isPartiallyReady) {
             return res.status(400).json({
-                message: 'Payment not allowed. Kitchen process not completed.',
+                message: order.isPartiallyReady 
+                    ? 'Payment not allowed. New items are still being prepared.'
+                    : 'Payment not allowed. Kitchen process not completed.',
             });
         }
 
@@ -429,16 +448,16 @@ const cancelOrderItem = async (req, res) => {
                 return res.status(403).json({ message: 'Cannot cancel an item that is already ready' });
             }
         }
-        if (order.orderStatus === 'ready') {
+        if (order.orderStatus === 'ready' && currentStatus !== 'PENDING') {
             if (req.role !== 'admin') {
                 return res.status(403).json({ message: 'Cannot cancel items in a ready order' });
             }
         }
 
-        // Waiters may only cancel their own PENDING items
-        if (req.role === 'waiter' && currentStatus !== 'PENDING') {
+        // Waiters may only cancel their own PENDING items before kitchen acceptance
+        if (req.role?.toLowerCase() === 'waiter' && currentStatus !== 'PENDING') {
             return res.status(403).json({
-                message: 'Waiters can only cancel items that are still pending',
+                message: 'Waiters cannot cancel items once the kitchen has accepted them',
             });
         }
 
@@ -448,31 +467,48 @@ const cancelOrderItem = async (req, res) => {
             cancelReason: reason || 'Item cancelled',
         });
 
-        // Recalculate order totals from remaining active (non-cancelled) items
+        // Dynamic Aggregate Status Calculation
         const nonCancelledItems = updatedOrder.items.filter(i => i.status?.toUpperCase() !== 'CANCELLED');
-        const newTotalAmount    = nonCancelledItems.reduce((sum, i) => sum + ((i.price || 0) * (i.quantity || 0)), 0);
-
-        let newTax = 0;
-        if (order.totalAmount > 0) {
-            const taxRate = order.tax / order.totalAmount;
-            newTax = Math.round(newTotalAmount * taxRate * 100) / 100;
-        }
-        const newFinalAmount = newTotalAmount + newTax - order.discount;
-
-        const orderUpdates = { totalAmount: newTotalAmount, tax: newTax, finalAmount: newFinalAmount };
+        const itemStatuses = nonCancelledItems.map(i => (i.status || 'PENDING').toUpperCase());
+        
+        let newOrderStatus = updatedOrder.orderStatus;
+        let kotStatus = updatedOrder.kotStatus || 'Open';
 
         if (nonCancelledItems.length === 0) {
-            orderUpdates.orderStatus = 'cancelled';
-            orderUpdates.kotStatus = 'Closed';
-        } else if (nonCancelledItems.every(i => i.status?.toUpperCase() === 'READY')) {
-            orderUpdates.orderStatus = 'ready';
+            newOrderStatus = 'cancelled';
+            kotStatus = 'Closed';
+        } else if (itemStatuses.some(s => s === 'PENDING')) {
+            newOrderStatus = 'pending';
+        } else if (itemStatuses.some(s => s === 'ACCEPTED')) {
+            newOrderStatus = 'accepted';
+        } else if (itemStatuses.some(s => s === 'PREPARING')) {
+            newOrderStatus = 'preparing';
+        } else if (itemStatuses.every(s => s === 'READY')) {
+            newOrderStatus = 'ready';
         }
+
+        // Recalculate order totals from scratch (USER PRO-TIP Logic)
+        const subtotalSum = nonCancelledItems.reduce((sum, i) => sum + (parseFloat(i.price) * parseInt(i.quantity)), 0);
+        const taxRate = (parseFloat(order.totalAmount) > 0) ? (parseFloat(order.tax) / parseFloat(order.totalAmount)) : 0.05;
+        const newTax = parseFloat((subtotalSum * taxRate).toFixed(2));
+        const newFinal = parseFloat((subtotalSum + newTax - (parseFloat(order.discount) || 0)).toFixed(2));
+
+        const orderUpdates = {
+            totalAmount: subtotalSum,
+            tax: newTax,
+            finalAmount: newFinal,
+            orderStatus: newOrderStatus,
+            kotStatus: kotStatus,
+            // Clear the partially-ready flag once all remaining items are back to ready
+            isPartiallyReady: newOrderStatus === 'ready' ? false : updatedOrder.isPartiallyReady,
+            ...(newOrderStatus === 'ready' && !order.readyAt && { readyAt: new Date().toISOString() })
+        };
 
         updatedOrder = await Order.updateById(orderId, orderUpdates);
 
 
 
-        if (activeItems.length === 0 && order.orderType === 'dine-in' && order.tableId) {
+        if (nonCancelledItems.length === 0 && order.orderType === 'dine-in' && order.tableId) {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'available', currentOrderId: null });
             req.app.get('io').to('restaurant_main').emit('table-updated', {

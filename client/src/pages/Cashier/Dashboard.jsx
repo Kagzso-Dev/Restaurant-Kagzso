@@ -19,14 +19,19 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
     const isGrid = viewType === 'compact';
     const isList = viewType === 'list';
     
+    const isPartiallyReady = !!order.isPartiallyReady;
+    const currentStatus = order.orderStatus?.toLowerCase();
+    
     // Determine status metadata for vibrant grid tokens
-    const statusMeta = {
-        pending:   { bg: 'bg-rose-50 border-rose-200',   text: 'text-rose-600',   dot: 'bg-rose-500',   label: 'bg-rose-100 text-rose-700' },
-        accepted:  { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-600',  dot: 'bg-amber-500',  label: 'bg-amber-100 text-amber-700' },
-        preparing: { bg: 'bg-indigo-50 border-indigo-200',text: 'text-indigo-600', dot: 'bg-indigo-500', label: 'bg-indigo-100 text-indigo-700' },
-        ready:     { bg: 'bg-emerald-50 border-emerald-300',text: 'text-emerald-700',dot: 'bg-emerald-500',label: 'bg-emerald-100 text-emerald-800' },
-        completed: { bg: 'bg-gray-100 border-gray-300',   text: 'text-gray-800',   dot: 'bg-gray-600',   label: 'bg-gray-200 text-gray-800' }
-    }[order.orderStatus?.toLowerCase()] || { bg: 'bg-gray-50 border-gray-100', text: 'text-gray-400', dot: 'bg-gray-300', label: 'bg-gray-100 text-gray-500' };
+    const statusMeta = (currentStatus === 'ready' && isPartiallyReady) 
+        ? { bg: 'bg-emerald-50 border-emerald-300', text: 'text-amber-600', dot: 'bg-amber-500', label: 'bg-amber-100 text-amber-800' }
+        : {
+            pending:   { bg: 'bg-rose-50 border-rose-200',   text: 'text-rose-600',   dot: 'bg-rose-500',   label: 'bg-rose-100 text-rose-700' },
+            accepted:  { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-600',  dot: 'bg-amber-500',  label: 'bg-amber-100 text-amber-700' },
+            preparing: { bg: 'bg-indigo-50 border-indigo-200',text: 'text-indigo-600', dot: 'bg-indigo-500', label: 'bg-indigo-100 text-indigo-700' },
+            ready:     { bg: 'bg-emerald-50 border-emerald-300',text: 'text-emerald-700',dot: 'bg-emerald-500',label: 'bg-emerald-100 text-emerald-800' },
+            completed: { bg: 'bg-gray-100 border-gray-300',   text: 'text-gray-800',   dot: 'bg-gray-600',   label: 'bg-gray-200 text-gray-800' }
+        }[currentStatus] || { bg: 'bg-gray-50 border-gray-100', text: 'text-gray-400', dot: 'bg-gray-300', label: 'bg-gray-100 text-gray-500' };
 
     if (isGrid) {
         const identifier = order.orderType === 'dine-in'
@@ -351,8 +356,10 @@ const CashierDashboard = () => {
     /* ── Open Payment Modal ────────────────────────────────────────── */
     const handleOpenPayment = () => {
         if (!selectedOrder || selectedOrder.paymentStatus === 'paid') return;
-        // Block payment unless kitchen has marked order as ready
+        // Block payment unless kitchen has marked ALL items ready
         if (selectedOrder.orderStatus !== 'ready') return;
+        // Block payment if new items were added and aren't fully ready yet
+        if (selectedOrder.isPartiallyReady) return;
         setShowPaymentModal(true);
     };
 
@@ -375,7 +382,10 @@ const CashierDashboard = () => {
         setShowPaymentModal(false);
     };
 
-    const isKitchenReady = selectedOrder?.orderStatus === 'ready';
+    // Fully ready = All items in KOT are READY and order marked as ready
+    const isKitchenReady = selectedOrder?.orderStatus === 'ready' && 
+                           !selectedOrder?.isPartiallyReady && 
+                           (selectedOrder?.items || []).every(i => ['READY', 'CANCELLED'].includes(i.status?.toUpperCase()));
     const isPayDisabled = !selectedOrder || paymentSuccess || selectedOrder?.paymentStatus === 'paid' || !isKitchenReady;
 
     /* ── Layout ─────────────────────────────────────────────────────── */
@@ -566,10 +576,14 @@ const CashierDashboard = () => {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold" style={{ color: `var(--status-${selectedOrder.orderStatus?.toLowerCase()})` }}>
-                                                    Waiting for kitchen to complete order.
+                                                    {selectedOrder.isPartiallyReady
+                                                        ? 'New item still being prepared by kitchen.'
+                                                        : 'Waiting for kitchen to complete order.'}
                                                 </p>
                                                 <p className="text-[10px] mt-0.5 uppercase font-semibold tracking-wider opacity-60" style={{ color: `var(--status-${selectedOrder.orderStatus?.toLowerCase()})` }}>
-                                                    Status: {selectedOrder.orderStatus?.toUpperCase() || 'UNKNOWN'} • Payment locked
+                                                    {selectedOrder.isPartiallyReady
+                                                        ? 'Partially Ready • Payment locked until all items ready'
+                                                        : `Status: ${selectedOrder.orderStatus?.toUpperCase() || 'UNKNOWN'} • Payment locked`}
                                                 </p>
                                             </div>
                                         </div>

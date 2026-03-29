@@ -84,6 +84,18 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
     const inputRef = useRef(null);
 
     const baseTotal = order?.finalAmount || 0;
+    const isOrderReady = order?.orderStatus === 'ready' && 
+                         !order?.isPartiallyReady && 
+                         (order?.items || []).every(i => ['READY', 'CANCELLED'].includes(i.status?.toUpperCase()));
+    
+    // Auto-close or show warning if order status changes to not ready while open
+    useEffect(() => {
+        if (!isOrderReady && step !== 'success' && step !== 'processing' && step !== 'select') {
+            setError('Kitchen status updated. Please review order before payment.');
+            setStep('error');
+        }
+    }, [isOrderReady, step]);
+
     const offerEnabled = settings?.cashierOfferEnabled && settings?.cashierOfferDiscount > 0;
     const offerPct = settings?.cashierOfferDiscount || 0;
     const offerLabel = settings?.cashierOfferLabel || 'Special Offer';
@@ -282,13 +294,22 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
         <div
             ref={modalRef}
             onClick={handleBackdrop}
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-[6px] animate-fade-in"
+            className="fixed inset-x-0 top-0 bottom-14 md:inset-0 z-[10000] flex items-end md:items-center justify-center md:p-4 bg-black/50 backdrop-blur-[6px] animate-fade-in"
         >
             <div className="
-                relative w-[94%] xs:w-[90%] sm:max-w-[340px] md:max-w-[380px] rounded-[2rem] bg-white dark:bg-[var(--theme-bg-card)] border border-[var(--theme-border)]
-                shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden
-                animate-in fade-in zoom-in-95 duration-200 max-h-[95vh] flex flex-col
+                relative w-full md:w-auto md:max-w-[380px]
+                rounded-t-[2rem] md:rounded-[2rem]
+                bg-white dark:bg-[var(--theme-bg-card)] border border-[var(--theme-border)]
+                shadow-[0_-8px_40px_rgba(0,0,0,0.3)] md:shadow-[0_25px_70px_rgba(0,0,0,0.4)]
+                overflow-hidden flex flex-col
+                animate-in slide-in-from-bottom md:zoom-in-95 duration-300
+                max-h-[calc(100dvh-4rem)] md:max-h-[90vh]
             ">
+                {/* ── Drag handle (mobile only) ───────────────────── */}
+                <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+                    <div className="w-10 h-1 rounded-full bg-[var(--theme-border)]" />
+                </div>
+
                 {/* ── Header ──────────────────────────────────────── */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--theme-border)] flex-shrink-0">
                     <h2 className="text-[14px] font-black uppercase tracking-widest text-[var(--theme-text-main)]">
@@ -636,7 +657,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
 
                 {/* ── Footer / Submit Button ── */}
                 {step === 'form' && (
-                    <div className="grid grid-cols-2 border-t border-[var(--theme-border)] bg-gray-50/50 dark:bg-black/10">
+                    <div className="flex-shrink-0 grid grid-cols-2 border-t border-[var(--theme-border)] bg-gray-50/50 dark:bg-black/10 pb-[env(safe-area-inset-bottom)]">
                         <button
                             onClick={() => setStep('select')}
                             className="h-16 flex items-center justify-center text-[13px] text-[var(--theme-text-muted)] font-black uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-white/5 active:bg-gray-200 transition-colors border-r border-[var(--theme-border)]"
@@ -659,7 +680,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
 
                 {/* Single Close Button for Selection/Success steps */}
                 {(step === 'select' || step === 'success' || step === 'error') && (
-                    <div className="p-4 border-t border-[var(--theme-border)] bg-gray-50/50 dark:bg-black/10">
+                    <div className="flex-shrink-0 p-4 border-t border-[var(--theme-border)] bg-gray-50/50 dark:bg-black/10 pb-[env(safe-area-inset-bottom)]">
                          <button
                             onClick={handleClose}
                             className="w-full h-14 flex items-center justify-center text-[13px] text-[var(--theme-text-muted)] font-black uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-white/5 rounded-2xl transition-colors active:scale-95 border border-[var(--theme-border)]"

@@ -27,7 +27,6 @@ const KitchenDashboard = lazy(() => import('./pages/Kitchen/Dashboard'));
 const CashierDashboard = lazy(() => import('./pages/Cashier/Dashboard'));
 const WorkingProcess = lazy(() => import('./pages/Cashier/WorkingProcess'));
 const WaiterDashboard = lazy(() => import('./pages/Waiter/Dashboard'));
-const NewOrder = lazy(() => import('./pages/Waiter/NewOrder'));
 const DineIn = lazy(() => import('./pages/Waiter/DineIn'));
 const TakeAway = lazy(() => import('./pages/Waiter/TakeAway'));
 const LogoutConfirm = lazy(() => import('./pages/LogoutConfirm'));
@@ -112,7 +111,6 @@ function App() {
               {/* Waiter Routes */}
               <Route element={<WaiterRoute />}>
                 <Route path="/waiter" element={<WaiterDashboard />} />
-                <Route path="/waiter/new-order" element={<NewOrder />} />
                 <Route path="/dine-in" element={<DineIn />} />
                 <Route path="/take-away" element={<TakeAway />} />
                 <Route path="/waiter/working-process" element={<WorkingProcess />} />

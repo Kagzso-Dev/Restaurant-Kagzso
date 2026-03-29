@@ -56,10 +56,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
     const urgency = (Date.now() - new Date(order.createdAt)) > 600000;
     const tColor = tokenColors[order.orderStatus] || 'bg-[var(--theme-bg-card)] border-[var(--theme-border)]';
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
-    const hasNewItems = order.items?.some(i =>
-        i.status?.toUpperCase() === 'PENDING' &&
-        (new Date(i.createdAt) - new Date(order.createdAt)) > 30000
-    );
+    const hasNewItems = order.items?.some(i => i.isNewlyAdded && i.status?.toUpperCase() === 'PENDING');
 
     const borderColor =
         hasNewItems                          ? 'border-l-[var(--status-pending)]' :
@@ -145,8 +142,14 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                     </h3>
                     <div className="flex items-center gap-1.5 shrink-0">
                         {hasNewItems && <span className="text-[8px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wide animate-pulse">+New</span>}
-                        {/* ALL Advancement Toggle - Jump to READY directly */}
-                        {order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED') && 
+                        {order.isPartiallyReady && order.orderStatus === 'pending' && !hasNewItems && (
+                            <span className="text-[8px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                ½ Ready
+                            </span>
+                        )}
+                        {/* ALL Advancement Toggle - Only for partially ready orders */}
+                        {order.isPartiallyReady && 
+                         order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED') && 
                          order.orderStatus !== 'ready' && order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' &&
                          (userRole === 'kitchen' || userRole === 'admin') && (
                             <button
@@ -207,28 +210,46 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
 
                     const status = item.status?.toUpperCase() || 'PENDING';
                     const isCancelled = status === 'CANCELLED';
-                    const isNewAdd = status === 'PENDING' && (new Date(item.createdAt) - new Date(order.createdAt)) > 30000;
+                    const isNewAdd = !!item.isNewlyAdded;
                     const nextStatus = status === 'PENDING' ? 'ACCEPTED' : status === 'ACCEPTED' ? 'PREPARING' : status === 'PREPARING' ? 'READY' : 'PENDING';
                     // Kitchen can cancel Pending/Accepted/Preparing — never Ready
                     const canCancel = !isCancelled && ['PENDING', 'ACCEPTED', 'PREPARING'].includes(status) && (userRole === 'kitchen' || userRole === 'admin');
-
                     return (
-                        <div key={item._id} className={`flex items-start gap-2 group ${isCancelled ? 'opacity-40' : ''}`}>
-                            <div className="w-4 h-4 mt-0.5 shrink-0 rounded flex items-center justify-center text-[10px] font-black bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border border-[var(--theme-border)]">
+                        <div key={item._id} className={`flex items-center gap-1.5 group ${isCancelled ? 'opacity-40' : ''}`}>
+                            {/* Qty badge */}
+                            <div className="w-4 h-4 shrink-0 rounded flex items-center justify-center text-[10px] font-black bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border border-[var(--theme-border)]">
                                 {item.quantity}
                             </div>
 
+                            {/* Name */}
                             <span
-                                className={`flex-1 text-[11px] font-bold leading-tight mt-0.5
+                                className={`flex-1 text-[11px] font-bold leading-tight min-w-0 pr-1
                                     ${isCancelled ? 'line-through text-[var(--theme-text-muted)]' : 'text-[var(--theme-text-main)]'}
                                     ${loadingItems[item._id] ? 'opacity-50' : ''}`}
                             >
                                 {item.name}
                                 {item.variant?.name && <span className="ml-1 text-[8px] opacity-70">({item.variant.name})</span>}
-                                {isNewAdd && <span className="ml-1.5 bg-orange-500 text-white text-[7px] font-black px-1 py-px rounded uppercase">NEW</span>}
+                                {isNewAdd && status === 'PENDING' && <span className="ml-1 bg-orange-600 text-white text-[7px] font-black px-1 py-px rounded uppercase shadow-sm">NEW</span>}
                             </span>
 
+                            {/* Advancement + Cancel Actions */}
                             <div className="flex items-center gap-1 shrink-0">
+                                {!isCancelled && status !== 'READY' && order.isPartiallyReady && (userRole === 'kitchen' || userRole === 'admin') && (
+                                    <button
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            if (loadingItems[item._id]) return;
+                                            setLoadingItems(prev => ({ ...prev, [item._id]: true }));
+                                            try { await onUpdateItemStatus(order._id, item._id, nextStatus); }
+                                            finally { setLoadingItems(prev => ({ ...prev, [item._id]: false })); }
+                                        }}
+                                        disabled={loadingItems[item._id]}
+                                        style={{ backgroundColor: status === 'PENDING' ? 'var(--status-accepted)' : status === 'ACCEPTED' ? 'var(--status-preparing)' : 'var(--status-ready)' }}
+                                        className={`px-1.5 h-5 flex items-center justify-center text-white text-[8px] font-black rounded-lg active:scale-95 transition-all shadow-sm ${loadingItems[item._id] ? 'opacity-70' : ''}`}
+                                    >
+                                        {loadingItems[item._id] ? <Loader2 size={10} className="animate-spin" /> : (status === 'PENDING' ? 'OK' : status === 'ACCEPTED' ? 'START' : 'READY')}
+                                    </button>
+                                )}
                                 {canCancel && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onCancelItem(order, item); }}
@@ -267,7 +288,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
 
                 <div className="flex items-center gap-1">
                     {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' &&
-                     (order.orderStatus !== 'ready' || userRole === 'admin') &&
+                     order.orderStatus !== 'ready' &&
                      (userRole === 'kitchen' || userRole === 'admin') && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onCancel(order); }}
@@ -285,20 +306,27 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                             onClick={async (e) => {
                                 e.stopPropagation();
                                 if (isUpdatingOrder) return;
+                                
+                                // Prevent manual "Ready" if items are still pending/preparing
+                                const nextStatus = order.orderStatus === 'pending' ? 'accepted' : order.orderStatus === 'accepted' ? 'preparing' : 'ready';
+                                if (nextStatus === 'ready') {
+                                    const hasItemsNotReady = order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED');
+                                    if (hasItemsNotReady) return; // User must click READY on items first
+                                }
+
                                 setIsUpdatingOrder(true);
                                 try {
-                                    const next = order.orderStatus === 'pending' ? 'accepted' : order.orderStatus === 'accepted' ? 'preparing' : 'ready';
-                                    await onUpdateStatus(order._id, next);
+                                    await onUpdateStatus(order._id, nextStatus);
                                 } finally {
                                     setIsUpdatingOrder(false);
                                 }
                             }}
-                            disabled={isUpdatingOrder}
+                            disabled={isUpdatingOrder || (order.orderStatus === 'preparing' && order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED'))}
                             className={`px-3 py-1.5 flex items-center justify-center min-w-[65px] h-[26px] text-white text-[10px] font-black rounded-lg shadow-sm transition-all active:scale-95 uppercase tracking-wider ${
                                 order.orderStatus === 'pending' ? 'bg-[var(--status-accepted)] hover:brightness-110' :
                                 order.orderStatus === 'accepted' ? 'bg-[var(--status-preparing)] hover:brightness-110' :
                                 'bg-[var(--status-ready)] hover:brightness-110 text-emerald-900 border border-emerald-900/10'
-                            } ${isUpdatingOrder ? 'opacity-70 cursor-wait' : ''}`}
+                            } ${(isUpdatingOrder || (order.orderStatus === 'preparing' && order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED'))) ? 'opacity-30 cursor-not-allowed grayscale-[0.5]' : ''}`}
                         >
                             {isUpdatingOrder ? <Loader2 size={12} className="animate-spin" /> : order.orderStatus === 'pending' ? 'Accept' : order.orderStatus === 'accepted' ? 'Start' : 'Ready'}
                         </button>
@@ -333,9 +361,16 @@ const KitchenTokenCard = ({ order, onClick }) => {
         >
             {/* Top row */}
             <div className="flex items-start justify-between w-full shrink-0 relative">
-                <span className="text-[8px] sm:text-[9px] uppercase font-black opacity-50 tracking-wider">
-                    {order.orderType === 'dine-in' ? 'Dine' : 'Take'}
-                </span>
+                <div className="flex flex-col items-start gap-1">
+                    <span className="text-[8px] sm:text-[9px] uppercase font-black opacity-50 tracking-wider">
+                        {order.orderType === 'dine-in' ? 'Dine' : 'Take'}
+                    </span>
+                    {order.isPartiallyReady && (
+                        <span className="text-[6px] font-black uppercase bg-emerald-500 text-white px-1.5 py-0.5 rounded-full shadow-sm animate-bounce-subtle">
+                            Partial
+                        </span>
+                    )}
+                </div>
                 <span className="text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-current/30 bg-white/10 shrink-0">
                     {order.orderStatus}
                 </span>
@@ -464,22 +499,17 @@ const KitchenDashboard = () => {
     };
 
     const handleCancelAction = async (orderId, arg2, arg3) => {
-        try {
-            const isItem = arg3 !== undefined;
-            const url = isItem
-                ? `/api/orders/${orderId}/items/${arg2}/cancel`
-                : `/api/orders/${orderId}/cancel`;
-            const reason = isItem ? arg3 : arg2;
-
-            await api.put(url, { reason }, {
-                headers: { Authorization: `Bearer ${user.token}` }
-            });
-        } catch (err) {
-            console.error(err);
-        }
+        const isItem = arg3 !== undefined;
+        const url = isItem
+            ? `/api/orders/${orderId}/items/${arg2}/cancel`
+            : `/api/orders/${orderId}/cancel`;
+        const reason = isItem ? arg3 : arg2;
+        // Let the error propagate — CancelOrderModal catches it, shows the message,
+        // and keeps the modal open so the user knows the action failed.
+        await api.put(url, { reason }, { headers: { Authorization: `Bearer ${user.token}` } });
     };
 
-    const ACTIVE_STATUSES = ['pending', 'accepted', 'preparing'];
+    const ACTIVE_STATUSES = ['pending', 'accepted', 'preparing', 'ready'];
     // Only count orders that are actually visible in the kitchen display (kotStatus not Closed)
     const activeKotOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.orderStatus) && o.kotStatus !== 'Closed');
 
@@ -552,35 +582,30 @@ const KitchenDashboard = () => {
 
                     <div className="flex items-center gap-2 md:gap-4 shrink-0">
                         {/* 2. View Mode Toggle */}
-                        <button
-                            onClick={() => { const next = !isCardView; setIsCardView(next); localStorage.setItem('kitchenCardView', next); }}
-                            className={`
-                                relative flex items-center h-8 md:h-11 w-8 md:w-32 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
-                                ${isCardView
-                                    ? 'bg-blue-600/10 border-blue-500/20'
-                                    : 'bg-orange-500/10 border-orange-500/20'}
-                            `}
-                        >
-                            {/* Mobile: icon-only centered */}
-                            <div className="md:hidden absolute inset-0 flex items-center justify-center">
-                                {isCardView ? <Grid size={14} strokeWidth={3} className="text-blue-500" /> : <List size={14} strokeWidth={3} className="text-orange-500" />}
-                            </div>
-                            {/* Desktop: sliding pill */}
-                            <div
-                                className={`
-                                    hidden md:flex absolute top-1 w-9 h-9 rounded-full items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                                    ${isCardView
-                                        ? 'left-1 bg-blue-600 rotate-0'
-                                        : 'left-[calc(100%-40px)] bg-orange-600 rotate-[360deg]'}
-                                `}
+                        <div className="flex items-center p-1 rounded-xl bg-[var(--theme-bg-hover)] border border-[var(--theme-border)] gap-1">
+                            <button
+                                onClick={() => { setIsCardView(true); localStorage.setItem('kitchenCardView', true); }}
+                                className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
+                                    isCardView
+                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                                }`}
                             >
-                                {isCardView ? <Grid size={14} strokeWidth={3} className="text-white" /> : <List size={14} strokeWidth={3} className="text-white" />}
-                            </div>
-                            <div className="hidden md:flex absolute inset-0 items-center justify-between px-3 pointer-events-none">
-                                <span className={`text-[9px] font-black transition-all duration-300 ${isCardView ? 'opacity-100 translate-x-7 text-blue-600' : 'opacity-0 translate-x-3'}`}>TOKEN</span>
-                                <span className={`text-[9px] font-black transition-all duration-300 ${!isCardView ? 'opacity-100 -translate-x-7 text-orange-600' : 'opacity-0 -translate-x-3'}`}>CARD</span>
-                            </div>
-                        </button>
+                                <Grid size={13} strokeWidth={2.5} />
+                                <span className="hidden md:inline">Card</span>
+                            </button>
+                            <button
+                                onClick={() => { setIsCardView(false); localStorage.setItem('kitchenCardView', false); }}
+                                className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
+                                    !isCardView
+                                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30'
+                                        : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
+                                }`}
+                            >
+                                <List size={13} strokeWidth={2.5} />
+                                <span className="hidden md:inline">List</span>
+                            </button>
+                        </div>
 
                         {/* Mobile: Logout | Desktop: Refresh */}
                         <button

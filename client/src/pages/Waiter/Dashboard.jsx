@@ -183,9 +183,9 @@ const TokenSquare = memo(({ order, onClick, isSelected }) => {
     const activeItems = order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED') || [];
     const itemCount = activeItems.length;
 
-    const hasReady = activeItems.some(i => i.status?.toUpperCase() === 'READY');
-    const hasPendingMixed = activeItems.some(i => ['PENDING', 'ACCEPTED', 'PREPARING'].includes(i.status?.toUpperCase()));
-    const isPartiallyReady = hasReady && hasPendingMixed && (order.orderStatus?.toLowerCase() === 'pending' || order.orderStatus?.toLowerCase() === 'ready' || order.orderStatus?.toLowerCase() === 'preparing' || order.orderStatus?.toLowerCase() === 'accepted');
+    // Use the DB flag as the canonical source — set by server when new items are added to a ready order,
+    // cleared by server when all items are READY again.
+    const isPartiallyReady = !!order.isPartiallyReady;
 
     return (
         <button
@@ -364,12 +364,11 @@ const WaiterDashboard = () => {
     }, [orders, navigate]);
 
     const handleCancelAction = async (orderId, arg2, arg3) => {
-        try {
-            const isItem = arg3 !== undefined;
-            const url = isItem ? `/api/orders/${orderId}/items/${arg2}/cancel` : `/api/orders/${orderId}/cancel`;
-            const reason = isItem ? arg3 : arg2;
-            await api.put(url, { reason }, { headers: { Authorization: `Bearer ${user.token}` } });
-        } catch (err) { alert(err.response?.data?.message || "Action failed"); }
+        const isItem = arg3 !== undefined;
+        const url = isItem ? `/api/orders/${orderId}/items/${arg2}/cancel` : `/api/orders/${orderId}/cancel`;
+        const reason = isItem ? arg3 : arg2;
+        // Errors propagate to CancelOrderModal which shows the message and keeps modal open
+        await api.put(url, { reason }, { headers: { Authorization: `Bearer ${user.token}` } });
     };
 
     const handleUpdateStatus = async (orderId, newStatus) => {
@@ -379,6 +378,17 @@ const WaiterDashboard = () => {
                 { headers: { Authorization: `Bearer ${user.token}` } }
             );
         } catch (err) { alert(err.response?.data?.message || "Action failed"); }
+    };
+    
+    const handleAddItems = async (orderId, items) => {
+        try {
+            await api.post(`/api/orders/${orderId}/add-items`, 
+                { items }, 
+                { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to add items');
+        }
     };
 
     const activeOrders = orders.filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled');
@@ -407,7 +417,9 @@ const WaiterDashboard = () => {
 
     const readyOrders = filteredOrders.filter(o => o.orderStatus === 'ready');
     const processOrders = filteredOrders.filter(o => o.orderStatus !== 'ready');
-    const displayOrders = statusFilter === 'ready' ? readyOrders : processOrders;
+    const displayOrders = statusFilter 
+        ? (statusFilter === 'ready' ? readyOrders : processOrders)
+        : filteredOrders;
 
     // TOKEN mode: prev / next navigation
     const tokenIdx = selectedOrder ? displayOrders.findIndex(o => o._id === selectedOrder._id) : -1;
@@ -846,6 +858,7 @@ const WaiterDashboard = () => {
                                 onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
                                 onCancelOrder={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
                                 onUpdateStatus={handleUpdateStatus}
+                                onAddItem={handleAddItems}
                                 settings={settings}
                             />
 

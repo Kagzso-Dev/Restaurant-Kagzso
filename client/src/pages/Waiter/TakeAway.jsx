@@ -14,8 +14,9 @@ import FoodItem from '../../components/FoodItem';
  * skips table selection entirely. orderType is fixed to 'takeaway'.
  */
 const TakeAway = () => {
-    const { user, formatPrice, settings } = useContext(AuthContext);
+    const { user, formatPrice, settings, socket } = useContext(AuthContext);
     const navigate = useNavigate();
+
 
     // Redirect away if takeaway is disabled in settings
     useEffect(() => {
@@ -127,6 +128,48 @@ const TakeAway = () => {
     const tax = totalAmount * (taxRate / 100);
     const finalAmount = totalAmount + tax;
 
+    // ── Real-time menu/category sync ─────────────────────────────────
+    useEffect(() => {
+        if (!socket) return;
+
+        const onMenuUpdated = ({ action, item, id }) => {
+            if (action === 'create' && item) {
+                if (item.availability) {
+                    setMenuItems(prev => prev.find(i => i._id === item._id) ? prev : [...prev, item]);
+                }
+            } else if (action === 'update' && item) {
+                setMenuItems(prev => {
+                    const exists = prev.find(i => i._id === item._id);
+                    if (!item.availability) return prev.filter(i => i._id !== item._id);
+                    return exists ? prev.map(i => i._id === item._id ? item : i) : [...prev, item];
+                });
+                setCart(prev => prev.map(c =>
+                    c._id === item._id ? { ...c, name: item.name, price: c.variant ? c.variant.price : item.price } : c
+                ));
+            } else if (action === 'delete' && id) {
+                setMenuItems(prev => prev.filter(i => i._id !== id));
+                setCart(prev => prev.filter(c => c._id !== id));
+            }
+        };
+
+        const onCategoryUpdated = ({ action, category, id }) => {
+            if (action === 'create' && category) {
+                setAllCategories(prev => prev.find(c => c._id === category._id) ? prev : [...prev, category]);
+            } else if (action === 'update' && category) {
+                setAllCategories(prev => prev.map(c => c._id === category._id ? category : c));
+            } else if (action === 'delete' && id) {
+                setAllCategories(prev => prev.filter(c => c._id !== id));
+            }
+        };
+
+        socket.on('menu-updated', onMenuUpdated);
+        socket.on('category-updated', onCategoryUpdated);
+        return () => {
+            socket.off('menu-updated', onMenuUpdated);
+            socket.off('category-updated', onCategoryUpdated);
+        };
+    }, [socket]);
+
     const handleSubmitOrder = async () => {
         if (!cart.length) return alert('Cart is empty!');
 
@@ -162,17 +205,17 @@ const TakeAway = () => {
 
                     {/* Top Bar */}
                     <div className="px-5 py-4 border-b border-[var(--theme-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-shrink-0">
                             <button
                                 onClick={() => navigate('/waiter', { replace: true })}
-                                className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] bg-[var(--theme-bg-hover)] rounded-lg"
+                                className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] bg-[var(--theme-bg-hover)] rounded-lg shrink-0"
                             >
                                 <ArrowLeft size={18} />
                             </button>
-                            <div>
-                                <h2 className="text-lg font-bold text-[var(--theme-text-main)] flex items-center gap-2">
+                            <div className="min-w-0">
+                                <h2 className="text-sm md:text-lg font-black text-[var(--theme-text-main)] uppercase tracking-[0.05em] flex items-center gap-2 whitespace-nowrap">
                                     Takeaway Order
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold border border-blue-500/20">
+                                    <span className="hidden xs:inline-flex text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-black border border-blue-500/20 uppercase tracking-widest">
                                         Take Away
                                     </span>
                                 </h2>

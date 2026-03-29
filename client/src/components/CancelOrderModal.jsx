@@ -9,29 +9,41 @@ const CancelOrderModal = ({ order, item, isOpen, onClose, onConfirm, title = "Ca
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!reason.trim()) return;
         setLoading(true);
-        if (item) {
-            await onConfirm(order._id, item._id, reason);
-        } else {
-            await onConfirm(order._id, reason);
+        try {
+            if (item) {
+                await onConfirm(order._id, item._id, reason);
+            } else {
+                await onConfirm(order._id, reason);
+            }
+            setReason('');
+            onClose();
+        } catch (err) {
+            // onConfirm re-threw — keep modal open so user sees the error
+            alert(err?.response?.data?.message || err?.message || 'Cancellation failed');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
-        setReason('');
-        onClose();
     };
 
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 animate-scale-in text-left">
-            {/* Enhanced Backdrop Blur */}
+        <div className="fixed inset-x-0 top-0 bottom-14 md:inset-0 z-[10000] flex items-end md:items-center justify-center md:p-4 text-left">
+            {/* Backdrop */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-[6px]" onClick={onClose} />
-            
-            {/* iOS-Style Premium Container - RESPONSIVE WIDTH */}
-            <div className="relative bg-white dark:bg-[var(--theme-bg-card)] rounded-[2rem] shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col w-[94%] xs:w-[90%] sm:max-w-[340px] md:max-w-[360px] animate-in fade-in zoom-in-95 duration-200 border border-[var(--theme-border)]">
-                
-                {/* Visual Accent */}
-                <div className="h-1.5 bg-red-600 w-full" />
 
-                <div className="p-6 pb-5">
+            {/* Sheet / Modal */}
+            <div className="relative bg-white dark:bg-[var(--theme-bg-card)] w-full md:w-auto md:max-w-[360px] rounded-t-[2rem] md:rounded-[2rem] shadow-[0_-8px_40px_rgba(0,0,0,0.3)] md:shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col animate-in slide-in-from-bottom md:zoom-in-95 duration-300 border border-[var(--theme-border)] max-h-[calc(100dvh-4rem)] md:max-h-[90vh]">
+
+                {/* Drag handle (mobile only) */}
+                <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+                    <div className="w-10 h-1 rounded-full bg-[var(--theme-border)]" />
+                </div>
+
+                {/* Visual Accent */}
+                <div className="h-1.5 bg-red-600 w-full flex-shrink-0" />
+
+                <div className="flex-1 overflow-y-auto p-6 pb-5">
                     {/* Header Block */}
                     <div className="flex flex-col items-center text-center gap-2 mb-5">
                         <div className="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 mb-1">
@@ -77,7 +89,7 @@ const CancelOrderModal = ({ order, item, isOpen, onClose, onConfirm, title = "Ca
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="Details (e.g. Out of stock...)"
-                                className="w-full bg-[var(--theme-input-bg)] border border-[var(--theme-border)] rounded-2xl p-4 text-[var(--theme-text-main)] text-xs placeholder:text-[var(--theme-text-subtle)] focus:outline-none focus:ring-2 focus:ring-red-500/30 min-h-[80px] resize-none transition-all font-bold"
+                                className="hidden md:block w-full bg-[var(--theme-input-bg)] border border-[var(--theme-border)] rounded-2xl p-4 text-[var(--theme-text-main)] text-xs placeholder:text-[var(--theme-text-subtle)] focus:outline-none focus:ring-2 focus:ring-red-500/30 min-h-[80px] resize-none transition-all font-bold"
                                 required
                             />
                         </div>
@@ -85,7 +97,7 @@ const CancelOrderModal = ({ order, item, isOpen, onClose, onConfirm, title = "Ca
                 </div>
 
                 {/* Footer Actions (iOS-Style Grid) */}
-                <div className="grid grid-cols-2 border-t border-[var(--theme-border)] bg-gray-50/30 dark:bg-black/10">
+                <div className="flex-shrink-0 grid grid-cols-2 border-t border-[var(--theme-border)] bg-gray-50/30 dark:bg-black/10">
                     <button
                         type="button"
                         onClick={onClose}

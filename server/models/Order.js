@@ -1,55 +1,57 @@
 const { databases, databaseId, COLLECTIONS, ID, Query } = require('../config/appwrite');
-const Counter    = require('./Counter');
-const Table      = require('./Table');
+const Counter = require('./Counter');
+const Table = require('./Table');
 
 
 // ─── Document formatters ──────────────────────────────────────────────────────────
 
 const fmtItem = (doc) => ({
-    _id:          doc.$id,
-    menuItemId:   doc.menu_item_id,
-    name:         doc.name,
-    price:        parseFloat(doc.price),
-    quantity:     doc.quantity,
-    notes:        doc.notes,
-    variant:      doc.variant ? JSON.parse(doc.variant) : null,
-    status:       doc.status,
-    cancelledBy:  doc.cancelled_by,
+    _id: doc.$id,
+    menuItemId: doc.menu_item_id,
+    name: doc.name,
+    price: parseFloat(doc.price),
+    quantity: doc.quantity,
+    notes: doc.notes,
+    variant: doc.variant ? JSON.parse(doc.variant) : null,
+    status: doc.status,
+    cancelledBy: doc.cancelled_by,
     cancelReason: doc.cancel_reason,
-    cancelledAt:  doc.cancelled_at,
-    addedAt:      doc.$createdAt,
-    createdAt:    doc.$createdAt,
+    cancelledAt: doc.cancelled_at,
+    isNewlyAdded: !!doc.is_newly_added,
+    addedAt: doc.$createdAt,
+    createdAt: doc.$createdAt,
 });
 
 const fmtOrder = (doc, items = [], tableNum = null) => ({
-    _id:           doc.$id,
-    orderNumber:   doc.order_number,
-    tokenNumber:   doc.token_number,
-    orderType:     doc.order_type,
-    tableId:       doc.table_id
+    _id: doc.$id,
+    orderNumber: doc.order_number,
+    tokenNumber: doc.token_number,
+    orderType: doc.order_type,
+    tableId: doc.table_id
         ? { _id: doc.table_id, number: tableNum || doc.table_id }
         : null,
-    customerInfo:  { name: doc.customer_name || null, phone: doc.customer_phone || null },
+    customerInfo: { name: doc.customer_name || null, phone: doc.customer_phone || null },
     items,
-    orderStatus:   doc.order_status,
+    orderStatus: doc.order_status,
     paymentStatus: doc.payment_status,
     paymentMethod: doc.payment_method,
-    kotStatus:     doc.kot_status,
-    totalAmount:   parseFloat(doc.total_amount),
-    tax:           parseFloat(doc.tax    || 0),
-    discount:      parseFloat(doc.discount || 0),
+    kotStatus: doc.kot_status,
+    totalAmount: parseFloat(doc.total_amount),
+    tax: parseFloat(doc.tax || 0),
+    discount: parseFloat(doc.discount || 0),
     discountLabel: doc.discount_label || '',
-    finalAmount:   parseFloat(doc.final_amount),
-    waiterId:      doc.waiter_id,
+    finalAmount: parseFloat(doc.final_amount),
+    waiterId: doc.waiter_id,
     prepStartedAt: doc.prep_started_at,
-    readyAt:       doc.ready_at,
-    completedAt:   doc.completed_at,
-    paymentAt:     doc.payment_at,
-    paidAt:        doc.paid_at,
-    cancelledBy:   doc.cancelled_by,
-    cancelReason:  doc.cancel_reason,
-    createdAt:     doc.$createdAt,
-    updatedAt:     doc.$updatedAt,
+    isPartiallyReady: !!doc.is_partially_ready,
+    readyAt: doc.ready_at,
+    completedAt: doc.completed_at,
+    paymentAt: doc.payment_at,
+    paidAt: doc.paid_at,
+    cancelledBy: doc.cancelled_by,
+    cancelReason: doc.cancel_reason,
+    createdAt: doc.$createdAt,
+    updatedAt: doc.$updatedAt,
 });
 
 const loadItems = async (orderId) => {
@@ -74,7 +76,7 @@ const Order = {
                 try {
                     const table = await databases.getDocument(databaseId, COLLECTIONS.tables, doc.table_id);
                     tableNum = table.number;
-                } catch (e) {}
+                } catch (e) { }
             }
             const items = await loadItems(id);
             return fmtOrder(doc, items, tableNum);
@@ -102,17 +104,17 @@ const Order = {
             queries.push(Query.equal(key, val));
         }
         queries.push(Query.limit(1));
-        
+
         const response = await databases.listDocuments(databaseId, COLLECTIONS.orders, queries);
         if (response.total === 0) return null;
-        
+
         const doc = response.documents[0];
         let tableNum = null;
         if (doc.table_id) {
             try {
                 const table = await databases.getDocument(databaseId, COLLECTIONS.tables, doc.table_id);
                 tableNum = table.number;
-            } catch (e) {}
+            } catch (e) { }
         }
         const items = await loadItems(doc.$id);
         return fmtOrder(doc, items, tableNum);
@@ -163,7 +165,7 @@ const Order = {
         // 1. Format and validate Enum Values
         let rawType = String(data.orderType || '').toLowerCase().replace('_', '-');
         const orderType = ['dine-in', 'takeaway'].includes(rawType) ? rawType : 'dine-in';
-        
+
         const orderStatus = 'pending';
         const paymentStatus = 'pending';
 
@@ -194,7 +196,7 @@ const Order = {
 
             const seq = await Counter.getNextSequence('tokenNumber_global');
             const orderNumber = `ORD-${seq}`;
-            
+
             const orderDoc = await databases.createDocument(
                 databaseId,
                 COLLECTIONS.orders,
@@ -219,7 +221,7 @@ const Order = {
             );
 
             const orderId = orderDoc.$id;
-            
+
             // 2. Insert items in parallel
             const itemDocs = await Promise.all(data.items.map(item =>
                 databases.createDocument(
@@ -266,16 +268,17 @@ const Order = {
             paidAt: 'paid_at',
             cancelledBy: 'cancelled_by',
             cancelReason: 'cancel_reason',
+            isPartiallyReady: 'is_partially_ready',
         };
-        
+
         const data = {};
         for (const [key, val] of Object.entries(updates)) {
             const col = fieldMap[key] || key;
             data[col] = val === undefined ? null : val;
         }
-        
+
         if (Object.keys(data).length === 0) return this.findById(id);
-        
+
         // logger.debug(`[Order.updateById] Updating ID=${id}...`);
         try {
             await databases.updateDocument(databaseId, COLLECTIONS.orders, id, data);
@@ -359,9 +362,9 @@ const Order = {
                 Query.limit(parseInt(limit))
             ]
         );
-        
+
         if (response.documents.length === 0) return [];
-        
+
         const orderIds = response.documents.map(r => r.$id);
         const Table = require('./Table');
         const [itemsResp, tableMap] = await Promise.all([
@@ -398,7 +401,7 @@ const Order = {
 
             // 2. Fetch existing items BEFORE adding new ones
             const existingItems = await loadItems(orderId);
-            
+
             // 3. Insert new items
             const newItemDocs = await Promise.all(items.map(async (item) => {
                 return databases.createDocument(
@@ -413,7 +416,8 @@ const Order = {
                         quantity: parseInt(item.quantity),
                         notes: item.notes || null,
                         variant: item.variant ? JSON.stringify(item.variant) : null,
-                        status: 'PENDING'
+                        status: 'PENDING',
+                        is_newly_added: true
                     }
                 );
             }));
@@ -422,21 +426,27 @@ const Order = {
             const allItems = [...existingItems, ...newItemDocs.map(fmtItem)];
             const activeItems = allItems.filter(i => i.status?.toUpperCase() !== 'CANCELLED');
             const subtotalSum = activeItems.reduce((sum, i) => sum + (parseFloat(i.price) * parseInt(i.quantity)), 0);
-            
+
             const taxRate = (parseFloat(orderCount.total_amount) > 0) ? (parseFloat(orderCount.tax) / parseFloat(orderCount.total_amount)) : 0.05;
             const newTax = parseFloat((subtotalSum * taxRate).toFixed(2));
             const newFinal = parseFloat((subtotalSum + newTax - (parseFloat(orderCount.discount) || 0)).toFixed(2));
+
+            // Flag is true if ANY existing item was already READY before we added new ones
+            const hasExistingReadyItems = existingItems.some(i => i.status?.toUpperCase() === 'READY');
 
             await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, {
                 total_amount: subtotalSum,
                 tax: newTax,
                 final_amount: newFinal,
-                kot_status: 'Open'
+                kot_status: 'Open',
+                order_status: 'pending',
+                is_partially_ready: hasExistingReadyItems || !!orderCount.is_partially_ready,
             });
 
             // Return fresh formatted order
             const fullOrder = await databases.getDocument(databaseId, COLLECTIONS.orders, orderId);
-            return fmtOrder(fullOrder, allItems);
+            const tableMap = await Table.getTableMap();
+            return fmtOrder(fullOrder, allItems, tableMap[fullOrder.table_id] || null);
 
         } finally {
             orderLocks.delete(orderId);

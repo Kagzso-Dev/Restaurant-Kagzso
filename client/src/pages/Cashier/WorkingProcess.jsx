@@ -33,34 +33,37 @@ const WorkingProcess = () => {
     useEffect(() => {
         if (user) fetchOrders();
 
-        if (socket) {
-            socket.on('new-order', (newOrder) => {
-                setOrders(prev => [newOrder, ...prev]);
+        if (!socket) return;
+
+        const onNewOrder = (newOrder) => {
+            setOrders(prev => prev.find(o => o._id === newOrder._id) ? prev : [newOrder, ...prev]);
+        };
+
+        const onOrderUpdated = (updatedOrder) => {
+            const isDone = ['completed', 'cancelled'].includes(updatedOrder.orderStatus);
+            setOrders(prev => {
+                const existing = prev.find(o => o._id === updatedOrder._id);
+                if (isDone) return prev.filter(o => o._id !== updatedOrder._id);
+                if (existing) return prev.map(o => o._id === updatedOrder._id ? updatedOrder : o);
+                return [updatedOrder, ...prev];
             });
-            socket.on('order-updated', (updatedOrder) => {
-                setOrders(prev => {
-                    const existing = prev.find(o => o._id === updatedOrder._id);
-                    if (['completed', 'cancelled'].includes(updatedOrder.orderStatus)) {
-                        if (selectedOrder?._id === updatedOrder._id) setSelectedOrder(null);
-                        return prev.filter(o => o._id !== updatedOrder._id);
-                    }
-                    if (existing) {
-                        const updated = prev.map(o => o._id === updatedOrder._id ? updatedOrder : o);
-                        if (selectedOrder?._id === updatedOrder._id) setSelectedOrder(updatedOrder);
-                        return updated;
-                    }
-                    return [updatedOrder, ...prev];
-                });
+            // Update selectedOrder without needing it in deps — compare by id at call time
+            setSelectedOrder(prev => {
+                if (!prev || prev._id !== updatedOrder._id) return prev;
+                return isDone ? null : updatedOrder;
             });
-        }
+        };
+
+        socket.on('new-order', onNewOrder);
+        socket.on('order-updated', onOrderUpdated);
+        socket.on('itemUpdated', onOrderUpdated);
 
         return () => {
-            if (socket) {
-                socket.off('new-order');
-                socket.off('order-updated');
-            }
+            socket.off('new-order', onNewOrder);
+            socket.off('order-updated', onOrderUpdated);
+            socket.off('itemUpdated', onOrderUpdated);
         };
-    }, [user, socket, fetchOrders, selectedOrder]);
+    }, [user, socket, fetchOrders]);
 
     const enabledOrders = orders
         .filter(o => settings?.takeawayEnabled !== false || o.orderType !== 'takeaway')
@@ -415,7 +418,7 @@ const WorkingProcess = () => {
                                                                 item.status?.toLowerCase() === 'accepted' ? 'border-[var(--status-accepted)] text-[var(--status-accepted)]' :
                                                                     item.status?.toLowerCase() === 'preparing' ? 'border-[var(--status-preparing)] text-[var(--status-preparing)]' :
                                                                         item.status?.toLowerCase() === 'ready' ? 'border-[var(--status-ready)] text-[var(--status-ready)]' :
-                                                                            item.status?.toUpperCase() === 'CANCELLED' ? 'border-red-600 text-red-600 line-through' :
+                                                                            item.status?.toLowerCase() === 'cancelled' ? 'border-red-600 text-red-600 line-through' :
                                                                                 'border-gray-400 text-gray-600'
                                                             }`}>
                                                             {item.status}
