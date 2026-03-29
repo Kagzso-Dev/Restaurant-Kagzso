@@ -68,7 +68,7 @@ const WaiterBoxCard = memo(({ order, formatPrice }) => {
                     <h3 className="text-[13px] font-black text-gray-900 tracking-tight leading-none truncate pr-1">
                         {order.orderNumber.replace('ORD-', '#')}
                     </h3>
-                    <StatusBadge status={order.orderStatus} size="xs" />
+                    <StatusBadge status={order.orderStatus} items={order.items || []} size="xs" />
                 </div>
 
                 <div className="flex flex-col gap-1 mt-1.5">
@@ -146,7 +146,7 @@ const OrderCard = memo(({ order, formatPrice }) => {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <span className="text-sm font-black text-[var(--theme-text-main)]">{formatPrice(order.finalAmount)}</span>
-                    <StatusBadge status={order.orderStatus} />
+                    <StatusBadge status={order.orderStatus} items={order.items || []} />
                 </div>
             </div>
             <div className="flex items-center justify-between gap-3 mt-2">
@@ -183,6 +183,10 @@ const TokenSquare = memo(({ order, onClick, isSelected }) => {
     const activeItems = order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED') || [];
     const itemCount = activeItems.length;
 
+    const hasReady = activeItems.some(i => i.status?.toUpperCase() === 'READY');
+    const hasPendingMixed = activeItems.some(i => ['PENDING', 'ACCEPTED', 'PREPARING'].includes(i.status?.toUpperCase()));
+    const isPartiallyReady = hasReady && hasPendingMixed && (order.orderStatus?.toLowerCase() === 'pending' || order.orderStatus?.toLowerCase() === 'ready' || order.orderStatus?.toLowerCase() === 'preparing' || order.orderStatus?.toLowerCase() === 'accepted');
+
     return (
         <button
             onClick={onClick}
@@ -190,21 +194,24 @@ const TokenSquare = memo(({ order, onClick, isSelected }) => {
             className={`
                 w-full rounded-xl border flex flex-col overflow-hidden group
                 hover:-translate-y-1 hover:shadow-xl active:translate-y-0 active:scale-[0.98]
-                ${s.card} ${s.glow}
-                ${isReady ? 'shadow-md shadow-emerald-200' : 'shadow-sm'}
+                ${isPartiallyReady ? 'bg-amber-50 border-emerald-300 shadow-emerald-100' : `${s.card} ${s.glow}`}
+                ${isReady && !isPartiallyReady ? 'shadow-md shadow-emerald-200' : 'shadow-sm'}
                 ${isSelected ? 'ring-2 ring-orange-500 ring-offset-1 -translate-y-0.5 shadow-lg shadow-orange-200' : ''}
             `}
         >
             {/* Status accent bar */}
-            <div className={`h-1 w-full shrink-0 ${s.bar} ${isReady ? 'animate-pulse' : ''}`} />
+            <div className={`h-1 w-full shrink-0 ${isPartiallyReady ? 'bg-emerald-500' : s.bar} ${isReady ? 'animate-pulse' : ''}`} />
 
             {/* Metric Top Section (Value on Top, Label Below) */}
             <div className="flex flex-col items-center pt-2.5 pb-2">
                 {/* 1. Status Row */}
                 <div className="flex items-center gap-1 mb-2">
-                    <div className={`w-1.5 h-1.5 rounded-full ${s.bar}`} />
-                    <span className={`text-[7px] font-black uppercase tracking-widest ${s.num}`}>{order.orderStatus}</span>
+                    <div className={`w-1.5 h-1.5 rounded-full ${isPartiallyReady ? 'bg-emerald-500' : s.bar}`} />
+                    <span className={`text-[7px] font-black uppercase tracking-widest ${isPartiallyReady ? 'text-emerald-700' : s.num}`}>
+                        {isPartiallyReady ? 'Partial Ready' : order.orderStatus}
+                    </span>
                 </div>
+
 
                 {/* 2. Primary Identifier (Table/Token) - FORCED BLACK */}
                 <div className="flex flex-col items-center justify-center">
@@ -284,11 +291,7 @@ const WaiterDashboard = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, item: null });
     const [refreshing, setRefreshing] = useState(false);
-    const [isProductionMode, setIsProductionMode] = useState(() => {
-        const local = localStorage.getItem('isProductionMode');
-        if (local !== null) return local === 'true';
-        return false;
-    });
+    const [isProductionMode, setIsProductionMode] = useState(false);
     const { user, socket, formatPrice, settings } = useContext(AuthContext);
 
     useEffect(() => {
@@ -369,7 +372,19 @@ const WaiterDashboard = () => {
         } catch (err) { alert(err.response?.data?.message || "Action failed"); }
     };
 
+    const handleUpdateStatus = async (orderId, newStatus) => {
+        try {
+            await api.put(`/api/orders/${orderId}/status`,
+                { status: newStatus },
+                { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+        } catch (err) { alert(err.response?.data?.message || "Action failed"); }
+    };
+
     const activeOrders = orders.filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled');
+
+
+
     const historyOrders = orders.filter(o => o.paymentStatus === 'paid').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const counts = {
@@ -729,8 +744,13 @@ const WaiterDashboard = () => {
                                 formatPrice={formatPrice}
                                 userRole={user.role}
                                 onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
+                                onCancelOrder={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
+                                onUpdateStatus={handleUpdateStatus}
                                 settings={settings}
                             />
+
+
+
                         </div>
                     )}
                 </div>

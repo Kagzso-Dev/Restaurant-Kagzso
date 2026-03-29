@@ -447,9 +447,9 @@ const cancelOrderItem = async (req, res) => {
             cancelReason: reason || 'Item cancelled',
         });
 
-        // Recalculate order totals from remaining active items
-        const activeItems    = updatedOrder.items.filter(i => i.status !== 'CANCELLED');
-        const newTotalAmount = activeItems.reduce((sum, i) => sum + ((i.price || 0) * (i.quantity || 0)), 0);
+        // Recalculate order totals from remaining active (non-cancelled) items
+        const nonCancelledItems = updatedOrder.items.filter(i => i.status?.toUpperCase() !== 'CANCELLED');
+        const newTotalAmount    = nonCancelledItems.reduce((sum, i) => sum + ((i.price || 0) * (i.quantity || 0)), 0);
 
         let newTax = 0;
         if (order.totalAmount > 0) {
@@ -460,12 +460,16 @@ const cancelOrderItem = async (req, res) => {
 
         const orderUpdates = { totalAmount: newTotalAmount, tax: newTax, finalAmount: newFinalAmount };
 
-        if (activeItems.length === 0) {
+        if (nonCancelledItems.length === 0) {
             orderUpdates.orderStatus = 'cancelled';
             orderUpdates.kotStatus = 'Closed';
+        } else if (nonCancelledItems.every(i => i.status?.toUpperCase() === 'READY')) {
+            orderUpdates.orderStatus = 'ready';
         }
 
         updatedOrder = await Order.updateById(orderId, orderUpdates);
+
+
 
         if (activeItems.length === 0 && order.orderType === 'dine-in' && order.tableId) {
             const tid = rawTableId(order.tableId);

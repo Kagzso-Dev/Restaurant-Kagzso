@@ -21,12 +21,12 @@ const CancelOrderModal = ({ order, item, isOpen, onClose, onConfirm, title = "Ca
     };
 
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 animate-scale-in text-left">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 animate-scale-in text-left">
             {/* Enhanced Backdrop Blur */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-[6px]" onClick={onClose} />
             
-            {/* iOS-Style Premium Container */}
-            <div className="relative bg-white dark:bg-[var(--theme-bg-card)] rounded-[2rem] shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col w-full max-w-[320px] md:max-w-[340px] animate-in fade-in zoom-in-95 duration-200 border border-[var(--theme-border)]">
+            {/* iOS-Style Premium Container - RESPONSIVE WIDTH */}
+            <div className="relative bg-white dark:bg-[var(--theme-bg-card)] rounded-[2rem] shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col w-[94%] xs:w-[90%] sm:max-w-[340px] md:max-w-[360px] animate-in fade-in zoom-in-95 duration-200 border border-[var(--theme-border)]">
                 
                 {/* Visual Accent */}
                 <div className="h-1.5 bg-red-600 w-full" />
@@ -89,7 +89,7 @@ const CancelOrderModal = ({ order, item, isOpen, onClose, onConfirm, title = "Ca
                     <button
                         type="button"
                         onClick={onClose}
-                        className="h-14 flex items-center justify-center text-[13px] text-[var(--theme-text-muted)] font-black uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-white/5 active:bg-gray-200 transition-colors border-r border-[var(--theme-border)]"
+                        className="h-14 sm:h-16 flex items-center justify-center text-[13px] sm:text-[14px] text-[var(--theme-text-muted)] font-black uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-white/5 active:bg-gray-200 transition-colors border-r border-[var(--theme-border)]"
                     >
                         Nevermind
                     </button>
@@ -97,7 +97,7 @@ const CancelOrderModal = ({ order, item, isOpen, onClose, onConfirm, title = "Ca
                         type="submit"
                         disabled={loading}
                         onClick={handleSubmit}
-                        className="h-14 flex items-center justify-center text-[13px] text-red-600 font-black uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors active:text-red-700 font-bold"
+                        className="h-14 sm:h-16 flex items-center justify-center text-[13px] sm:text-[14px] text-red-600 font-black uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors active:text-red-700 font-bold"
                     >
                         {loading ? '...' : 'Confirm'}
                     </button>

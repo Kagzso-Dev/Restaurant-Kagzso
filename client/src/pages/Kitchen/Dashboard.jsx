@@ -95,7 +95,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                 <div className={`shrink-0 flex items-center gap-1 text-[11px] font-bold ${urgency ? 'text-red-600 bg-red-100 px-2 py-0.5 rounded-md' : 'text-gray-400'}`}>
                     <Clock size={11} />{elapsed}
                 </div>
-                <div className="shrink-0"><StatusBadge status={order.orderStatus} size="sm" /></div>
+                <div className="shrink-0"><StatusBadge status={order.orderStatus} items={order.items || []} size="sm" /></div>
                 {(userRole === 'kitchen' || userRole === 'admin') && (
                     <div className="shrink-0 flex items-center gap-1">
                         {order.orderStatus === 'pending' && (
@@ -180,7 +180,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                 {isMarkingAll ? <Loader2 size={10} className="animate-spin" /> : <CheckCheck size={10} />} All
                             </button>
                         )}
-                        <StatusBadge status={order.orderStatus} size="xs" />
+                        <StatusBadge status={order.orderStatus} items={order.items || []} size="xs" />
                     </div>
                 </div>
                 {/* Row 2: Token/Table + timer */}
@@ -200,7 +200,11 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
             {/* ── Items ─────────────────────────────────────────────────── */}
             <div className="flex-1 px-3 py-2.5 space-y-2 overflow-y-auto custom-scrollbar min-h-[60px] max-h-[220px]">
                 {/* ACTIVE ITEMS */}
-                {order.items.filter(i => i.status?.toUpperCase() !== 'READY').map(item => {
+                {order.items.filter(i => {
+                    const s = i.status?.toUpperCase();
+                    return s !== 'READY' && s !== 'CANCELLED';
+                }).map(item => {
+
                     const status = item.status?.toUpperCase() || 'PENDING';
                     const isCancelled = status === 'CANCELLED';
                     const isNewAdd = status === 'PENDING' && (new Date(item.createdAt) - new Date(order.createdAt)) > 30000;
@@ -474,7 +478,7 @@ const KitchenDashboard = () => {
         }
     };
 
-    const ACTIVE_STATUSES = ['pending', 'accepted', 'preparing', 'ready'];
+    const ACTIVE_STATUSES = ['pending', 'accepted', 'preparing'];
     // Only count orders that are actually visible in the kitchen display (kotStatus not Closed)
     const activeKotOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.orderStatus) && o.kotStatus !== 'Closed');
 
@@ -482,7 +486,7 @@ const KitchenDashboard = () => {
         pending: activeKotOrders.filter(o => o.orderStatus === 'pending').length,
         accepted: activeKotOrders.filter(o => o.orderStatus === 'accepted').length,
         preparing: activeKotOrders.filter(o => o.orderStatus === 'preparing').length,
-        ready: activeKotOrders.filter(o => o.orderStatus === 'ready').length,
+        ready: orders.filter(o => o.orderStatus === 'ready').length,
         cancelled: orders.filter(o => o.orderStatus === 'cancelled').length,
         completed: orders.filter(o => o.orderStatus === 'completed').length,
     };
@@ -490,8 +494,9 @@ const KitchenDashboard = () => {
         ? activeKotOrders
         : activeTab === 'cancelled'
             ? orders.filter(o => o.orderStatus === 'cancelled')
-            : orders.filter(o => o.orderStatus === 'completed')
+            : orders.filter(o => o.orderStatus === 'completed' || o.orderStatus === 'ready')
     )
+
     .filter(o => settings?.takeawayEnabled !== false || o.orderType !== 'takeaway')
     .filter(o => settings?.dineInEnabled   !== false || o.orderType !== 'dine-in')
     .filter(o => {
@@ -717,9 +722,9 @@ const KitchenDashboard = () => {
     
                 {/* ── TOP POPUP: Print Confirmation & Quick Details (iOS Style) ── */}
                 {printConfirm.open && (
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-scale-in">
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 animate-scale-in">
                         <div className="absolute inset-0 bg-black/50 backdrop-blur-[6px]" onClick={() => setPrintConfirm({ open: false, order: null })} />
-                        <div className="relative bg-white rounded-[2rem] shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col w-full max-w-[320px] md:max-w-[360px] animate-in fade-in zoom-in-95 duration-200">
+                        <div className="relative bg-white rounded-[2rem] shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col w-[94%] xs:w-[90%] sm:max-w-[340px] md:max-w-[380px] animate-in fade-in zoom-in-95 duration-200">
                             {/* Header Content */}
                             <div className="p-6 flex flex-col items-center text-center gap-2 text-black">
                                 <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-500 mb-1">
@@ -757,13 +762,13 @@ const KitchenDashboard = () => {
                             <div className="grid grid-cols-2 border-t border-gray-100 bg-gray-50/50">
                                 <button 
                                     onClick={() => setPrintConfirm({ open: false, order: null })}
-                                    className="h-14 flex items-center justify-center text-[15px] text-gray-400 font-black uppercase tracking-widest hover:bg-gray-100 active:bg-gray-200 transition-colors border-r border-gray-100"
+                                    className="h-16 flex items-center justify-center text-[14px] text-gray-400 font-black uppercase tracking-widest hover:bg-gray-100 active:bg-gray-200 transition-colors border-r border-gray-100"
                                 >
                                     Cancel
                                 </button>
                                 <button 
                                     onClick={() => { printBill(printConfirm.order, (p) => `₹${p}`, settings, true); setPrintConfirm({ open: false, order: null }); }}
-                                    className="h-14 flex items-center justify-center text-[15px] text-orange-600 font-black uppercase tracking-widest hover:bg-orange-50 active:bg-orange-100 transition-colors"
+                                    className="h-16 flex items-center justify-center text-[14px] text-orange-600 font-black uppercase tracking-widest hover:bg-orange-50 active:bg-orange-100 transition-colors"
                                 >
                                     Print KOT
                                 </button>

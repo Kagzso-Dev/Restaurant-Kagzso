@@ -437,6 +437,7 @@ const Order = {
         }
 
         const updatedOrderDoc = await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, updates);
+
         const tableMap = await Table.getTableMap();
         return fmtOrder(updatedOrderDoc, allItems, tableMap[updatedOrderDoc.table_id] || null);
     },

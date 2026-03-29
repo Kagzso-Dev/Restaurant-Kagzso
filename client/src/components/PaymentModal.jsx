@@ -282,78 +282,47 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
         <div
             ref={modalRef}
             onClick={handleBackdrop}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-[6px] animate-fade-in"
         >
             <div className="
-                relative w-full max-w-lg sm:rounded-3xl rounded-2xl bg-[var(--theme-bg-card)] border border-[var(--theme-border)]
-                shadow-2xl shadow-black/60 overflow-hidden
-                animate-scale-in max-h-[95vh] flex flex-col modal-shell
+                relative w-[94%] xs:w-[90%] sm:max-w-[340px] md:max-w-[380px] rounded-[2rem] bg-white dark:bg-[var(--theme-bg-card)] border border-[var(--theme-border)]
+                shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden
+                animate-in fade-in zoom-in-95 duration-200 max-h-[95vh] flex flex-col
             ">
                 {/* ── Header ──────────────────────────────────────── */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--theme-border)] flex-shrink-0">
-                    <div>
-                        <h2 className="text-lg font-bold text-[var(--theme-text-main)]">
-                            {step === 'success' ? 'Payment Complete' : 'Process Payment'}
-                        </h2>
-                        <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
-                            {order.orderNumber} •{' '}
-                            {order.orderType === 'dine-in'
-                                ? `Table ${order.tableId?.number || '?'}`
-                                : `Token ${order.tokenNumber}`}
-                        </p>
+                <div className="flex flex-col items-center text-center px-6 py-6 border-b border-[var(--theme-border)] flex-shrink-0 gap-1.5">
+                    <h2 className="text-[18px] font-black uppercase tracking-tight text-[var(--theme-text-main)]">
+                        {step === 'success' ? 'Payment Success' : 'Process Payment'}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black bg-gray-100 dark:bg-white/5 rounded-lg px-2 py-1 text-[var(--theme-text-muted)] border border-[var(--theme-border)] shadow-sm uppercase">
+                            {order.orderNumber.replace('ORD-', '#')}
+                        </span>
+                        <span className="text-[10px] font-black bg-orange-500/10 rounded-lg px-2 py-1 text-orange-600 border border-orange-200 uppercase">
+                            {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || '?'}` : `Token ${order.tokenNumber}`}
+                        </span>
                     </div>
-                    {step !== 'processing' && (
-                        <button
-                            onClick={handleClose}
-                            className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-xl transition-colors"
-                        >
-                            <X size={20} />
-                        </button>
-                    )}
                 </div>
 
                 {/* ── Amount Banner ───────────────────────────────── */}
-                {step !== 'success' && (
-                    <div className="px-6 py-4 bg-[var(--theme-bg-muted)] border-b border-[var(--theme-border)] flex-shrink-0">
-                        <div className="flex items-start justify-between gap-3">
-                            <div>
-                                <p className="text-[10px] text-[var(--theme-text-muted)] font-bold uppercase tracking-widest mb-1">Amount Due</p>
+                {step !== 'success' && step !== 'processing' && (
+                    <div className="px-6 py-5 bg-[var(--theme-bg-muted)]/30 border-b border-[var(--theme-border)] flex-shrink-0">
+                        <div className="flex flex-col items-center gap-1">
+                                <p className="text-[9px] text-[var(--theme-text-muted)] font-black uppercase tracking-[0.2em] mb-1">Grand Total</p>
+                                <div className="flex flex-col items-center leading-none">
+                                    {offerApplied && (
+                                        <p className="text-xs line-through text-[var(--theme-text-subtle)] font-bold mb-1 opacity-50">{formatPrice(baseTotal)}</p>
+                                    )}
+                                    <p className="text-4xl font-black text-orange-500 tracking-tighter drop-shadow-sm">{formatPrice(total)}</p>
+                                </div>
                                 {offerApplied && (
-                                    <p className="text-sm line-through text-[var(--theme-text-subtle)]">{formatPrice(baseTotal)}</p>
+                                    <div className="mt-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-1.5 animate-bounce-in">
+                                        <Tag size={10} className="text-emerald-500" />
+                                        <p className="text-[10px] text-emerald-500 font-black uppercase tracking-wider">
+                                            Saved {formatPrice(discountAmt)}
+                                        </p>
+                                    </div>
                                 )}
-                                <p className="text-3xl font-black text-orange-400">{formatPrice(total)}</p>
-                                {offerApplied && (
-                                    <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">
-                                        -{offerPct}% off • Saving {formatPrice(discountAmt)}
-                                    </p>
-                                )}
-                                <p className="text-xs text-[var(--theme-text-subtle)] mt-1">
-                                    {order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').length || 0} items •{' '}
-                                    {new Date(order.createdAt).toLocaleTimeString()}
-                                </p>
-                            </div>
-                            {offerEnabled && step !== 'processing' && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setOfferApplied(p => !p);
-                                        setAmountReceived('');
-                                    }}
-                                    className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all ${
-                                        offerApplied
-                                            ? 'bg-amber-500/15 border-amber-400/40 text-amber-400'
-                                            : 'bg-[var(--theme-bg-hover)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:border-amber-400/40 hover:text-amber-400'
-                                    }`}
-                                >
-                                    <Tag size={15} />
-                                    <span className="text-[9px] font-black uppercase tracking-wider leading-none">{offerLabel}</span>
-                                    <span className="text-[9px] font-bold text-current leading-none">{offerApplied ? 'Applied' : `${offerPct}% off`}</span>
-                                    {offerApplied
-                                        ? <ToggleRight size={16} className="text-amber-400" />
-                                        : <ToggleLeft size={16} />
-                                    }
-                                </button>
-                            )}
                         </div>
                     </div>
                 )}
@@ -658,23 +627,37 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
                     )}
                 </div>
 
-                {/* ── Footer / Submit Button ──────────────────────── */}
+                {/* ── Footer / Submit Button ── */}
                 {step === 'form' && (
-                    <div className="px-6 py-4 border-t border-[var(--theme-border)] flex-shrink-0">
+                    <div className="grid grid-cols-2 border-t border-[var(--theme-border)] bg-gray-50/50 dark:bg-black/10">
+                        <button
+                            onClick={() => setStep('select')}
+                            className="h-16 flex items-center justify-center text-[13px] text-[var(--theme-text-muted)] font-black uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-white/5 active:bg-gray-200 transition-colors border-r border-[var(--theme-border)]"
+                        >
+                            Cancel
+                        </button>
                         <button
                             onClick={handleSubmit}
                             disabled={!isFormValid()}
-                            className={`
-                                w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl
-                                font-bold text-sm transition-all duration-200
-                                ${isFormValid()
-                                    ? `bg-gradient-to-r ${method?.color} text-white shadow-lg active:scale-[0.98] hover:shadow-xl`
-                                    : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-subtle)] cursor-not-allowed'
-                                }
-                            `}
+                            className={`h-16 flex items-center justify-center text-[13px] font-black uppercase tracking-widest transition-all ${
+                                isFormValid()
+                                    ? 'text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 active:scale-95'
+                                    : 'text-gray-300 cursor-not-allowed opacity-50'
+                            }`}
                         >
-                            Confirm {method?.label} Payment
-                            <ArrowRight size={16} />
+                            Confirm
+                        </button>
+                    </div>
+                )}
+
+                {/* Single Close Button for Selection/Success steps */}
+                {(step === 'select' || step === 'success' || step === 'error') && (
+                    <div className="p-4 border-t border-[var(--theme-border)] bg-gray-50/50 dark:bg-black/10">
+                         <button
+                            onClick={handleClose}
+                            className="w-full h-14 flex items-center justify-center text-[13px] text-[var(--theme-text-muted)] font-black uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-white/5 rounded-2xl transition-colors active:scale-95 border border-[var(--theme-border)]"
+                        >
+                            {step === 'success' ? 'All Done' : 'Nevermind'}
                         </button>
                     </div>
                 )}

@@ -13,7 +13,7 @@ const WorkingProcess = () => {
 
     const [filterType, setFilterType] = useState('all');
     const [statusFilter, setStatusFilter] = useState(null);
-    const [isGridView, setIsGridView] = useState(false);
+    const [isGridView, setIsGridView] = useState(true);
 
     const fetchOrders = useCallback(async () => {
         setLoading(true);
