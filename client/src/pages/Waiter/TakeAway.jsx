@@ -197,14 +197,18 @@ const TakeAway = () => {
                             {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
                             <button
                                 onClick={() => setIsCartOpen(!isCartOpen)}
-                                className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all font-black text-sm border shadow-sm shrink-0 active:scale-95
-                                    ${isCartOpen 
-                                        ? 'bg-orange-500 text-white border-orange-600 shadow-md' 
+                                className={`relative flex items-center gap-1.5 px-3 py-2.5 rounded-xl transition-all font-black text-sm border shadow-sm shrink-0 active:scale-95
+                                    ${isCartOpen
+                                        ? 'bg-orange-500 text-white border-orange-600 shadow-md'
                                         : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}
                                 `}
                             >
-                                <ShoppingCart size={18} />
-                                <ChevronLeft size={16} className={`transition-transform duration-300 ${isCartOpen ? 'rotate-180' : ''}`} />
+                                <ShoppingCart size={18} className="shrink-0" />
+                                {/* 3D animated double arrow */}
+                                <span className={`flex items-center transition-transform duration-300 ${isCartOpen ? 'rotate-180' : ''}`} style={{ perspective: '120px' }}>
+                                    <ChevronLeft size={14} className="animate-cart-arrow-1" strokeWidth={3} />
+                                    <ChevronLeft size={14} className="animate-cart-arrow-2 -ml-2" strokeWidth={3} />
+                                </span>
                                 {cart.length > 0 && (
                                     <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${isCartOpen ? 'bg-white text-orange-600 border-orange-500' : 'bg-orange-600 text-white border-[var(--theme-bg-card)]'}`}>
                                         {cart.length}
@@ -261,9 +265,9 @@ const TakeAway = () => {
                                 </div>
                             ) : (
                                 <div className={`grid gap-2 sm:gap-4 ${viewMode === 'grid'
-                                    ? 'grid-cols-2 lg:grid-cols-3'
+                                    ? 'grid-cols-2 md:[grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]'
                                     : viewMode === 'compact'
-                                        ? 'grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
+                                        ? 'grid-cols-3 md:[grid-template-columns:repeat(auto-fill,minmax(110px,1fr))]'
                                         : 'grid-cols-1'
                                 }`}>
                                     {filteredItems.map(item => (
@@ -286,7 +290,7 @@ const TakeAway = () => {
 
                 {/* Cart Panel */}
                 <aside className={`
-                    fixed inset-0 z-40 md:relative md:inset-auto md:z-0 flex-shrink-0
+                    fixed inset-0 z-40 md:relative md:inset-auto md:z-0 flex-shrink-0 md:self-start
                     transition-all duration-300 ease-in-out overflow-hidden
                     ${isCartOpen
                         ? 'translate-x-0 w-full md:w-[300px] xl:w-[360px]'
@@ -296,7 +300,7 @@ const TakeAway = () => {
                     {isCartOpen && <div onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" />}
 
 
-                    <div className="relative h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col" style={{ maxHeight: '100dvh' }}>
+                    <div className="relative h-full md:h-auto md:max-h-[calc(100dvh-2rem)] w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col">
 
                         {/* Header */}
                         <div className="px-5 py-4 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
@@ -314,37 +318,49 @@ const TakeAway = () => {
                         </div>
 
                         {/* Scrollable items */}
-                        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar min-h-0">
+                        <div className="overflow-y-auto px-4 py-4 space-y-3 custom-scrollbar">
                             {cart.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-700 py-10">
+                                <div className="flex flex-col items-center justify-center text-gray-700 py-10">
                                     <ShoppingCart size={64} className="mb-4 opacity-5" strokeWidth={1} />
                                     <p className="font-bold">Your cart is empty</p>
                                     <p className="text-xs">Add items from the menu to build your order</p>
                                 </div>
                             ) : (
-                                cart.map(item => (
-                                    <div key={item.cartKey} className="flex gap-3 animate-slide-up">
-                                        <div className="w-12 h-12 rounded-xl bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden">
-                                            {item.image
-                                                ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
-                                                : <div className="w-full h-full flex items-center justify-center text-xl">🥘</div>}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <div className="pr-2">
-                                                    <h4 className="text-sm font-bold text-[var(--theme-text-main)]">{item.name}</h4>
-                                                    {item.variant && <span className="text-xs text-[var(--theme-text-muted)]">({item.variant.name})</span>}
+                                    cart.map(item => (
+                                        <div key={item.cartKey} className="flex items-center gap-3 animate-slide-up hover:bg-blue-500/5 p-1 -m-1 rounded-xl transition-colors group">
+                                            <div className="w-10 h-10 rounded-lg bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden border border-[var(--theme-border)] shadow-sm">
+                                                {item.image
+                                                    ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
+                                                    : <div className="w-full h-full flex items-center justify-center text-lg bg-[var(--theme-bg-hover)]">🥘</div>}
+                                            </div>
+                                            <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5">
+                                                <div className="min-w-0 flex-1 pr-1">
+                                                    <h4 className="text-[12px] font-black text-[var(--theme-text-main)] truncate leading-tight uppercase tracking-tighter">{item.name}</h4>
+                                                    {item.variant && <p className="text-[8px] font-black text-blue-500 uppercase leading-none mt-0.5">{item.variant.name}</p>}
                                                 </div>
-                                                <span className="text-sm font-black text-[var(--theme-text-main)]">{formatPrice(item.price * item.quantity)}</span>
-                                            </div>
-                                            <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-lg p-0.5 border border-[var(--theme-border)] w-fit">
-                                                <button onClick={() => updateQuantity(item.cartKey, -1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]"><Minus size={12} /></button>
-                                                <span className="w-8 text-center text-xs font-black text-[var(--theme-text-main)]">{item.quantity}</span>
-                                                <button onClick={() => updateQuantity(item.cartKey, 1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]"><Plus size={12} /></button>
+                                                
+                                                <div className="flex items-center shrink-0">
+                                                    <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-full p-0.5 border border-[var(--theme-border)] shadow-inner">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); updateQuantity(item.cartKey, -1); }} 
+                                                            className="w-6 h-6 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-blue-500 transition-all active:scale-75"
+                                                        >
+                                                            <Minus size={11} strokeWidth={3} />
+                                                        </button>
+                                                        <span className="w-5 text-center text-[10px] font-black text-[var(--theme-text-main)] tabular-nums">{item.quantity}</span>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); updateQuantity(item.cartKey, 1); }} 
+                                                            className="w-6 h-6 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-blue-500 transition-all active:scale-75"
+                                                        >
+                                                            <Plus size={11} strokeWidth={3} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <span className="text-[12px] font-black text-blue-500 min-w-[50px] text-right tabular-nums tracking-tighter shrink-0">{formatPrice(item.price * item.quantity)}</span>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
+                                    ))
                             )}
                         </div>
 

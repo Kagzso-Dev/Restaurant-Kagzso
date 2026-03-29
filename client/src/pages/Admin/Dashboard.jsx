@@ -295,9 +295,8 @@ const AdminDashboard = () => {
                     <button
                         onClick={handleRefresh}
                         disabled={refreshing}
-                        className="relative flex items-center gap-2 px-4 py-2.5 border border-rose-500/40 bg-rose-500/10 text-rose-500 rounded-xl text-sm font-bold animate-pulse-red transition-all min-h-[44px] active:scale-95 disabled:opacity-60"
+                        className="relative flex items-center gap-2 px-4 py-2.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl text-sm font-bold transition-all min-h-[44px] active:scale-95 disabled:opacity-60 shadow-sm"
                     >
-                        <span className="absolute inset-0 rounded-xl ring-1 ring-rose-500/40 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
                         <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
                         <span className="hidden sm:inline">Refresh</span>
                     </button>

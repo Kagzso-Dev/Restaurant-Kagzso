@@ -42,7 +42,11 @@ const Layout = () => {
         if (isMobile) {
             openDrawer();
         } else {
-            setSidebarCollapsed(c => !c);
+            setSidebarCollapsed(c => {
+                const next = !c;
+                window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: next } }));
+                return next;
+            });
         }
     }, [isMobile, openDrawer]);
 
@@ -123,7 +127,11 @@ const Layout = () => {
             >
                 <Sidebar
                     collapsed={isMobile ? false : sidebarCollapsed}
-                    onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+                    onToggleCollapse={() => setSidebarCollapsed(c => {
+                        const next = !c;
+                        window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: next } }));
+                        return next;
+                    })}
                     onClose={closeDrawer}
                 />
             </aside>

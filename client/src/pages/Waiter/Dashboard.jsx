@@ -422,33 +422,11 @@ const WaiterDashboard = () => {
 
             {/* ── Row 1: Filter + action buttons ── */}
             {document.getElementById('topbar-portal') && createPortal(
-                <div className="flex items-center justify-between w-full h-full animate-fade-in translate-y-0.5 pr-2 md:pr-4">
-                    <div className="flex items-center gap-2 md:gap-3">
-                        {/* 0. Status Toggle — desktop only */}
-                        <button
-                            onClick={() => setShowCounters(prev => !prev)}
-                            className="hidden md:flex relative items-center justify-center w-10 h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] shadow-[0_2px_0_var(--theme-border)] transition-all duration-200 active:scale-95 active:translate-y-[1px] shrink-0"
-                            title={showCounters ? 'Collapse' : 'Expand'}
-                        >
-                            <div className={`flex items-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${showCounters ? 'scale-110' : 'scale-100'}`}>
-                                {showCounters ? (
-                                    <div className="flex items-center -ml-0.5 text-blue-500">
-                                        <ChevronLeft size={16} strokeWidth={3} className="animate-chevron-1" />
-                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 opacity-60 animate-chevron-2" />
-                                        <ChevronLeft size={16} strokeWidth={3} className="-ml-2.5 opacity-30 animate-chevron-3" />
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center ml-0.5 text-rose-500">
-                                        <ChevronRight size={16} strokeWidth={3} className="animate-chevron-r1" />
-                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 opacity-60 animate-chevron-r2" />
-                                        <ChevronRight size={16} strokeWidth={3} className="-ml-2.5 opacity-30 animate-chevron-r3" />
-                                    </div>
-                                )}
-                            </div>
-                        </button>
-
+                <div className="flex items-center justify-between w-full h-full animate-fade-in pr-2 md:pr-3">
+                    {/* Left: filter pill */}
+                    <div className="flex items-center gap-2 min-w-0">
                         {/* Filter Pill */}
-                        <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm flex-1 md:flex-none md:w-[240px]">
+                        <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm flex-1 md:flex-none">
                             {['all', 'dine-in', 'takeaway']
                                 .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
                                 .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
@@ -456,94 +434,64 @@ const WaiterDashboard = () => {
                                     <button
                                         key={t}
                                         onClick={() => setFilterType(t)}
-                                        className={`flex-1 py-1.5 md:px-3 md:py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-md border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)]'}`}
+                                        className={`flex-1 px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-[11px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
                                     >
                                         <span className="hidden sm:inline">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine-In' : 'Takeaway'}</span>
                                         <span className="inline sm:hidden">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}</span>
                                     </button>
                                 ))}
                         </div>
-
-                        {/* Mobile-only: Stats & Grid toggles — icon only */}
-                        <div className="flex md:hidden items-center gap-1.5 shrink-0">
-                            <button
-                                onClick={() => setShowCounters(!showCounters)}
-                                className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/15 border-orange-500/40 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}
-                                title="Stats"
-                            >
-                                <Clock size={16} strokeWidth={2.5} />
-                            </button>
-                            <button
-                                onClick={() => setIsProductionMode(!isProductionMode)}
-                                className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}
-                                title={isProductionMode ? 'Grid view' : 'List view'}
-                            >
-                                {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
-                            </button>
-                        </div>
                     </div>
 
-                    <div className="hidden md:block h-8 w-px bg-[var(--theme-border)] mx-4 opacity-50 flex-shrink-0" />
-
-                    <div className="flex items-center gap-2 md:gap-3">
-                        {/* 1. Production Mode Toggle — desktop only */}
-                        <button
-                            onClick={() => setIsProductionMode(!isProductionMode)}
-                            className={`
-                                hidden md:flex relative w-16 h-9 rounded-lg border transition-all p-1 items-center overflow-hidden active:scale-95 group
-                                ${isProductionMode
-                                    ? 'bg-emerald-500/5 border-emerald-500/10'
-                                    : 'bg-orange-500/5 border-orange-500/10'}
-                            `}
-                        >
-                            <div className="absolute inset-0 flex items-center justify-around px-1 pointer-events-none opacity-20">
-                                <List size={12} className={!isProductionMode ? 'text-orange-600' : 'text-gray-400'} />
-                                <Grid size={12} className={isProductionMode ? 'text-emerald-600' : 'text-gray-400'} />
-                            </div>
-                            <div
-                                className={`
-                                    absolute top-1 w-7 h-7 rounded-md flex items-center justify-center shadow-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                                    ${isProductionMode
-                                        ? 'left-[calc(100%-32px)] bg-emerald-600 rotate-[360deg]'
-                                        : 'left-1 bg-orange-600 rotate-0'}
-                                `}
-                            >
-                                {isProductionMode ? <Grid size={12} strokeWidth={3} className="text-white" /> : <List size={12} strokeWidth={3} className="text-white" />}
-                            </div>
+                    {/* Right: Mobile-only utility buttons — now pushed right by justify-between */}
+                    <div className="flex md:hidden items-center gap-1.5 shrink-0 ml-auto">
+                        <button onClick={() => setShowCounters(!showCounters)} className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/15 border-orange-500/40 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
+                            <Clock size={16} strokeWidth={2.5} />
                         </button>
+                        <button onClick={() => setIsProductionMode(!isProductionMode)} className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
+                            {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
+                        </button>
+                        <button onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }} className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
+                            <RefreshCw size={16} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
+                        </button>
+                    </div>
 
-                        {/* Tables Toggle — desktop only */}
+                    {/* Right: desktop controls — icon-only utility buttons + action buttons */}
+                    <div className="hidden md:flex items-center gap-1.5 shrink-0">
+                        {/* Icon-only utility buttons */}
+                        <button onClick={() => setShowCounters(prev => !prev)} title="Stats"
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                            <Clock size={16} strokeWidth={2.5} />
+                        </button>
+                        <button onClick={() => setIsProductionMode(!isProductionMode)} title={isProductionMode ? 'Grid view' : 'List view'}
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                            {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
+                        </button>
                         {settings?.tableMapEnabled !== false && (
-                            <button
-                                onClick={() => setShowTables(t => !t)}
-                                className={`hidden md:flex items-center justify-center p-2 rounded-lg border transition-all active:translate-y-[1px] h-9 min-w-[40px] ${
-                                    showTables
-                                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 shadow-inner'
-                                        : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60 hover:border-emerald-500/30'
-                                }`}
-                                title="Table Map"
-                            >
-                                <Armchair size={16} className={`transition-transform duration-300 ${showTables ? 'scale-110 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'scale-100'}`} />
+                            <button onClick={() => setShowTables(t => !t)} title="Tables"
+                                className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                                <Armchair size={16} strokeWidth={2.5} />
                             </button>
                         )}
 
-                        {/* Dine in | Take away — desktop only (mobile uses row 2) */}
-                        <div className="hidden md:flex gap-1.5 shrink-0">
-                            {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
-                                <button onClick={() => navigate('/dine-in')} className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all shadow-md active:scale-95 h-9 min-w-[90px]"><Utensils size={14} strokeWidth={3} />Dine In</button>
-                            )}
-                            {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
-                                <button onClick={() => navigate('/take-away')} className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all shadow-md active:scale-95 h-9 min-w-[90px]"><Package size={14} strokeWidth={3} />Takeaway</button>
-                            )}
-                        </div>
+                        <div className="w-px h-6 bg-[var(--theme-border)] mx-1" />
 
-                        {/* Refresh — desktop only (mobile uses row 2) */}
-                        <button
-                            onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }}
-                            className={`hidden md:flex items-center justify-center w-9 h-9 rounded-lg border transition-all active:scale-95 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'border-[var(--theme-border)] bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
-                            title="Refresh"
-                        >
-                            <RefreshCw size={13} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
+                        {/* Action buttons */}
+                        {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
+                            <button onClick={() => navigate('/dine-in')} className="flex items-center gap-2 h-10 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[11px] uppercase tracking-wide transition-all active:scale-95 whitespace-nowrap">
+                                <Utensils size={14} strokeWidth={3} />Dine In
+                            </button>
+                        )}
+                        {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
+                            <button onClick={() => navigate('/take-away')} className="flex items-center gap-2 h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[11px] uppercase tracking-wide transition-all active:scale-95 whitespace-nowrap">
+                                <Package size={14} strokeWidth={3} />Takeaway
+                            </button>
+                        )}
+
+                        {/* Refresh */}
+                        <button onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }} title="Refresh"
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ml-1 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                            <RefreshCw size={16} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
                         </button>
                     </div>
                 </div>,
@@ -557,42 +505,34 @@ const WaiterDashboard = () => {
                     {settings?.tableMapEnabled !== false && (
                         <button
                             onClick={() => setShowTables(t => !t)}
-                            className={`flex flex-1 min-w-0 items-center justify-center gap-1 h-8 rounded-lg border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 shadow-inner' : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60'}`}
+                            className={`flex flex-[0.8] min-w-0 items-center justify-center gap-1.5 h-10 rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 shadow-inner' : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60'}`}
                         >
-                            <Armchair size={12} className="shrink-0" />
-                            <span className="text-[7px] font-black uppercase truncate">Tables</span>
+                            <Armchair size={13} className="shrink-0" />
+                            <span className="text-[9px] font-black uppercase truncate">Tables</span>
                         </button>
                     )}
 
                     {/* Dine In Action */}
                     {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
-                        <button onClick={() => navigate('/dine-in')} className="flex-1 min-w-0 flex items-center justify-center gap-1 h-8 bg-orange-500 text-white rounded-lg font-black text-[7px] uppercase tracking-tighter active:scale-95">
-                            <Utensils size={10} strokeWidth={3} className="shrink-0" /> <span className="truncate">Dine In</span>
+                        <button onClick={() => navigate('/dine-in')} className="flex-1 min-w-0 flex items-center justify-center gap-2 h-10 bg-orange-500 text-white rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-wider active:scale-95 shadow-lg shadow-orange-500/20">
+                            <Utensils size={12} strokeWidth={3} className="shrink-0" /> <span className="truncate">Dine In</span>
                         </button>
                     )}
 
                     {/* Take Away Action */}
                     {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
-                        <button onClick={() => navigate('/take-away')} className="flex-1 min-w-0 flex items-center justify-center gap-1 h-8 bg-blue-600 text-white rounded-lg font-black text-[7px] uppercase tracking-tighter active:scale-95">
-                            <Package size={10} strokeWidth={3} className="shrink-0" /> <span className="truncate">Takeaway</span>
+                        <button onClick={() => navigate('/take-away')} className="flex-1 min-w-0 flex items-center justify-center gap-2 h-10 bg-blue-600 text-white rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-wider active:scale-95 shadow-lg shadow-blue-600/20">
+                            <Package size={12} strokeWidth={3} className="shrink-0" /> <span className="truncate">Takeaway</span>
                         </button>
                     )}
-
-                    {/* Refresh Action */}
-                    <button
-                        onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }}
-                        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all active:scale-95 shrink-0 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'border-[var(--theme-border)] bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)]'}`}
-                    >
-                        <RefreshCw size={12} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
-                    </button>
                 </div>,
                 document.getElementById('topbar-portal-row2')
             )}
 
             {activeTab === 'active' && (
                 <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showCounters ? 'max-h-[200px] opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}>
-                    <div className="flex items-stretch gap-2 w-full">
-                        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[var(--theme-bg-card)] p-3 rounded-2xl border border-[var(--theme-border)] shadow-sm min-w-0">
+                    <div className="flex items-stretch gap-1.5 w-full">
+                        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[var(--theme-bg-dark)]/40 p-1.5 rounded-xl border border-[var(--theme-border)] shadow-sm min-w-0 transition-all duration-300">
                             {[
                                 { key: 'pending', count: counts.pending, dot: 'bg-[var(--status-pending)]', label: 'Pending', activeColor: 'text-[var(--status-pending)]', activeBg: 'bg-[var(--status-pending-bg)]' },
                                 { key: 'accepted', count: counts.accepted, dot: 'bg-[var(--status-accepted)]', label: 'Accepted', activeColor: 'text-[var(--status-accepted)]', activeBg: 'bg-[var(--status-accepted-bg)]' },
@@ -606,19 +546,23 @@ const WaiterDashboard = () => {
                                         animationDelay: `${idx * 0.05}s`,
                                         animationFillMode: 'backwards' 
                                     }}
-                                    className={`group rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center transition-all duration-300 border animate-in fade-in zoom-in-95 slide-in-from-top-2 ${
-                                        statusFilter === key ? `${activeBg} border-transparent shadow-sm scale-95` : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] hover:border-orange-500/30'
-                                    }`}
+                                    className={`group rounded-lg transition-all duration-300 border animate-in fade-in zoom-in-95
+                                        py-2 px-1 flex flex-col items-center justify-center gap-0.5
+                                        xl:py-2 xl:px-3 xl:flex-row xl:justify-between xl:gap-2
+                                        ${statusFilter === key ? `${activeBg} border-transparent shadow-sm scale-[0.97]` : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)]/40 hover:border-orange-500/30'}`}
                                 >
-                                    <p className={`text-base sm:text-xl font-black tabular-nums transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-main)]'}`}>{count}</p>
-                                    <div className="flex items-center gap-1 mt-1">
-                                        <div className={`flex items-center -ml-0.5 scale-[1.02] ${statusFilter === key ? activeColor : dot.replace('bg-', 'text-')}`}>
-                                            <ChevronRight size={13} strokeWidth={4} className="animate-chevron-r1" />
-                                            <ChevronRight size={13} strokeWidth={4} className="-ml-1.5 opacity-60 animate-chevron-r2" />
-                                            <ChevronRight size={13} strokeWidth={4} className="-ml-1.5 opacity-20 animate-chevron-r3" />
-                                        </div>
-                                        <p className={`text-[8px] sm:text-[10px] ml-0.5 uppercase font-bold tracking-wider transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                                    {/* Desktop: label left */}
+                                    <p className={`hidden xl:block text-[10px] uppercase font-black tracking-tight whitespace-nowrap transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                                    {/* Desktop: chevrons */}
+                                    <div className={`hidden xl:flex items-center shrink-0 ${statusFilter === key ? activeColor : dot.replace('bg-', 'text-')}`}>
+                                        <ChevronRight size={10} strokeWidth={4} className="animate-chevron-r1" />
+                                        <ChevronRight size={10} strokeWidth={4} className="-ml-1.5 opacity-60 animate-chevron-r2" />
+                                        <ChevronRight size={10} strokeWidth={4} className="-ml-1.5 opacity-20 animate-chevron-r3" />
                                     </div>
+                                    {/* Count — shown on all sizes */}
+                                    <p className={`text-base xl:text-lg font-black tabular-nums leading-none transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-main)]'}`}>{count}</p>
+                                    {/* Tablet/mobile: label below count */}
+                                    <p className={`xl:hidden text-[8px] uppercase font-black tracking-widest whitespace-nowrap leading-none transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
                                 </button>
                             ))}
                         </div>
@@ -679,9 +623,9 @@ const WaiterDashboard = () => {
                             )}
                         </div>
                     ) : (
-                        <div className={`grid p-2 ${
+                        <div className={`grid p-2 w-full mx-auto ${
                             isProductionMode
-                                ? 'gap-3 grid-cols-[repeat(auto-fill,minmax(min(200px,calc(50%-0.5rem)),1fr))]'
+                                ? 'gap-2 grid-cols-2 sm:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-5'
                                 : selectedOrder
                                     ? 'gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
                                     : 'gap-4 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'

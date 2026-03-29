@@ -115,7 +115,7 @@ const TopBar = memo(({ onMenuClick }) => {
 
     return (
         <header
-            className="sticky top-0 z-30 flex flex-col justify-center px-3 md:px-6 min-h-[70px] md:h-[70px] backdrop-blur-md border-b border-[var(--theme-border)] flex-shrink-0 pt-safe transition-all"
+            className="sticky top-0 z-30 flex flex-col justify-center px-1 md:px-2 min-h-[70px] md:h-[73px] backdrop-blur-md border-b border-[var(--theme-border)] flex-shrink-0 pt-safe transition-all"
             style={{ backgroundColor: 'var(--theme-topbar-bg)' }}
         >
             {/* ── Row 1: always visible ────────────────────────────────── */}

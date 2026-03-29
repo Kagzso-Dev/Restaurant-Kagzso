@@ -196,7 +196,6 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                                 <NavItem to="/waiter" icon={Armchair} label="Order View" color="text-yellow-400" />
                                 <NavItem to="/cashier/working-process" icon={ClipboardList} label="Working Process" color="text-blue-400" />
                                 <NavItem to="/cashier/kitchen-view" icon={ChefHat} label="Kitchen View" color="text-orange-400" />
-                                <NavItem to="/cashier/history" icon={History} label="Order History" color="text-purple-400" />
                             </>
                         )}
 

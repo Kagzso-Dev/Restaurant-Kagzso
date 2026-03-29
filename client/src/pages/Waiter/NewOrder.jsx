@@ -375,57 +375,71 @@ const NewOrder = () => {
                     {/* Panel 1 & 2: Categories + Menu Grid */}
                     <div className="flex-1 flex flex-col min-w-0 bg-[var(--theme-bg-card)] rounded-3xl border border-[var(--theme-border)] shadow-2xl overflow-hidden">
 
-                        {/* ── Top Bar (Search + Info) ────── */}
-                        <div className="px-5 py-4 border-b border-[var(--theme-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
-                            <div className="flex items-center gap-3 min-w-0 flex-shrink-0">
-                                <button onClick={() => {
-                                    if (orderId) {
-                                        navigate(-1);
-                                    } else {
-                                        setStep(step === 3 && orderType === 'takeaway' ? 1 : step - 1);
-                                    }
-                                }} className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] bg-[var(--theme-bg-hover)] rounded-lg flex-shrink-0">
-                                    <ArrowLeft size={18} />
-                                </button>
-                                <div className="min-w-0">
-                                    <h2 className="text-lg font-bold text-[var(--theme-text-main)] flex items-center gap-2">
-                                        <span className="truncate block">
+                        {/* ── Top Bar (Search + Info) — High Density Mobile Optimized ── */}
+                        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 md:p-5 border-b border-[var(--theme-border)] bg-[var(--theme-bg-card)]/80 backdrop-blur-md flex-shrink-0">
+                            <div className="flex items-center justify-between w-full md:w-auto overflow-hidden">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <button onClick={() => {
+                                        if (orderId) {
+                                            navigate(-1);
+                                        } else {
+                                            setStep(step === 3 && orderType === 'takeaway' ? 1 : step - 1);
+                                        }
+                                    }} className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] bg-[var(--theme-bg-hover)] rounded-xl border border-[var(--theme-border)]/50 shrink-0 shadow-sm active:scale-95 transition-all">
+                                        <ArrowLeft size={16} />
+                                    </button>
+                                    <div className="min-w-0">
+                                        <h2 className="text-sm md:text-lg font-black text-[var(--theme-text-main)] uppercase tracking-[0.05em] flex items-center gap-2 truncate">
                                             {orderId
-                                                ? `Add Items to ${currentOrder?.orderNumber || 'Order'}${currentOrder?.orderType === 'takeaway' ? ` | Token #${currentOrder.tokenNumber}` : currentOrder?.tableId?.number ? ` | Table ${currentOrder.tableId.number}` : ''}`
-                                                : (selectedTable ? `Table ${selectedTable.number}` : 'Takeaway Order')}
-                                        </span>
-                                        {!orderId && (
-                                            <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] font-normal uppercase tracking-tighter">
-                                                Step 3 of 3
+                                                ? `Edit ${currentOrder?.orderNumber || 'Order'}`
+                                                : (selectedTable ? `Table ${selectedTable.number}` : 'Takeaway')}
+                                            <span className="hidden sm:inline-flex px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-full text-[10px] font-bold border border-orange-500/20">
+                                                {selectedCategory ? categories.find(c => c._id === selectedCategory)?.name : 'Menu'}
+                                            </span>
+                                        </h2>
+                                    </div>
+                                </div>
+
+                                {/* Cart Toggle for Mobile (Right of title) */}
+                                <div className="flex md:hidden items-center gap-2 shrink-0">
+                                    <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />
+                                    <button
+                                        onClick={() => setIsCartOpen(!isCartOpen)}
+                                        className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-all border shadow-sm active:scale-95 ${isCartOpen ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}`}
+                                    >
+                                        <ShoppingCart size={18} />
+                                        {cart.length > 0 && (
+                                            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black bg-orange-600 text-white border-2 border-[var(--theme-bg-card)]">
+                                                {cart.length}
                                             </span>
                                         )}
-                                    </h2>
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 w-full sm:flex-1 justify-end">
-                                <div className="relative flex-1 max-w-md">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" size={16} />
+
+                            {/* Search & Actions — Row 2 on mobile, Next to title on desktop */}
+                            <div className="flex items-center gap-2 w-full md:w-auto md:flex-1 md:justify-end">
+                                <div className="relative flex-1 max-w-none md:max-w-md">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)]" size={14} />
                                     <input
                                         type="text"
-                                        placeholder="Search items..."
+                                        placeholder="Search menu..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl pl-10 pr-4 py-2 border-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl pl-9 pr-4 py-2 border border-[var(--theme-border)] focus:ring-1 focus:ring-orange-500 text-xs md:text-sm h-10 transition-all shadow-inner"
                                     />
-                                    {searchQuery && (
-                                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
-                                            <SearchX size={14} />
-                                        </button>
-                                    )}
                                 </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
+                                <div className="hidden md:flex items-center gap-2">
                                     {!settings?.enforceMenuView && <ViewToggle viewMode={viewMode} setViewMode={handleViewToggle} />}
                                     <button
                                         onClick={() => setIsCartOpen(!isCartOpen)}
-                                        className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all font-black text-sm border shadow-sm shrink-0 active:scale-95 ${isCartOpen ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}`}
+                                        className={`relative flex items-center gap-1.5 px-3 h-10 rounded-xl transition-all font-black text-sm border shadow-sm active:scale-95 ${isCartOpen ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}`}
                                     >
-                                        <ShoppingCart size={18} />
-                                        <ChevronLeft size={16} className={`transition-transform duration-300 ${isCartOpen ? 'rotate-180' : ''}`} />
+                                        <ShoppingCart size={18} className="shrink-0" />
+                                        <span className={`flex items-center transition-transform duration-300 ${isCartOpen ? 'rotate-180' : ''}`} style={{ perspective: '120px' }}>
+                                            <ChevronLeft size={14} className="animate-cart-arrow-1" strokeWidth={3} />
+                                            <ChevronLeft size={14} className="animate-cart-arrow-2 -ml-2" strokeWidth={3} />
+                                        </span>
                                         {cart.length > 0 && (
                                             <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${isCartOpen ? 'bg-white text-orange-600 border-orange-500' : 'bg-orange-600 text-white border-[var(--theme-bg-card)]'}`}>
                                                 {cart.length}
@@ -476,9 +490,9 @@ const NewOrder = () => {
                                     </div>
                                 ) : (
                                     <div className={`grid gap-2 sm:gap-4 ${viewMode === 'grid'
-                                        ? 'grid-cols-2 lg:grid-cols-3'
+                                        ? 'grid-cols-2 md:[grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]'
                                         : viewMode === 'compact'
-                                            ? 'grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
+                                            ? 'grid-cols-3 md:[grid-template-columns:repeat(auto-fill,minmax(110px,1fr))]'
                                             : 'grid-cols-1'
                                     }`}>
                                         {filteredItems.map(item => (
@@ -564,29 +578,36 @@ const NewOrder = () => {
                                     </div>
                                 ) : (
                                     cart.map(item => (
-                                        <div key={item.cartKey || (item.variant ? `${item._id}-${item.variant.name}` : item._id)} className="flex gap-3 animate-slide-up group">
-                                            <div className="w-12 h-12 rounded-xl bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden border border-[var(--theme-border)]">
-                                                {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xl bg-[var(--theme-bg-hover)]">🥘</div>}
+                                        <div key={item.cartKey || (item.variant ? `${item._id}-${item.variant.name}` : item._id)} className="flex items-center gap-3 animate-slide-up hover:bg-orange-500/5 p-1 -m-1 rounded-xl transition-colors group">
+                                            <div className="w-10 h-10 rounded-lg bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden border border-[var(--theme-border)] shadow-sm">
+                                                {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-lg bg-[var(--theme-bg-hover)]">🥘</div>}
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <div>
-                                                        <h4 className="text-sm font-black text-[var(--theme-text-main)] truncate pr-2">{item.name}</h4>
-                                                        {item.variant && (
-                                                            <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">{item.variant.name}</p>
-                                                        )}
-                                                    </div>
-                                                    <span className="text-sm font-black text-orange-500">{formatPrice(item.price * item.quantity)}</span>
+                                            <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5">
+                                                <div className="min-w-0 flex-1 pr-1">
+                                                    <h4 className="text-[12px] font-black text-[var(--theme-text-main)] truncate leading-tight uppercase tracking-tighter">{item.name}</h4>
+                                                    {item.variant && <p className="text-[8px] font-black text-orange-500 uppercase leading-none mt-0.5">{item.variant.name}</p>}
                                                 </div>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-lg p-0.5 border border-[var(--theme-border)] shadow-inner">
-                                                        <button onClick={() => updateQuantity(item.variant ? `${item._id}-${item.variant.name}` : item._id, -1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-white transition-colors"><Minus size={12} strokeWidth={3} /></button>
-                                                        <span className="w-9 text-center text-xs font-black text-[var(--theme-text-main)]">{item.quantity}</span>
-                                                        <button onClick={() => updateQuantity(item.variant ? `${item._id}-${item.variant.name}` : item._id, 1)} className="w-7 h-7 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-white transition-colors"><Plus size={12} strokeWidth={3} /></button>
+                                                
+                                                <div className="flex items-center shrink-0">
+                                                    <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-full p-0.5 border border-[var(--theme-border)] shadow-inner">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); updateQuantity(item.variant ? `${item._id}-${item.variant.name}` : item._id, -1); }} 
+                                                            className="w-6 h-6 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-orange-500 transition-all active:scale-75"
+                                                        >
+                                                            <Minus size={11} strokeWidth={3} />
+                                                        </button>
+                                                        <span className="w-5 text-center text-[10px] font-black text-[var(--theme-text-main)] tabular-nums">{item.quantity}</span>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); updateQuantity(item.variant ? `${item._id}-${item.variant.name}` : item._id, 1); }} 
+                                                            className="w-6 h-6 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-orange-500 transition-all active:scale-75"
+                                                        >
+                                                            <Plus size={11} strokeWidth={3} />
+                                                        </button>
                                                     </div>
                                                 </div>
-                                            </div>
 
+                                                <span className="text-[12px] font-black text-orange-500 min-w-[50px] text-right tabular-nums tracking-tighter shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                                            </div>
                                         </div>
                                     ))
                                 )}

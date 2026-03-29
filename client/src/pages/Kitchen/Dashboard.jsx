@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
-import { ChefHat, Clock, CheckCheck, Utensils, XCircle, Grid, List, Loader2, ChevronRight, ChevronLeft, RefreshCw, X } from 'lucide-react';
+import { ChefHat, Clock, CheckCheck, Utensils, XCircle, Grid, List, Loader2, ChevronRight, ChevronLeft, RefreshCw, X, Printer } from 'lucide-react';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
@@ -369,6 +369,7 @@ const KitchenDashboard = () => {
     const [detailsModal, setDetailsModal] = useState({ isOpen: false, order: null });
     const [isCardView, setIsCardView] = useState(() => localStorage.getItem('kitchenCardView') !== 'false');
     const [showTables, setShowTables] = useState(false);
+    const [printConfirm, setPrintConfirm] = useState({ open: false, order: null });
     const { user, socket, settings } = useContext(AuthContext);
 
     const fetchOrders = useCallback(async () => {
@@ -503,79 +504,84 @@ const KitchenDashboard = () => {
 
             {/* ── TopBar Portal (Relocated Controls) ────────────────────── */}
             {document.getElementById('topbar-portal') && createPortal(
-                <div className="flex items-center justify-between w-full h-full animate-fade-in translate-y-0.5 pr-4">
-                    <div className="flex items-center gap-3">
-                        {/* 0. Stats Toggle - Triple Chevron Arrow View */}
-                        <button 
-                            onClick={() => setShowTables(!showTables)} 
-                            className={`p-2.5 bg-black/5 dark:bg-white/5 rounded-2xl border border-[var(--theme-border)] shadow-sm shrink-0 transition-all duration-300 group hover:bg-black/10 dark:hover:bg-white/10 ${showTables ? 'ring-2 ring-orange-500/20 shadow-inner' : ''}`}
+                <div className="flex items-center justify-between w-full h-full animate-fade-in pr-2 md:pr-4 gap-2">
+                    <div className="flex items-center gap-1.5 md:gap-3 min-w-0">
+                        {/* 0. Stats Toggle */}
+                        <button
+                            onClick={() => setShowTables(!showTables)}
+                            className={`p-2 md:p-3 bg-black/5 dark:bg-white/5 rounded-xl md:rounded-2xl border border-[var(--theme-border)] shadow-sm shrink-0 transition-all duration-300 hover:bg-black/10 dark:hover:bg-white/10 ${showTables ? 'ring-2 ring-orange-500/20 shadow-inner' : ''}`}
                             title="Toggle Counters"
                         >
                             <div className={`transition-transform duration-500 flex items-center justify-center ${showTables ? 'rotate-180' : 'rotate-0'}`}>
                                 <div className="flex items-center text-rose-500">
-                                    <ChevronLeft size={18} strokeWidth={3} className="-mr-2.5" />
-                                    <ChevronLeft size={18} strokeWidth={3} className="-mr-2.5" />
-                                    <ChevronLeft size={18} strokeWidth={3} />
+                                    <ChevronLeft size={14} strokeWidth={3} className="-mr-2 animate-chevron-1 md:[width:16px] md:[height:16px]" />
+                                    <ChevronLeft size={14} strokeWidth={3} className="-mr-2 opacity-60 animate-chevron-2 md:[width:16px] md:[height:16px]" />
+                                    <ChevronLeft size={14} strokeWidth={3} className="opacity-30 animate-chevron-3 md:[width:16px] md:[height:16px]" />
                                 </div>
                             </div>
                         </button>
 
-                        {/* 1. All | Dine-in | Takeaway - Capsule/Pill Switch */}
-                        <div className="flex items-center p-1 bg-black/5 dark:bg-white/5 rounded-full border border-[var(--theme-border)] shadow-inner shrink-0 leading-none">
+                        {/* 1. All | Dine-in | Takeaway */}
+                        <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-full border border-[var(--theme-border)] shadow-inner shrink-0 leading-none">
                             {['all', 'dine-in', 'takeaway']
                                 .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
                                 .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
                                 .map(t => (
-                                    <button 
-                                        key={t} 
-                                        onClick={() => setFilterType(t)} 
-                                        className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                                            filterType === t 
-                                                ? 'bg-white dark:bg-[var(--theme-bg-card)] text-orange-500 shadow-md transform scale-[1.02]' 
+                                    <button
+                                        key={t}
+                                        onClick={() => setFilterType(t)}
+                                        className={`px-2.5 md:px-6 py-1.5 md:py-2.5 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-wide md:tracking-widest transition-all whitespace-nowrap ${
+                                            filterType === t
+                                                ? 'bg-white dark:bg-[var(--theme-bg-card)] text-orange-500 shadow-md scale-[1.02]'
                                                 : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
                                         }`}
                                     >
-                                        {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKE-AWAY'}
+                                        <span className="hidden sm:inline">{t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKE-AWAY'}</span>
+                                        <span className="inline sm:hidden">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}</span>
                                     </button>
                                 ))}
                         </div>
                     </div>
 
-                    <div className="ml-auto flex items-center gap-4">
-                        {/* 2. View Mode Toggle - 3D Pill Handle */}
+                    <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                        {/* 2. View Mode Toggle */}
                         <button
                             onClick={() => { const next = !isCardView; setIsCardView(next); localStorage.setItem('kitchenCardView', next); }}
                             className={`
-                                relative flex items-center h-10 w-28 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
-                                ${isCardView 
-                                    ? 'bg-blue-600/10 border-blue-500/20' 
+                                relative flex items-center h-8 md:h-11 w-8 md:w-32 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
+                                ${isCardView
+                                    ? 'bg-blue-600/10 border-blue-500/20'
                                     : 'bg-orange-500/10 border-orange-500/20'}
                             `}
                         >
-                            <div 
+                            {/* Mobile: icon-only centered */}
+                            <div className="md:hidden absolute inset-0 flex items-center justify-center">
+                                {isCardView ? <Grid size={14} strokeWidth={3} className="text-blue-500" /> : <List size={14} strokeWidth={3} className="text-orange-500" />}
+                            </div>
+                            {/* Desktop: sliding pill */}
+                            <div
                                 className={`
-                                    absolute top-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                                    ${isCardView 
-                                        ? 'left-1 bg-blue-600 rotate-0' 
-                                        : 'left-[calc(100%-36px)] bg-orange-600 rotate-[360deg]'}
+                                    hidden md:flex absolute top-1 w-9 h-9 rounded-full items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                    ${isCardView
+                                        ? 'left-1 bg-blue-600 rotate-0'
+                                        : 'left-[calc(100%-40px)] bg-orange-600 rotate-[360deg]'}
                                 `}
                             >
                                 {isCardView ? <Grid size={14} strokeWidth={3} className="text-white" /> : <List size={14} strokeWidth={3} className="text-white" />}
                             </div>
-
-                            <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+                            <div className="hidden md:flex absolute inset-0 items-center justify-between px-3 pointer-events-none">
                                 <span className={`text-[9px] font-black transition-all duration-300 ${isCardView ? 'opacity-100 translate-x-7 text-blue-600' : 'opacity-0 translate-x-3'}`}>TOKEN</span>
                                 <span className={`text-[9px] font-black transition-all duration-300 ${!isCardView ? 'opacity-100 -translate-x-7 text-orange-600' : 'opacity-0 -translate-x-3'}`}>CARD</span>
                             </div>
                         </button>
 
-                        {/* 3. Refresh Live */}
+                        {/* 3. Refresh */}
                         <button
                             onClick={() => { window.dispatchEvent(new CustomEvent('pos-refresh')); }}
-                            className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.15)] transition-all active:translate-y-[1px] active:scale-95"
+                            className="flex items-center justify-center w-8 h-8 md:w-11 md:h-11 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-500 transition-all active:scale-95"
                             title="Refresh Live"
                         >
-                            <RefreshCw size={16} strokeWidth={2.5} />
+                            <RefreshCw size={14} strokeWidth={2.5} />
                         </button>
                     </div>
                 </div>,
@@ -651,10 +657,10 @@ const KitchenDashboard = () => {
                             {isCardView ? (
                                 <KitchenTokenCard
                                     order={order}
-                                    onClick={() => printBill(order, (p) => `₹${p}`, settings, true)}
+                                    onClick={() => setPrintConfirm({ open: true, order })}
                                 />
                             ) : (
-                                <div onClick={() => printBill(order, (p) => `₹${p}`, settings, true)} className="cursor-pointer h-full">
+                                <div onClick={() => setPrintConfirm({ open: true, order })} className="cursor-pointer h-full">
                                     <KotTicket
                                         order={order}
                                         onUpdateStatus={updateStatus}
@@ -670,35 +676,72 @@ const KitchenDashboard = () => {
                     ))}
                 </div>
             )}
-
-            <OrderDetailsModal
-                order={detailsModal.order}
-                isOpen={detailsModal.isOpen}
-                onClose={() => setDetailsModal({ isOpen: false, order: null })}
-                formatPrice={(p) => `₹${p}`}
-                onCancelItem={(o, i) => {
-                    setDetailsModal({ isOpen: false, order: null });
-                    setCancelModal({ isOpen: true, order: o, item: i });
-                }}
-                onCancelOrder={(o) => {
-                    setDetailsModal({ isOpen: false, order: null });
-                    setCancelModal({ isOpen: true, order: o, item: null });
-                }}
-                userRole={user.role}
-                settings={settings}
-            />
-
-            <CancelOrderModal
-                isOpen={cancelModal.isOpen}
-                order={cancelModal.order}
-                item={cancelModal.item}
-                title={cancelModal.item ? "Cancel Item" : "Cancel Order"}
-                onClose={() => setCancelModal({ isOpen: false, order: null, item: null })}
-                onConfirm={handleCancelAction}
-            />
-        </div>
-    );
-};
-
-export default KitchenDashboard;
-
+    
+                <OrderDetailsModal
+                    order={detailsModal.order}
+                    isOpen={detailsModal.isOpen}
+                    onClose={() => setDetailsModal({ isOpen: false, order: null })}
+                    formatPrice={(p) => `₹${p}`}
+                    onCancelItem={(o, i) => {
+                        setDetailsModal({ isOpen: false, order: null });
+                        setCancelModal({ isOpen: true, order: o, item: i });
+                    }}
+                    onCancelOrder={(o) => {
+                        setDetailsModal({ isOpen: false, order: null });
+                        setCancelModal({ isOpen: true, order: o, item: null });
+                    }}
+                    userRole={user.role}
+                    settings={settings}
+                />
+    
+                <CancelOrderModal
+                    isOpen={cancelModal.isOpen}
+                    order={cancelModal.order}
+                    item={cancelModal.item}
+                    title={cancelModal.item ? "Cancel Item" : "Cancel Order"}
+                    onClose={() => setCancelModal({ isOpen: false, order: null, item: null })}
+                    onConfirm={handleCancelAction}
+                />
+    
+                {/* ── TOP POPUP: Print Confirmation (iOS Style) ── */}
+                {printConfirm.open && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 animate-scale-in">
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[4px]" onClick={() => setPrintConfirm({ open: false, order: null })} />
+                        <div className="relative bg-white rounded-[1.3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col w-full max-w-[270px] sm:max-w-[280px]">
+                            {/* Content Block */}
+                            <div className="p-6 flex flex-col items-center text-center gap-1.5 text-black">
+                                <h4 className="text-[17px] font-semibold tracking-tight leading-tight">Print Ticket?</h4>
+                                <p className="text-[13px] text-gray-600 leading-tight">
+                                    Send {printConfirm.order?.orderNumber} to printer?
+                                </p>
+                                <div className="mt-1">
+                                    <span className="text-[12px] font-semibold bg-gray-100 rounded-md px-2 py-0.5 text-gray-700">
+                                        {printConfirm.order?.orderType === 'dine-in' ? `Table ${printConfirm.order?.tableId?.number || printConfirm.order?.tableId}` : `Token ${printConfirm.order?.tokenNumber}`}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            {/* Buttons Block (iOS Style) */}
+                            <div className="grid grid-cols-2 border-t border-gray-200">
+                                <button 
+                                    onClick={() => setPrintConfirm({ open: false, order: null })}
+                                    className="h-12 flex items-center justify-center text-[17px] text-[#007AFF] font-normal hover:bg-gray-50 active:bg-gray-100 transition-colors border-r border-gray-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={() => { printBill(printConfirm.order, (p) => `₹${p}`, settings, true); setPrintConfirm({ open: false, order: null }); }}
+                                    className="h-12 flex items-center justify-center text-[17px] text-[#FF3B30] font-semibold hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                                >
+                                    Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+    
+    export default KitchenDashboard;
+    

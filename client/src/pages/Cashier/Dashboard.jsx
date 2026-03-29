@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 /* ── Order List Item ──────────────────────────────────────────────────────── */
-const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'normal' }) => {
+const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'normal', hideAmount = false }) => {
     const isGrid = viewType === 'compact';
     const isList = viewType === 'list';
     
@@ -29,40 +29,46 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
     }[order.orderStatus?.toLowerCase()] || { bg: 'bg-gray-50 border-gray-100', text: 'text-gray-400', dot: 'bg-gray-300', label: 'bg-gray-100 text-gray-500' };
 
     if (isGrid) {
+        const identifier = order.orderType === 'dine-in'
+            ? (order.tableId?.number || order.tableId || '?')
+            : order.tokenNumber;
+        const isPulse = ['pending', 'ready'].includes(order.orderStatus?.toLowerCase());
+        const shortStatus = ({ pending:'PEND', accepted:'ACC', preparing:'PREP', ready:'READY', completed:'DONE', cancelled:'CNCL' })[order.orderStatus?.toLowerCase()] || order.orderStatus?.slice(0,4).toUpperCase();
+
         return (
             <button
                 onClick={onClick}
                 className={`
-                    w-full aspect-[4/4] p-3 rounded-2xl border-2 flex flex-col transition-all duration-300 group
-                    ${statusMeta.bg} ${selected ? 'ring-4 ring-orange-500 scale-[1.05] shadow-2xl z-10' : 'hover:-translate-y-1 shadow-md hover:shadow-xl'}
+                    w-full p-2 rounded-xl border-2 flex flex-col justify-between min-h-[95px] sm:min-h-[90px] transition-all duration-300 group overflow-hidden
+                    ${statusMeta.bg} ${selected ? 'ring-4 ring-orange-500 scale-[1.03] shadow-2xl z-10' : 'hover:-translate-y-0.5 shadow-md hover:shadow-xl'}
                 `}
             >
+                {/* Top: status + type */}
                 <div className="flex items-center justify-between w-full mb-1">
-                    <div className="flex items-center gap-1.5">
-                        <div className={`w-2 h-2 rounded-full ${statusMeta.dot} ${['pending', 'ready'].includes(order.orderStatus?.toLowerCase()) ? 'animate-pulse' : ''}`} />
-                        <span className={`text-[8px] font-black uppercase tracking-widest ${statusMeta.text}`}>
-                            {order.orderStatus}
-                        </span>
+                    <div className="flex items-center gap-1">
+                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusMeta.dot} ${isPulse ? 'animate-pulse' : ''}`} />
+                        <span className={`text-[7px] font-black uppercase ${statusMeta.text}`}>{shortStatus}</span>
                     </div>
+                    <span className={`text-[7px] font-black uppercase ${statusMeta.text}`}>
+                        {order.orderType === 'dine-in' ? 'TABLE' : 'TOKEN'}
+                    </span>
                 </div>
 
-                <div className="flex-1 flex flex-col items-center justify-center -space-y-1">
-                    <p className={`text-4xl font-black tracking-tighter ${statusMeta.text} group-hover:scale-110 transition-transform duration-300 leading-none`}>
-                        {order.orderType === 'dine-in' ? `${order.tableId?.number || order.tableId || '?'}` : `${order.tokenNumber}`}
-                    </p>
-                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400 opacity-60">
-                        {order.orderType === 'dine-in' ? 'Table' : 'Token'}
+                {/* Center: big number */}
+                <div className="flex items-center justify-center py-2">
+                    <p className={`text-3xl font-black tracking-tighter leading-none ${statusMeta.text} group-hover:scale-105 transition-transform duration-200`}>
+                        {identifier}
                     </p>
                 </div>
 
-                <div className="mt-auto w-full border-t border-black/5 pt-2 flex flex-col items-center">
-                    <p className={`text-[11px] font-black tracking-tight ${statusMeta.text}`}>
-                        {formatPrice(order.finalAmount)}
-                    </p>
-                    <p className="text-[7px] font-bold text-gray-400 opacity-40 leading-none mt-0.5">
-                        {order.orderNumber.replace('ORD-', '#')}
-                    </p>
-                </div>
+                {/* Bottom: price — hidden in history mode */}
+                {!hideAmount && (
+                    <div className="w-full border-t border-black/[0.08] pt-1 flex items-center justify-center">
+                        <p className={`text-[9px] font-black ${statusMeta.text} whitespace-nowrap`}>
+                            {formatPrice(order.finalAmount)}
+                        </p>
+                    </div>
+                )}
             </button>
         );
     }
@@ -74,71 +80,53 @@ const OrderItem = memo(({ order, selected, onClick, formatPrice, viewType = 'nor
             className={`
                 w-full text-left transition-all duration-200 group token-tap rounded-2xl
                 ${tColor}
-                ${isList ? 'p-3.5 border-l-8' : 'p-5 border-l-[10px]'}
+                ${isList ? 'p-3 border-l-[6px]' : 'p-3.5 border-l-[8px]'}
                 ${order.orderStatus === 'pending' ? 'border-l-[var(--status-pending)]' :
                   order.orderStatus === 'accepted' ? 'border-l-[var(--status-accepted)]' :
                   order.orderStatus === 'preparing' ? 'border-l-[var(--status-preparing)]' :
                   order.orderStatus === 'ready' ? 'border-l-[var(--status-ready)]' :
                   'border-l-transparent'}
-                ${selected ? 'ring-2 ring-orange-500 shadow-2xl scale-[1.02]' : 'hover:scale-[1.01] shadow-lg'}
+                ${selected ? 'ring-2 ring-orange-500 shadow-xl scale-[1.01]' : 'hover:scale-[1.005] shadow-md'}
             `}
         >
-            <div className={`flex flex-1 ${isList ? 'flex-row items-center justify-between gap-4' : 'flex-col'}`}>
-                <div className={`flex items-center gap-3 ${isList ? 'flex-1' : 'justify-between mb-2'}`}>
-                    <div className="flex flex-col">
-                        <h3 className={`font-extrabold text-inherit tracking-tight truncate pr-2 ${isList ? 'text-sm' : 'text-base'}`}>
-                            {order.orderNumber}
-                        </h3>
-                        {isList && (
-                            <div className="flex items-center gap-1.5 text-[9px] text-inherit opacity-60 font-bold mt-0.5">
-                                <Clock size={10} />
-                                {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </div>
+            {isList ? (
+                /* ── List row ── */
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="inline-flex items-center justify-center min-w-[32px] h-6 font-black text-inherit text-[9px] px-1.5 bg-black/10 rounded-lg border border-current/20 shrink-0 whitespace-nowrap">
+                            {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
+                        </span>
+                        <p className="text-[10px] font-black text-inherit truncate leading-none">{order.orderNumber}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <p className="text-[11px] font-black text-inherit whitespace-nowrap">{formatPrice(order.finalAmount)}</p>
+                        <StatusBadge status={order.orderStatus} size="sm" />
+                    </div>
+                </div>
+            ) : (
+                /* ── Normal card ── */
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-extrabold text-inherit tracking-tight truncate pr-2">{order.orderNumber}</h3>
+                        <StatusBadge status={order.orderStatus} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center justify-center h-7 font-black text-inherit text-[11px] px-2.5 bg-black/10 rounded-lg border border-current/20">
+                            {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
+                        </span>
+                        <p className="font-black text-inherit text-base">{formatPrice(order.finalAmount)}</p>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                        <div className="flex items-center gap-1 text-[9px] text-inherit opacity-50 font-bold uppercase">
+                            <Clock size={10} />
+                            {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        {order.paymentStatus === 'payment_pending' && (
+                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20 font-black uppercase">PAYING</span>
                         )}
                     </div>
                 </div>
-
-                <div className={`flex items-center gap-4 ${isList ? 'shrink-0' : 'justify-between mt-1 items-end'}`}>
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5">
-                            <span className={`inline-flex items-center justify-center min-w-[32px] h-7 font-black text-inherit px-2.5 bg-black/10 rounded-lg border border-current/20 shadow-sm ${isList ? 'text-[9px]' : 'text-[11px]'}`}>
-                                {order.orderType === 'dine-in' ? `T${order.tableId?.number || order.tableId || '?'}` : `TK${order.tokenNumber}`}
-                            </span>
-                            {!isList && (
-                                <span className={`text-[8px] font-black uppercase opacity-60 tracking-wider`}>
-                                    {order.orderType}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                        <p className={`font-black text-inherit text-right whitespace-nowrap ${isList ? 'text-sm' : 'text-base'}`}>
-                            {formatPrice(order.finalAmount)}
-                        </p>
-                        <div className={`${isList ? 'block' : 'hidden'}`}>
-                            <StatusBadge status={order.orderStatus} />
-                        </div>
-                    </div>
-                </div>
-
-                {!isList && (
-                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
-                        <div className="flex items-center gap-1.5 text-[9px] text-inherit opacity-60 font-bold uppercase">
-                            <Clock size={12} />
-                            {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        <div className="flex gap-1.5">
-                            <StatusBadge status={order.orderStatus} />
-                            {order.paymentStatus === 'payment_pending' && (
-                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20 font-black tracking-tighter uppercase">
-                                    PAYING
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
+            )}
         </button>
     );
 });
@@ -234,11 +222,30 @@ const CashierDashboard = () => {
     const [showInvoice, setShowInvoice] = useState(false); // mobile panel toggle
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [showPrintConfirm, setShowPrintConfirm] = useState(false);
     const [filterType, setFilterType] = useState('all'); // 'all' | 'dine-in' | 'takeaway'
     const [isCardView, setIsCardView] = useState(() => localStorage.getItem('cashierCardView') !== 'false');
+    const [lgCols, setLgCols] = useState(() => {
+        const stored = parseInt(localStorage.getItem('cashierLgCols'));
+        if (stored === 3 || stored === 4) return stored;
+        const sidebar = document.querySelector('aside');
+        return (sidebar && sidebar.offsetWidth > 120) ? 3 : 4;
+    });
     const { user, socket, formatPrice, settings } = useContext(AuthContext);
     const location = useLocation();
     const isHistoryMode = location.pathname.includes('/history');
+
+    // Auto-adjust desktop columns when sidebar expands/collapses
+    useEffect(() => {
+        const handler = (e) => {
+            const collapsed = e.detail?.collapsed;
+            const next = collapsed ? 4 : 3;
+            setLgCols(next);
+            localStorage.setItem('cashierLgCols', next);
+        };
+        window.addEventListener('sidebar-toggle', handler);
+        return () => window.removeEventListener('sidebar-toggle', handler);
+    }, []);
 
     /* ── Fetch Orders ────────────────────────────────────────────────── */
     const fetchOrders = useCallback(async () => {
@@ -372,57 +379,36 @@ const CashierDashboard = () => {
 
     /* ── Layout ─────────────────────────────────────────────────────── */
     return (
-        <div className="flex flex-col gap-5 animate-fade-in">
-
-            {/* Print styles injected via CSS global, not inline */}
-
-            {/* ── Header ──────────────────────────────────────────── */}
-
+        <div className="animate-fade-in">
 
             {/* ── POS Layout ────────────────────────────────────── */}
             <div className="relative">
 
-                {/* Mobile: Orders List Panel */}
-                <div className={`
-                    ${showInvoice ? 'hidden md:block' : 'block'}
-                    md:float-none
-                `}>
-                    {/* Mobile back button */}
-                    {showInvoice && (
-                        <button
-                            onClick={() => setShowInvoice(false)}
-                            className="md:hidden flex items-center gap-2 text-sm text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] mb-3 min-h-[44px]"
-                        >
-                            <ArrowLeft size={16} /> Back to orders
-                        </button>
-                    )}
-                </div>
-
                     {/* ── TopBar Portal ────────────────────────────────────────── */}
                     {document.getElementById('topbar-portal') && createPortal(
-                        <div className="flex items-center gap-3 w-full animate-fade-in px-4">
-                            {/* Operational Filters - 3D Mechanical Switch */}
-                            <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 shrink-0">
+                        <div className="flex items-center gap-2 w-full animate-fade-in px-2 md:px-4">
+                            {/* Filters */}
+                            <div className="flex bg-[var(--theme-bg-dark)] p-0.5 rounded-xl md:rounded-2xl border border-[var(--theme-border)] shadow-inner h-9 md:h-11 shrink-0">
                                 {['all', 'dine-in', 'takeaway'].map(t => (
                                     <button
                                         key={t}
                                         onClick={() => setFilterType(t)}
-                                        className={`flex-1 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center ${
+                                        className={`flex-1 px-2 md:px-4 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-wide md:tracking-widest transition-all duration-300 flex items-center justify-center whitespace-nowrap ${
                                             filterType === t
-                                                ? 'bg-orange-500 text-white shadow-[0_2px_4px_rgba(249,115,22,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] scale-[1.02] border-t border-white/20 active:translate-y-[1px] active:shadow-none'
+                                                ? 'bg-orange-500 text-white shadow-[0_2px_4px_rgba(249,115,22,0.4)] scale-[1.02]'
                                                 : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
                                         }`}
                                     >
-                                        {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}
+                                        <span className="hidden sm:inline">{t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}</span>
+                                        <span className="inline sm:hidden">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}</span>
                                     </button>
                                 ))}
                             </div>
 
-                            <div className="h-8 w-px bg-[var(--theme-border)] mx-2 opacity-50 flex-shrink-0" />
-
-                            {/* Right Commands - Consolidated Status & View Controls */}
-                            <div className="ml-auto flex items-center gap-4">
-                                <div className="flex flex-col items-end pr-4 border-r border-[var(--theme-border)]">
+                            {/* Right Controls */}
+                            <div className="ml-auto flex items-center gap-2 md:gap-4 shrink-0">
+                                {/* Pending count — text only on md+ */}
+                                <div className="hidden md:flex flex-col items-end pr-4 border-r border-[var(--theme-border)]">
                                     <span className="text-[11px] font-black text-orange-400 tracking-tight leading-none uppercase">
                                         {orders.filter(o => filterType === 'all' || o.orderType === filterType).length} Pending
                                     </span>
@@ -430,59 +416,67 @@ const CashierDashboard = () => {
                                         Point View
                                     </span>
                                 </div>
+                                {/* Mobile: badge only */}
+                                <span className="md:hidden inline-flex items-center justify-center px-2 h-7 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[10px] font-black">
+                                    {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
+                                </span>
 
-                                {/* View Mode Toggle moved from left to right point */}
+                                {/* View Toggle */}
                                 <button
                                     onClick={() => { const next = !isCardView; setIsCardView(next); localStorage.setItem('cashierCardView', next); }}
                                     className={`
-                                        relative flex items-center h-10 w-28 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
-                                        ${isCardView 
-                                            ? 'bg-emerald-500/10 border-emerald-500/20' 
-                                            : 'bg-orange-500/10 border-orange-500/20'}
+                                        relative flex items-center h-9 md:h-10 w-9 md:w-32 rounded-full transition-all duration-500 shadow-lg overflow-hidden border-2
+                                        ${isCardView
+                                            ? 'bg-emerald-500/5 border-emerald-500/20 shadow-emerald-500/5'
+                                            : 'bg-orange-500/5 border-orange-500/20 shadow-orange-500/5'}
                                     `}
                                 >
-                                    <div 
-                                        className={`
-                                            absolute top-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                                            ${isCardView 
-                                                ? 'left-[calc(100%-36px)] bg-emerald-600 rotate-[360deg]' 
-                                                : 'left-1 bg-orange-600 rotate-0'}
-                                        `}
-                                    >
-                                        {isCardView ? <Grid size={14} strokeWidth={3} className="text-white" /> : <List size={14} strokeWidth={3} className="text-white" />}
+                                    {/* Mobile: icon only */}
+                                    <div className="md:hidden absolute inset-0 flex items-center justify-center">
+                                        {isCardView ? <Grid size={16} strokeWidth={2.5} className="text-emerald-500" /> : <List size={16} strokeWidth={2.5} className="text-orange-500" />}
                                     </div>
-                                    <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
-                                        <span className={`text-[10px] font-black transition-all duration-300 ${!isCardView ? 'opacity-100 translate-x-7 text-orange-600' : 'opacity-0 translate-x-3'}`}>LIST</span>
-                                        <span className={`text-[10px] font-black transition-all duration-300 ${isCardView ? 'opacity-100 -translate-x-7 text-emerald-600' : 'opacity-0 -translate-x-3'}`}>GRID</span>
+
+                                    {/* Desktop: Sliding Icon Circle */}
+                                    <div className={`
+                                        hidden md:flex absolute top-1 w-8 h-8 rounded-full items-center justify-center shadow-xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-10
+                                        ${isCardView 
+                                            ? 'left-[calc(100%-36px)] bg-emerald-500 rotate-[360deg] shadow-emerald-500/40' 
+                                            : 'left-1 bg-orange-500 rotate-0 shadow-orange-500/40'}
+                                    `}>
+                                        {isCardView ? <Grid size={15} strokeWidth={2.5} className="text-white" /> : <List size={15} strokeWidth={2.5} className="text-white" />}
+                                    </div>
+
+                                    {/* Desktop: Background Labels */}
+                                    <div className="hidden md:flex absolute inset-0 items-center justify-between px-3.5 select-none">
+                                        <span className={`text-[10px] font-black tracking-widest transition-all duration-500 ${!isCardView ? 'opacity-100 translate-x-8 text-orange-600' : 'opacity-0 translate-x-4'}`}>LIST</span>
+                                        <span className={`text-[10px] font-black tracking-widest transition-all duration-500 ${isCardView ? 'opacity-100 -translate-x-8 text-emerald-600' : 'opacity-0 -translate-x-4'}`}>CARD</span>
                                     </div>
                                 </button>
-                                
+
+                                {/* Refresh */}
                                 <button
                                     onClick={fetchOrders}
-                                    className="relative w-10 h-10 border border-rose-500/40 bg-rose-500/10 text-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.15)] rounded-xl flex items-center justify-center animate-pulse-red transition-all active:translate-y-[1px] active:scale-95"
+                                    className="relative w-8 h-8 md:w-10 md:h-10 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm"
                                 >
-                                    <span className="absolute inset-0 rounded-xl ring-1 ring-rose-500/40 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
-                                    <RefreshCw size={16} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
+                                    <RefreshCw size={14} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
                                 </button>
-                                
-
                             </div>
                         </div>,
                         document.getElementById('topbar-portal')
                     )}
 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-5 md:h-[calc(100dvh-110px)]">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 h-[calc(100dvh-70px)] md:h-[calc(100dvh-113px)]">
 
                     {/* ── Left: Order List ──────────────── */}
                     <div className={`
                         md:col-span-2 bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)]
-                        overflow-hidden flex flex-col
+                        overflow-hidden flex flex-col min-h-0
                         ${showInvoice ? 'hidden md:flex' : 'flex'}
                     `}>
                         
                         <div className={`
                             flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar
-                            ${isCardView ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 self-start' : 'space-y-2.5'}
+                            ${isCardView ? `grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 ${lgCols === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-2 content-start` : 'space-y-2.5'}
                         `}>
                             {loading ? (
                                 Array(4).fill(0).map((_, i) => <div key={i} className="skeleton h-20 rounded-xl" />)
@@ -502,6 +496,7 @@ const CashierDashboard = () => {
                                             onClick={() => handleSelect(order)}
                                             formatPrice={formatPrice}
                                             viewType={isCardView ? 'compact' : 'list'}
+                                            hideAmount={isHistoryMode}
                                         />
                                     ))
                             )}
@@ -511,7 +506,7 @@ const CashierDashboard = () => {
                     {/* ── Right: Invoice Panel ──────────── */}
                     <div className={`
                         md:col-span-3 bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)]
-                        flex flex-col overflow-hidden relative
+                        flex flex-col overflow-hidden relative min-h-0
                         ${showInvoice ? 'flex' : 'hidden md:flex'}
                     `}>
                         {/* Mobile back */}
@@ -538,7 +533,7 @@ const CashierDashboard = () => {
                                             <p className="text-emerald-400 text-sm font-medium">Token closed • Order completed</p>
                                         </div>
                                     )}
-                                    <div className="p-4 sm:p-6 md:p-8 flex justify-center">
+                                    <div className="p-2 sm:p-4 md:p-6 flex justify-center">
                                         <Receipt order={selectedOrder} formatPrice={formatPrice} settings={settings} />
                                     </div>
                                 </div>
@@ -577,7 +572,7 @@ const CashierDashboard = () => {
                                         </div>
                                         <div className="flex gap-3 flex-wrap">
                                             <button
-                                                onClick={() => printBill(selectedOrder, formatPrice, settings)}
+                                                onClick={() => setShowPrintConfirm(true)}
                                                 className="flex items-center gap-2 px-4 md:px-5 py-3 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-main)] rounded-xl font-semibold text-sm transition-colors min-h-[44px] border border-[var(--theme-border)]"
                                             >
                                                 <Printer size={17} />
@@ -621,6 +616,38 @@ const CashierDashboard = () => {
                         )}
                     </div>
                 </div>
+
+                {/* ── TOP POPUP: Print Confirmation (iOS Style) ── */}
+                {showPrintConfirm && selectedOrder && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-scale-in">
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[4px]" onClick={() => setShowPrintConfirm(false)} />
+                        <div className="relative bg-white rounded-[1.3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col w-full max-w-[260px]">
+                            {/* Content Block */}
+                            <div className="p-5 flex flex-col items-center text-center gap-1.5 text-black">
+                                <h4 className="text-[17px] font-semibold tracking-tight leading-tight">Print Bill?</h4>
+                                <p className="text-[13px] text-gray-600 leading-tight">
+                                    Generate invoice for {selectedOrder.orderNumber}?
+                                </p>
+                            </div>
+                            
+                            {/* Buttons Block (iOS Style) */}
+                            <div className="grid grid-cols-2 border-t border-gray-200">
+                                <button 
+                                    onClick={() => setShowPrintConfirm(false)}
+                                    className="h-11 flex items-center justify-center text-[17px] text-[#007AFF] font-normal hover:bg-gray-50 active:bg-gray-100 transition-colors border-r border-gray-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={() => { printBill(selectedOrder, formatPrice, settings); setShowPrintConfirm(false); }}
+                                    className="h-11 flex items-center justify-center text-[17px] text-[#FF3B30] font-semibold hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                                >
+                                    Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ── Payment Modal ────────────────────────────────── */}

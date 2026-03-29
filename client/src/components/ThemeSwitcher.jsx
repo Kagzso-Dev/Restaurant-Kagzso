@@ -53,12 +53,16 @@ const ThemeSwitcher = ({ collapsed = false }) => {
             </button>
 
             {open && (
-                <div className="
-                    absolute bottom-full left-0 mb-2 w-52
+                <div className={`
+                    absolute w-52
                     bg-[var(--theme-bg-card)] border border-[var(--theme-border)]
                     rounded-2xl shadow-2xl shadow-black/40
                     overflow-hidden z-[100] animate-scale-in
-                ">
+                    ${collapsed
+                        ? 'left-full ml-3 bottom-0'
+                        : 'bottom-full left-0 mb-2'
+                    }
+                `}>
                     <div className="px-3 py-2.5 border-b border-[var(--theme-border)]">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--theme-text-muted)]">
                             Choose Theme

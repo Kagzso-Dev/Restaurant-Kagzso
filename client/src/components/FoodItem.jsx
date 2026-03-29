@@ -242,58 +242,63 @@ const FoodItem = memo(({
             </div>
 
             {/* Content Area */}
-            <div className="flex flex-col flex-1 p-4 w-full text-center">
-                <div className="mb-4">
-                    <h3 className="text-sm font-black text-[var(--theme-text-main)] uppercase tracking-[0.02em] leading-tight mb-1">{item.name}</h3>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest opacity-60">{item.category?.name || 'Main Course'}</p>
+            <div className="flex flex-col flex-1 p-3 w-full text-center">
+                <div className="mb-1">
+                    <h3 className="text-sm font-black text-[var(--theme-text-main)] uppercase tracking-[0.02em] leading-tight">{item.name}</h3>
                 </div>
 
                 {/* ACTIONS - Horizontal Pill Theme */}
-                <div className="mt-auto space-y-4">
+                <div className="mt-auto space-y-2.5">
                     {showActions && !isAdmin && (
                         <>
                             {item.variants?.length > 0 ? (
-                                <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-2.5">
                                     {/* Horizontal Variant Pills - Scrollable Rail */}
-                                    <div className="relative group/rail flex items-center pr-1">
-                                        <div className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none animate-pulse-slow">
-                                            <ChevronRight size={16} className="text-gray-900 drop-shadow-sm" />
+                                    <div className="relative group/rail flex items-center px-1">
+                                        {/* Left Side Hint */}
+                                        <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-40 group-hover/rail:opacity-100 transition-opacity">
+                                            <ChevronLeft size={16} className="text-gray-900 animate-chevron-bounce-3d" strokeWidth={3} />
                                         </div>
-                                        
-                                        <div className="flex-1 flex items-center gap-1.5 bg-gray-50/80 dark:bg-white/5 p-1 rounded-2xl border border-[var(--theme-border)] overflow-x-auto hide-scrollbar snap-x snap-mandatory scroll-smooth min-h-[58px]">
+
+                                        <div className="flex-1 flex items-center gap-1.5 bg-gray-50/80 dark:bg-white/5 p-1 rounded-xl border border-[var(--theme-border)] overflow-x-auto hide-scrollbar snap-x snap-mandatory scroll-smooth min-h-[48px]">
                                             {item.variants.map((v, i) => {
                                                 const isSelected = selectedSize?.name === v.name;
                                                 return (
                                                     <button
                                                         key={i}
                                                         onClick={(e) => { e.stopPropagation(); setSelectedSize(v); }}
-                                                        className={`flex-shrink-0 w-24 flex flex-col items-center justify-center py-2 px-2 rounded-xl transition-all duration-300 snap-center border-2 ${
+                                                        className={`flex-shrink-0 w-24 flex flex-col items-center justify-center py-1.5 px-2 rounded-lg transition-all duration-300 snap-center border-2 ${
                                                             isSelected 
-                                                                ? 'bg-white text-black border-black shadow-md scale-[1.02]' 
-                                                                : 'bg-white text-gray-400 border-gray-100 opacity-80 hover:border-gray-300'
+                                                                ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-[1.02]' 
+                                                                : 'bg-white text-gray-400 border-gray-100 opacity-80 hover:border-rose-100'
                                                         }`}
                                                     >
-                                                        <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isSelected ? 'text-black/40' : 'text-gray-400'}`}>{v.name}</span>
-                                                        <span className={`text-[10px] sm:text-[11px] font-black mt-1 ${isSelected ? 'text-black' : 'text-gray-500'}`}>₹{v.price}</span>
+                                                        <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>{v.name}</span>
+                                                        <span className={`text-[10px] font-black mt-0.5 ${isSelected ? 'text-white' : 'text-gray-500'}`}>₹{v.price}</span>
                                                     </button>
                                                 );
                                             })}
+                                        </div>
+ 
+                                        {/* Right Side Hint */}
+                                        <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-40 group-hover/rail:opacity-100 transition-opacity">
+                                            <ChevronRight size={16} className="text-gray-900 animate-chevron-bounce-3d [animation-delay:0.3s]" strokeWidth={3} />
                                         </div>
                                     </div>
                                     
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onAdd(item, selectedSize); }}
-                                        className="w-full py-3.5 bg-white hover:bg-gray-50 text-gray-900 text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-sm active:scale-[0.97] transition-all flex items-center justify-center gap-2 border-2 border-gray-900/10"
+                                        className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-sm active:scale-[0.97] transition-all flex items-center justify-center gap-2 border-2 border-rose-600/20"
                                     >
                                         Add Item
                                     </button>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center gap-4">
+                                <div className="flex flex-col items-center gap-2.5">
                                     <span className="text-2xl font-black text-gray-900 leading-none">₹{item.price}</span>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onAdd(item); }}
-                                        className="w-full py-3.5 bg-white hover:bg-gray-50 text-gray-900 text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-sm active:scale-[0.97] transition-all border-2 border-gray-900/10"
+                                        className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-sm active:scale-[0.97] transition-all border-2 border-rose-600/20"
                                     >
                                         Add Item
                                     </button>

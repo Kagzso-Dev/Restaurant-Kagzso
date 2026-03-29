@@ -464,6 +464,19 @@ svg {
 .animate-chevron-r2 { animation: chevron-flow-right 1.4s ease-in-out 0.2s infinite; }
 .animate-chevron-r3 { animation: chevron-flow-right 1.4s ease-in-out 0.4s infinite; }
 
+/* 3D cart arrow animation */
+.animate-cart-arrow-1 { animation: cart-arrow-3d 1.2s ease-in-out infinite; }
+.animate-cart-arrow-2 { animation: cart-arrow-3d 1.2s ease-in-out 0.25s infinite; }
+
+/* 3D bounce for portion rail chevrons */
+@keyframes chevron-bounce-3d {
+  0%, 100% { opacity: 0.4; transform: perspective(100px) translateZ(0) scale(1); }
+  50%       { opacity: 1;   transform: perspective(100px) translateZ(20px) scale(1.2); }
+}
+.animate-chevron-bounce-3d { 
+  animation: chevron-bounce-3d 1.5s ease-in-out infinite; 
+}
+
 @keyframes toast-slide-in {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
@@ -1689,5 +1702,45 @@ main > div {
   nav, aside, header, .bottom-nav-safe, .no-print {
     display: none !important;
   }
+}
+
+/* ─── Custom Animations ──────────────────────────────────────────────────── */
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
