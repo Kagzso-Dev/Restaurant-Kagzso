@@ -1,5 +1,7 @@
 const { databases, databaseId, COLLECTIONS, ID, Query } = require('../config/appwrite');
 const Counter    = require('./Counter');
+const Table      = require('./Table');
+
 
 // ─── Document formatters ──────────────────────────────────────────────────────────
 
@@ -385,8 +387,10 @@ const Order = {
             throw new Error(`Cannot add items to ${order.order_status} order`);
         }
 
-        const Table = require('./Table');
-        // 2. Insert new items into database in parallel
+        // 2. Fetch existing items BEFORE adding new ones to prevent double-counting
+        const existingItems = await loadItems(orderId);
+        
+        // 3. Insert new items into database
         const newItemDocs = await Promise.all(items.map(async (item) => {
             if (!item.name || item.price === undefined || item.quantity === undefined) {
                 throw new Error(`Incomplete item details for "${item.name || 'Unknown'}"`);
@@ -408,19 +412,20 @@ const Order = {
             );
         }));
 
-        // 3. Recalculate totals from ALL items (old and new)
-        const oldItems = await loadItems(orderId);
-        const allItems = [...oldItems, ...newItemDocs.map(fmtItem)];
-        const activeItems = allItems.filter(i => i.status !== 'CANCELLED');
+        // 4. Single Source of Truth Calculation (Pro-Tip Implementation)
+        const allItems = [...existingItems, ...newItemDocs.map(fmtItem)];
+        const activeItems = allItems.filter(i => i.status?.toUpperCase() !== 'CANCELLED');
         
-        const rawTotal = activeItems.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
-        const newTotalAmount = parseFloat(rawTotal.toFixed(2));
+        // Sum all item costs from scratch
+        const subtotalSum = activeItems.reduce((sum, i) => sum + (parseFloat(i.price) * parseInt(i.quantity)), 0);
+        const newTotalAmount = parseFloat(subtotalSum.toFixed(2));
 
+        // Use current tax rate or default to 5% (0.05)
         const oldTotal = parseFloat(order.total_amount) || 0;
-        const oldTax = parseFloat(order.tax) || 0;
-        const currentTaxRate = oldTotal > 0 ? (oldTax / oldTotal) : 0.05;
+        const oldTax   = parseFloat(order.tax) || 0;
+        const taxRate  = oldTotal > 0 ? (oldTax / oldTotal) : 0.05;
         
-        const newTax = parseFloat((newTotalAmount * currentTaxRate).toFixed(2));
+        const newTax   = parseFloat((newTotalAmount * taxRate).toFixed(2));
         const newFinalAmount = parseFloat((newTotalAmount + newTax - (parseFloat(order.discount) || 0)).toFixed(2));
 
         const updates = {
@@ -428,6 +433,7 @@ const Order = {
             tax: newTax,
             final_amount: newFinalAmount,
         };
+
 
         const currentStatus = (order.order_status || '').toLowerCase();
         // Always reopen the KOT whenever new items are added

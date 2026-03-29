@@ -35,7 +35,9 @@ const NewOrder = () => {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isCartOpen, setIsCartOpen] = useState(false); // Mobile cart overlay toggle
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentOrder, setCurrentOrder] = useState(null);
+
     const [userInteracted, setUserInteracted] = useState(false);
     const [viewMode, setViewMode] = useState(() => {
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -244,9 +246,10 @@ const NewOrder = () => {
 
     // ── Submit Logic ─────────────────────────────────────────────────
     const handleSubmitOrder = async () => {
-        if (!cart.length) return alert("Cart is empty!");
+        if (!cart.length || isSubmitting) return;
         if (orderType === 'dine-in' && !selectedTable) return alert("Select a table!");
 
+        setIsSubmitting(true);
         const orderData = {
             orderType,
             tableId: selectedTable ? (selectedTable._id || selectedTable) : null,
@@ -277,6 +280,7 @@ const NewOrder = () => {
             navigate(orderId ? `${returnPath}?openOrder=${orderId}` : returnPath);
         } catch (error) {
             alert("Order failed: " + (error.response?.data?.message || "Server Error"));
+            setIsSubmitting(false);
         }
     };
 
@@ -650,10 +654,10 @@ const NewOrder = () => {
                                 </div>
                                 <button
                                     onClick={handleSubmitOrder}
-                                    disabled={cart.length === 0}
+                                    disabled={cart.length === 0 || isSubmitting}
                                     className="w-full py-4 bg-orange-600 hover:bg-orange-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-black rounded-2xl shadow-glow-orange transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
-                                    {orderId ? `Add to Order ${currentOrder?.orderNumber || ''}` : 'Confirm & Place Order'} <ArrowRight size={18} />
+                                    {isSubmitting ? 'Processing...' : (orderId ? `Add to Order ${currentOrder?.orderNumber || ''}` : 'Confirm & Place Order')} <ArrowRight size={18} />
                                 </button>
                                 <button className="md:hidden w-full py-3 text-gray-400 font-bold text-xs uppercase tracking-widest" onClick={() => setIsCartOpen(false)}>
 
