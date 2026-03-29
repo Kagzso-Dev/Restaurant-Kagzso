@@ -61,8 +61,9 @@ const loadItems = async (orderId) => {
     return response.documents.map(fmtItem);
 };
 
-// ─── Order model ─────────────────────────────────────────────────────────────
+const orderLocks = new Set();
 
+// ─── Order model ─────────────────────────────────────────────────────────────
 const Order = {
 
     async findById(id) {
@@ -381,71 +382,65 @@ const Order = {
     },
 
     async addItems(orderId, items, { totalAmount, tax, finalAmount }) {
-        // 1. Fetch latest order to ensure we have current totals
-        const order = await databases.getDocument(databaseId, COLLECTIONS.orders, orderId);
-        if (['completed', 'cancelled'].includes(order.order_status)) {
-            throw new Error(`Cannot add items to ${order.order_status} order`);
+        if (orderLocks.has(orderId)) {
+            // Wait slightly or just reject to prevent double-deposit
+            throw new Error("Order update in progress, please wait...");
         }
 
-        // 2. Fetch existing items BEFORE adding new ones to prevent double-counting
-        const existingItems = await loadItems(orderId);
-        
-        // 3. Insert new items into database
-        const newItemDocs = await Promise.all(items.map(async (item) => {
-            if (!item.name || item.price === undefined || item.quantity === undefined) {
-                throw new Error(`Incomplete item details for "${item.name || 'Unknown'}"`);
+        try {
+            orderLocks.add(orderId);
+
+            // 1. Fetch latest order to ensure we have current totals
+            const orderCount = await databases.getDocument(databaseId, COLLECTIONS.orders, orderId);
+            if (['completed', 'cancelled'].includes(orderCount.order_status)) {
+                throw new Error(`Cannot add items to ${orderCount.order_status} order`);
             }
-            return databases.createDocument(
-                databaseId,
-                COLLECTIONS.order_items,
-                ID.unique(),
-                {
-                    order_id: orderId,
-                    menu_item_id: item.menuItemId || null,
-                    name: item.name,
-                    price: parseFloat(item.price),
-                    quantity: parseInt(item.quantity),
-                    notes: item.notes || null,
-                    variant: item.variant ? JSON.stringify(item.variant) : null,
-                    status: 'PENDING'
-                }
-            );
-        }));
 
-        // 4. Single Source of Truth Calculation (Pro-Tip Implementation)
-        const allItems = [...existingItems, ...newItemDocs.map(fmtItem)];
-        const activeItems = allItems.filter(i => i.status?.toUpperCase() !== 'CANCELLED');
-        
-        // Sum all item costs from scratch
-        const subtotalSum = activeItems.reduce((sum, i) => sum + (parseFloat(i.price) * parseInt(i.quantity)), 0);
-        const newTotalAmount = parseFloat(subtotalSum.toFixed(2));
+            // 2. Fetch existing items BEFORE adding new ones
+            const existingItems = await loadItems(orderId);
+            
+            // 3. Insert new items
+            const newItemDocs = await Promise.all(items.map(async (item) => {
+                return databases.createDocument(
+                    databaseId,
+                    COLLECTIONS.order_items,
+                    ID.unique(),
+                    {
+                        order_id: orderId,
+                        menu_item_id: item.menuItemId || null,
+                        name: item.name,
+                        price: parseFloat(item.price),
+                        quantity: parseInt(item.quantity),
+                        notes: item.notes || null,
+                        variant: item.variant ? JSON.stringify(item.variant) : null,
+                        status: 'PENDING'
+                    }
+                );
+            }));
 
-        // Use current tax rate or default to 5% (0.05)
-        const oldTotal = parseFloat(order.total_amount) || 0;
-        const oldTax   = parseFloat(order.tax) || 0;
-        const taxRate  = oldTotal > 0 ? (oldTax / oldTotal) : 0.05;
-        
-        const newTax   = parseFloat((newTotalAmount * taxRate).toFixed(2));
-        const newFinalAmount = parseFloat((newTotalAmount + newTax - (parseFloat(order.discount) || 0)).toFixed(2));
+            // 4. Single Source calculation
+            const allItems = [...existingItems, ...newItemDocs.map(fmtItem)];
+            const activeItems = allItems.filter(i => i.status?.toUpperCase() !== 'CANCELLED');
+            const subtotalSum = activeItems.reduce((sum, i) => sum + (parseFloat(i.price) * parseInt(i.quantity)), 0);
+            
+            const taxRate = (parseFloat(orderCount.total_amount) > 0) ? (parseFloat(orderCount.tax) / parseFloat(orderCount.total_amount)) : 0.05;
+            const newTax = parseFloat((subtotalSum * taxRate).toFixed(2));
+            const newFinal = parseFloat((subtotalSum + newTax - (parseFloat(orderCount.discount) || 0)).toFixed(2));
 
-        const updates = {
-            total_amount: newTotalAmount,
-            tax: newTax,
-            final_amount: newFinalAmount,
-        };
+            await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, {
+                total_amount: subtotalSum,
+                tax: newTax,
+                final_amount: newFinal,
+                kot_status: 'Open'
+            });
 
+            // Return fresh formatted order
+            const fullOrder = await databases.getDocument(databaseId, COLLECTIONS.orders, orderId);
+            return fmtOrder(fullOrder, allItems);
 
-        const currentStatus = (order.order_status || '').toLowerCase();
-        // Always reopen the KOT whenever new items are added
-        updates.kot_status = 'Open';
-        if (['ready', 'preparing', 'accepted'].includes(currentStatus)) {
-            updates.order_status = 'pending';
+        } finally {
+            orderLocks.delete(orderId);
         }
-
-        const updatedOrderDoc = await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, updates);
-
-        const tableMap = await Table.getTableMap();
-        return fmtOrder(updatedOrderDoc, allItems, tableMap[updatedOrderDoc.table_id] || null);
     },
 };
 

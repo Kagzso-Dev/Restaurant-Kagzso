@@ -435,9 +435,10 @@ const cancelOrderItem = async (req, res) => {
             }
         }
 
-        if (req.role === 'waiter' && ['PREPARING'].includes(currentStatus)) {
+        // Waiters may only cancel their own PENDING items
+        if (req.role === 'waiter' && currentStatus !== 'PENDING') {
             return res.status(403).json({
-                message: 'Waiters cannot cancel items that are preparing',
+                message: 'Waiters can only cancel items that are still pending',
             });
         }
 

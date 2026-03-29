@@ -209,7 +209,8 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                     const isCancelled = status === 'CANCELLED';
                     const isNewAdd = status === 'PENDING' && (new Date(item.createdAt) - new Date(order.createdAt)) > 30000;
                     const nextStatus = status === 'PENDING' ? 'ACCEPTED' : status === 'ACCEPTED' ? 'PREPARING' : status === 'PREPARING' ? 'READY' : 'PENDING';
-                    const canCancel = !isCancelled && status === 'PENDING' && (userRole === 'kitchen' || userRole === 'admin');
+                    // Kitchen can cancel Pending/Accepted/Preparing — never Ready
+                    const canCancel = !isCancelled && ['PENDING', 'ACCEPTED', 'PREPARING'].includes(status) && (userRole === 'kitchen' || userRole === 'admin');
 
                     return (
                         <div key={item._id} className={`flex items-start gap-2 group ${isCancelled ? 'opacity-40' : ''}`}>
@@ -726,11 +727,13 @@ const KitchenDashboard = () => {
                         <div className="absolute inset-0 bg-black/50 backdrop-blur-[6px]" onClick={() => setPrintConfirm({ open: false, order: null })} />
                         <div className="relative bg-white rounded-[2rem] shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col w-[94%] xs:w-[90%] sm:max-w-[340px] md:max-w-[380px] animate-in fade-in zoom-in-95 duration-200">
                             {/* Header Content */}
-                            <div className="p-6 flex flex-col items-center text-center gap-2 text-black">
-                                <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-500 mb-1">
-                                    <Printer size={24} strokeWidth={2.5} />
+                            <div className="p-6 flex flex-col items-center text-center text-black">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500 shrink-0">
+                                        <Printer size={20} strokeWidth={2.5} />
+                                    </div>
+                                    <h4 className="text-[18px] font-black tracking-tight leading-tight uppercase">Print Order Ticket?</h4>
                                 </div>
-                                <h4 className="text-[18px] font-black tracking-tight leading-tight uppercase">Print Order Ticket?</h4>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="text-[11px] font-black bg-gray-100 rounded-lg px-2.5 py-1 text-gray-700 border border-gray-200 shadow-sm uppercase">
                                         {printConfirm.order?.orderNumber.replace('ORD-', '#')}

@@ -290,26 +290,32 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
                 animate-in fade-in zoom-in-95 duration-200 max-h-[95vh] flex flex-col
             ">
                 {/* ── Header ──────────────────────────────────────── */}
-                <div className="flex flex-col items-center text-center px-6 py-6 border-b border-[var(--theme-border)] flex-shrink-0 gap-1.5">
-                    <h2 className="text-[18px] font-black uppercase tracking-tight text-[var(--theme-text-main)]">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--theme-border)] flex-shrink-0">
+                    <h2 className="text-[14px] font-black uppercase tracking-widest text-[var(--theme-text-main)]">
                         {step === 'success' ? 'Payment Success' : 'Process Payment'}
                     </h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black bg-gray-100 dark:bg-white/5 rounded-lg px-2 py-1 text-[var(--theme-text-muted)] border border-[var(--theme-border)] shadow-sm uppercase">
-                            {order.orderNumber.replace('ORD-', '#')}
-                        </span>
-                        <span className="text-[10px] font-black bg-orange-500/10 rounded-lg px-2 py-1 text-orange-600 border border-orange-200 uppercase">
-                            {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || '?'}` : `Token ${order.tokenNumber}`}
-                        </span>
-                    </div>
+                    <button onClick={handleClose} className="p-2 text-[var(--theme-text-muted)] hover:text-rose-500 transition-colors">
+                        <X size={18} />
+                    </button>
                 </div>
 
                 {/* ── Amount Banner ───────────────────────────────── */}
                 {step !== 'success' && step !== 'processing' && (
                     <div className="px-6 py-5 bg-[var(--theme-bg-muted)]/30 border-b border-[var(--theme-border)] flex-shrink-0">
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center justify-between gap-4">
+                            {/* Order Context Badges (Relocated) */}
+                            <div className="flex flex-col gap-1 shrink-0">
+                                <span className="text-[10px] w-fit font-black bg-black/5 dark:bg-white/5 rounded-lg px-3 py-1.5 text-[var(--theme-text-muted)] border border-[var(--theme-border)] shadow-sm uppercase">
+                                    {order.orderNumber.replace('ORD-', '#')}
+                                </span>
+                                <span className="text-[10px] w-fit font-black bg-orange-500/10 rounded-lg px-3 py-1.5 text-orange-600 border border-orange-200 uppercase">
+                                    {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || '?'}` : `Token ${order.tokenNumber}`}
+                                </span>
+                            </div>
+
+                            <div className="flex flex-col items-end gap-0.5">
                                 <p className="text-[9px] text-[var(--theme-text-muted)] font-black uppercase tracking-[0.2em] mb-1">Grand Total</p>
-                                <div className="flex flex-col items-center leading-none">
+                                <div className="flex flex-col items-end leading-none">
                                     {offerApplied && (
                                         <p className="text-xs line-through text-[var(--theme-text-subtle)] font-bold mb-1 opacity-50">{formatPrice(baseTotal)}</p>
                                     )}
@@ -323,6 +329,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
                                         </p>
                                     </div>
                                 )}
+                            </div>
                         </div>
                     </div>
                 )}

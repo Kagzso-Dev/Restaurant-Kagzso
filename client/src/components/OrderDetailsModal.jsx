@@ -248,19 +248,23 @@ const OrderDetailsModal = ({
                                                 {formatPrice(item.price * item.quantity)}
                                             </p>
                                         </div>
-                                        {!cancelled && !isPaid && onCancelItem && (
-                                            <button 
-                                                onClick={() => onCancelItem(order, item)}
-                                                disabled={userRole === 'waiter' && item.status?.toUpperCase() !== 'PENDING'}
-                                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all
-                                                    ${(userRole === 'waiter' && item.status?.toUpperCase() !== 'PENDING')
-                                                        ? 'bg-gray-100 text-gray-300 cursor-not-allowed opacity-50'
-                                                        : 'bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white'
-                                                    }`}
-                                            >
-                                                <X size={14} strokeWidth={3} />
-                                            </button>
-                                        )}
+                                        {(() => {
+                                            const itemStatus = item.status?.toUpperCase();
+                                            // Waiter: only PENDING items can be cancelled
+                                            if (userRole === 'waiter' && itemStatus !== 'PENDING') return null;
+                                            // Kitchen/Admin: PENDING, ACCEPTED, PREPARING only — never READY
+                                            if (userRole !== 'admin' && itemStatus === 'READY') return null;
+                                            // Don't show for already-cancelled or paid orders
+                                            if (cancelled || isPaid || !onCancelItem) return null;
+                                            return (
+                                                <button
+                                                    onClick={() => onCancelItem(order, item)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-all bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white"
+                                                >
+                                                    <X size={14} strokeWidth={3} />
+                                                </button>
+                                            );
+                                        })()}
 
                                     </div>
                                 </div>

@@ -563,41 +563,141 @@ const WaiterDashboard = () => {
 
             {activeTab === 'active' && (
                 <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showCounters ? 'max-h-[200px] opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}>
-                    <div className="flex items-stretch gap-1.5 w-full">
-                        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[var(--theme-bg-dark)]/40 p-1.5 rounded-xl border border-[var(--theme-border)] shadow-sm min-w-0 transition-all duration-300">
+                    {/* ── Mobile / Tablet: compact 2×2 grid (unchanged) ── */}
+                    <div className="xl:hidden flex items-stretch gap-1.5 w-full">
+                        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[var(--theme-bg-dark)]/40 p-1.5 rounded-xl border border-[var(--theme-border)] shadow-sm min-w-0">
                             {[
-                                { key: 'pending', count: counts.pending, dot: 'bg-[var(--status-pending)]', label: 'Pending', activeColor: 'text-[var(--status-pending)]', activeBg: 'bg-[var(--status-pending-bg)]' },
-                                { key: 'accepted', count: counts.accepted, dot: 'bg-[var(--status-accepted)]', label: 'Accepted', activeColor: 'text-[var(--status-accepted)]', activeBg: 'bg-[var(--status-accepted-bg)]' },
-                                { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]', label: 'Cooking', activeColor: 'text-[var(--status-preparing)]', activeBg: 'bg-[var(--status-preparing-bg)]' },
-                                { key: 'ready', count: counts.ready, dot: 'bg-[var(--status-ready)]', label: 'Ready', activeColor: 'text-[var(--status-ready)]', activeBg: 'bg-[var(--status-ready-bg)]' },
+                                { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',   label: 'Pending',  activeColor: 'text-[var(--status-pending)]',   activeBg: 'bg-[var(--status-pending-bg)]'   },
+                                { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',  label: 'Accepted', activeColor: 'text-[var(--status-accepted)]',  activeBg: 'bg-[var(--status-accepted-bg)]'  },
+                                { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]', label: 'Cooking',  activeColor: 'text-[var(--status-preparing)]', activeBg: 'bg-[var(--status-preparing-bg)]' },
+                                { key: 'ready',     count: counts.ready,     dot: 'bg-[var(--status-ready)]',     label: 'Ready',    activeColor: 'text-[var(--status-ready)]',     activeBg: 'bg-[var(--status-ready-bg)]'     },
                             ].map(({ key, count, dot, label, activeColor, activeBg }, idx) => (
-                                <button 
-                                    key={key} 
-                                    onClick={() => setStatusFilter(f => f === key ? null : key)} 
-                                    style={{ 
-                                        animationDelay: `${idx * 0.05}s`,
-                                        animationFillMode: 'backwards' 
-                                    }}
+                                <button
+                                    key={key}
+                                    onClick={() => setStatusFilter(f => f === key ? null : key)}
+                                    style={{ animationDelay: `${idx * 0.05}s`, animationFillMode: 'backwards' }}
                                     className={`group rounded-lg transition-all duration-300 border animate-in fade-in zoom-in-95
                                         py-2 px-1 flex flex-col items-center justify-center gap-0.5
-                                        xl:py-2 xl:px-3 xl:flex-row xl:justify-between xl:gap-2
                                         ${statusFilter === key ? `${activeBg} border-transparent shadow-sm scale-[0.97]` : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)]/40 hover:border-orange-500/30'}`}
                                 >
-                                    {/* Desktop: label left */}
-                                    <p className={`hidden xl:block text-[10px] uppercase font-black tracking-tight whitespace-nowrap transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
-                                    {/* Desktop: chevrons */}
-                                    <div className={`hidden xl:flex items-center shrink-0 ${statusFilter === key ? activeColor : dot.replace('bg-', 'text-')}`}>
-                                        <ChevronRight size={10} strokeWidth={4} className="animate-chevron-r1" />
-                                        <ChevronRight size={10} strokeWidth={4} className="-ml-1.5 opacity-60 animate-chevron-r2" />
-                                        <ChevronRight size={10} strokeWidth={4} className="-ml-1.5 opacity-20 animate-chevron-r3" />
-                                    </div>
-                                    {/* Count — shown on all sizes */}
-                                    <p className={`text-base xl:text-lg font-black tabular-nums leading-none transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-main)]'}`}>{count}</p>
-                                    {/* Tablet/mobile: label below count */}
-                                    <p className={`xl:hidden text-[8px] uppercase font-black tracking-widest whitespace-nowrap leading-none transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
+                                    <p className={`text-base font-black tabular-nums leading-none transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-main)]'}`}>{count}</p>
+                                    <p className={`text-[8px] uppercase font-black tracking-widest whitespace-nowrap leading-none transition-colors ${statusFilter === key ? activeColor : 'text-[var(--theme-text-muted)]'}`}>{label}</p>
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    {/* ── Desktop: premium stat bar ── */}
+                    <div className="hidden xl:grid grid-cols-4 gap-3 w-full">
+                        {[
+                            {
+                                key: 'pending',
+                                count: counts.pending,
+                                label: 'Pending',
+                                accent: 'border-l-orange-500',
+                                countColor: 'text-orange-500',
+                                iconBg: 'bg-orange-500/10',
+                                iconColor: 'text-orange-500',
+                                activeBg: 'bg-[var(--status-pending-bg)]',
+                                activeRing: 'ring-orange-400/40',
+                                icon: (
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                    </svg>
+                                ),
+                            },
+                            {
+                                key: 'accepted',
+                                count: counts.accepted,
+                                label: 'Accepted',
+                                accent: 'border-l-violet-500',
+                                countColor: 'text-violet-500',
+                                iconBg: 'bg-violet-500/10',
+                                iconColor: 'text-violet-500',
+                                activeBg: 'bg-[var(--status-accepted-bg)]',
+                                activeRing: 'ring-violet-400/40',
+                                icon: (
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                ),
+                            },
+                            {
+                                key: 'preparing',
+                                count: counts.preparing,
+                                label: 'Cooking',
+                                accent: 'border-l-blue-500',
+                                countColor: 'text-blue-500',
+                                iconBg: 'bg-blue-500/10',
+                                iconColor: 'text-blue-500',
+                                activeBg: 'bg-[var(--status-preparing-bg)]',
+                                activeRing: 'ring-blue-400/40',
+                                icon: (
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                        <path d="M12 2a5 5 0 0 1 5 5c0 5-5 11-5 11S7 12 7 7a5 5 0 0 1 5-5z"/><circle cx="12" cy="7" r="2"/>
+                                    </svg>
+                                ),
+                            },
+                            {
+                                key: 'ready',
+                                count: counts.ready,
+                                label: 'Ready',
+                                accent: 'border-l-emerald-500',
+                                countColor: 'text-emerald-500',
+                                iconBg: 'bg-emerald-500/10',
+                                iconColor: 'text-emerald-500',
+                                activeBg: 'bg-[var(--status-ready-bg)]',
+                                activeRing: 'ring-emerald-400/40',
+                                icon: (
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                    </svg>
+                                ),
+                            },
+                        ].map(({ key, count, label, accent, countColor, iconBg, iconColor, activeBg, activeRing, icon }, idx) => (
+                            <button
+                                key={key}
+                                onClick={() => setStatusFilter(f => f === key ? null : key)}
+                                style={{ animationDelay: `${idx * 0.06}s`, animationFillMode: 'backwards' }}
+                                className={`
+                                    group relative flex items-center gap-4 px-5 py-3.5 rounded-2xl border-l-4
+                                    border border-[var(--theme-border)] ${accent}
+                                    transition-all duration-300 animate-in fade-in slide-in-from-bottom-2
+                                    ${statusFilter === key
+                                        ? `${activeBg} ring-2 ${activeRing} shadow-lg scale-[0.98]`
+                                        : 'bg-[var(--theme-bg-card)] hover:shadow-md hover:scale-[1.01] hover:border-[var(--theme-border)]'
+                                    }
+                                `}
+                            >
+                                {/* Icon badge */}
+                                <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} ${iconColor} transition-transform duration-200 group-hover:scale-110`}>
+                                    {icon}
+                                </div>
+
+                                {/* Text block */}
+                                <div className="flex flex-col items-start min-w-0">
+                                    <span className={`text-3xl font-black tabular-nums leading-none tracking-tight ${countColor}`}>
+                                        {count}
+                                    </span>
+                                    <span className="mt-0.5 text-[11px] font-bold uppercase tracking-widest text-[var(--theme-text-muted)] whitespace-nowrap">
+                                        {label}
+                                    </span>
+                                </div>
+
+                                {/* Active filter indicator */}
+                                {statusFilter === key && (
+                                    <div className={`absolute top-2.5 right-3 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${iconBg} ${iconColor}`}>
+                                        Filtered
+                                    </div>
+                                )}
+
+                                {/* Animated chevrons (subtle, right edge) */}
+                                <div className={`absolute right-3 bottom-3 flex items-center opacity-20 group-hover:opacity-50 transition-opacity ${iconColor}`}>
+                                    <ChevronRight size={9} strokeWidth={4} />
+                                    <ChevronRight size={9} strokeWidth={4} className="-ml-1.5" />
+                                </div>
+                            </button>
+                        ))}
                     </div>
                 </div>
             )}
