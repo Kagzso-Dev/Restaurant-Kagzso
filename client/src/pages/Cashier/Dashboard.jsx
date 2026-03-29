@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import logoImg from '../../assets/logo.png';
 import PaymentModal from '../../components/PaymentModal';
@@ -11,7 +11,7 @@ import { printBill } from '../../components/BillPrint';
 import {
     Printer, Banknote, CheckCircle,
     ShoppingBag, RefreshCw, ArrowLeft,
-    Clock, AlertTriangle, Grid, List
+    Clock, AlertTriangle, Grid, List, LogOut
 } from 'lucide-react';
 
 /* ── Order List Item ──────────────────────────────────────────────────────── */
@@ -233,6 +233,7 @@ const CashierDashboard = () => {
     });
     const { user, socket, formatPrice, settings } = useContext(AuthContext);
     const location = useLocation();
+    const navigate = useNavigate();
     const isHistoryMode = location.pathname.includes('/history');
 
     // Auto-adjust desktop columns when sidebar expands/collapses
@@ -453,12 +454,23 @@ const CashierDashboard = () => {
                                     </div>
                                 </button>
 
-                                {/* Refresh */}
+                                {/* Mobile: Logout | Desktop: Refresh */}
                                 <button
-                                    onClick={fetchOrders}
-                                    className="relative w-8 h-8 md:w-10 md:h-10 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm"
+                                    onClick={() => {
+                                        if (window.innerWidth < 768) {
+                                            navigate('/logout');
+                                        } else {
+                                            fetchOrders();
+                                        }
+                                    }}
+                                    className="relative w-8 h-8 md:w-10 md:h-10 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm md:hover:-translate-y-1 md:hover:shadow-lg md:hover:shadow-rose-500/20"
                                 >
-                                    <RefreshCw size={14} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
+                                    <div className="md:hidden">
+                                        <LogOut size={16} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="hidden md:block">
+                                        <RefreshCw size={14} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
+                                    </div>
                                 </button>
                             </div>
                         </div>,

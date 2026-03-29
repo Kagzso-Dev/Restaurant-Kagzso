@@ -1,9 +1,9 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
-import { ChefHat, Clock, CheckCheck, Utensils, XCircle, Grid, List, Loader2, ChevronRight, ChevronLeft, RefreshCw, X, Printer } from 'lucide-react';
+import { ChefHat, Clock, CheckCheck, Utensils, XCircle, Grid, List, Loader2, ChevronRight, ChevronLeft, RefreshCw, X, Printer, LogOut } from 'lucide-react';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
 import StatusBadge from '../../components/StatusBadge';
@@ -361,6 +361,7 @@ const KitchenDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const activeTab = searchParams.get('tab') || 'active'; // 'active', 'cancelled', 'completed'
     const [filterType, setFilterType] = useState('all'); // 'all', 'dine-in', 'takeaway'
     const [statusFilter, setStatusFilter] = useState(null);
@@ -575,13 +576,24 @@ const KitchenDashboard = () => {
                             </div>
                         </button>
 
-                        {/* 3. Refresh */}
+                        {/* Mobile: Logout | Desktop: Refresh */}
                         <button
-                            onClick={() => { window.dispatchEvent(new CustomEvent('pos-refresh')); }}
-                            className="flex items-center justify-center w-8 h-8 md:w-11 md:h-11 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-500 transition-all active:scale-95"
-                            title="Refresh Live"
+                            onClick={() => { 
+                                if (window.innerWidth < 768) {
+                                    navigate('/logout');
+                                } else {
+                                    window.dispatchEvent(new CustomEvent('pos-refresh'));
+                                }
+                            }}
+                            className="flex items-center justify-center w-8 h-8 md:w-11 md:h-11 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-500 transition-all active:scale-95 md:hover:-translate-y-1 md:hover:shadow-lg md:hover:shadow-rose-500/20"
+                            title="Sign Out (Mobile) / Refresh (Desktop)"
                         >
-                            <RefreshCw size={14} strokeWidth={2.5} />
+                            <div className="md:hidden">
+                                <LogOut size={16} strokeWidth={2.5} />
+                            </div>
+                            <div className="hidden md:block">
+                                <RefreshCw size={14} strokeWidth={2.5} />
+                            </div>
                         </button>
                     </div>
                 </div>,
@@ -647,10 +659,10 @@ const KitchenDashboard = () => {
                     )}
                 </div>
             ) : (
-                <div className={`grid gap-4 p-4 ${
+                <div className={`grid gap-5 p-5 ${
                     isCardView
-                        ? 'grid-cols-[repeat(auto-fill,minmax(160px,1fr))]'
-                        : 'grid-cols-[repeat(auto-fill,minmax(240px,1fr))]'
+                        ? 'grid-cols-[repeat(auto-fill,minmax(140px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))]'
+                        : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
                 }`}>
                     {displayOrders.map(order => (
                         <div key={order._id} className="h-full transition-transform">
@@ -703,37 +715,57 @@ const KitchenDashboard = () => {
                     onConfirm={handleCancelAction}
                 />
     
-                {/* ── TOP POPUP: Print Confirmation (iOS Style) ── */}
+                {/* ── TOP POPUP: Print Confirmation & Quick Details (iOS Style) ── */}
                 {printConfirm.open && (
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-scale-in">
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[4px]" onClick={() => setPrintConfirm({ open: false, order: null })} />
-                        <div className="relative bg-white rounded-[1.3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col w-full max-w-[260px]">
-                            {/* Content Block */}
-                            <div className="p-5 flex flex-col items-center text-center gap-1.5 text-black">
-                                <h4 className="text-[17px] font-semibold tracking-tight leading-tight">Print Ticket?</h4>
-                                <p className="text-[13px] text-gray-600 leading-tight">
-                                    Send {printConfirm.order?.orderNumber} to printer?
-                                </p>
-                                <div className="mt-1">
-                                    <span className="text-[12px] font-semibold bg-gray-100 rounded-md px-2 py-0.5 text-gray-700">
+                        <div className="absolute inset-0 bg-black/50 backdrop-blur-[6px]" onClick={() => setPrintConfirm({ open: false, order: null })} />
+                        <div className="relative bg-white rounded-[2rem] shadow-[0_25px_70px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col w-full max-w-[320px] md:max-w-[360px] animate-in fade-in zoom-in-95 duration-200">
+                            {/* Header Content */}
+                            <div className="p-6 flex flex-col items-center text-center gap-2 text-black">
+                                <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-500 mb-1">
+                                    <Printer size={24} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-[18px] font-black tracking-tight leading-tight uppercase">Print Order Ticket?</h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[11px] font-black bg-gray-100 rounded-lg px-2.5 py-1 text-gray-700 border border-gray-200 shadow-sm uppercase">
+                                        {printConfirm.order?.orderNumber.replace('ORD-', '#')}
+                                    </span>
+                                    <span className="text-[11px] font-black bg-orange-500/10 rounded-lg px-2.5 py-1 text-orange-600 border border-orange-200 uppercase">
                                         {printConfirm.order?.orderType === 'dine-in' ? `Table ${printConfirm.order?.tableId?.number || printConfirm.order?.tableId}` : `Token ${printConfirm.order?.tokenNumber}`}
                                     </span>
                                 </div>
                             </div>
+
+                            {/* Items Preview List (The requested "Details" view) */}
+                            <div className="px-6 pb-6 max-h-[300px] overflow-y-auto custom-scrollbar-light">
+                                <div className="space-y-2">
+                                    {printConfirm.order?.items?.filter(i => i.status !== 'CANCELLED').map((item, idx) => (
+                                        <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                                            <div className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-[11px] font-black text-gray-800 shrink-0">
+                                                {item.quantity}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[12px] font-black text-gray-900 leading-tight truncate">{item.name}</p>
+                                                {item.variant?.name && <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none mt-1">{item.variant.name}</p>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                             
-                            {/* Buttons Block (iOS Style) */}
-                            <div className="grid grid-cols-2 border-t border-gray-200">
+                            {/* Buttons Block (Premium iOS Style Separated Actions) */}
+                            <div className="grid grid-cols-2 border-t border-gray-100 bg-gray-50/50">
                                 <button 
                                     onClick={() => setPrintConfirm({ open: false, order: null })}
-                                    className="h-11 flex items-center justify-center text-[17px] text-[#007AFF] font-normal hover:bg-gray-50 active:bg-gray-100 transition-colors border-r border-gray-200"
+                                    className="h-14 flex items-center justify-center text-[15px] text-gray-400 font-black uppercase tracking-widest hover:bg-gray-100 active:bg-gray-200 transition-colors border-r border-gray-100"
                                 >
                                     Cancel
                                 </button>
                                 <button 
                                     onClick={() => { printBill(printConfirm.order, (p) => `₹${p}`, settings, true); setPrintConfirm({ open: false, order: null }); }}
-                                    className="h-11 flex items-center justify-center text-[17px] text-[#FF3B30] font-semibold hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                                    className="h-14 flex items-center justify-center text-[15px] text-orange-600 font-black uppercase tracking-widest hover:bg-orange-50 active:bg-orange-100 transition-colors"
                                 >
-                                    Print
+                                    Print KOT
                                 </button>
                             </div>
                         </div>

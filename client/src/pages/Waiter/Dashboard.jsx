@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api';
-import { Utensils, Package, Grid, List, ShoppingBag, Clock, History, WifiOff, ChevronRight, ChevronLeft, RefreshCw, X, Armchair } from 'lucide-react';
+import { Utensils, Package, Grid, List, ShoppingBag, Clock, History, WifiOff, ChevronRight, ChevronLeft, RefreshCw, X, Armchair, LogOut } from 'lucide-react';
 import TableGrid from '../../components/TableGrid';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
@@ -451,8 +451,25 @@ const WaiterDashboard = () => {
                         <button onClick={() => setIsProductionMode(!isProductionMode)} className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
                             {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
                         </button>
-                        <button onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }} className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
-                            <RefreshCw size={16} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
+                        <button 
+                            onClick={() => { 
+                                if (window.innerWidth < 768) {
+                                    navigate('/logout');
+                                } else {
+                                    if (refreshing) return; 
+                                    setRefreshing(true); 
+                                    fetchOrders(); 
+                                    setTimeout(() => setRefreshing(false), 1000); 
+                                }
+                            }} 
+                            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 md:hover:-translate-y-1 md:hover:shadow-lg md:hover:shadow-rose-500/20 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}
+                        >
+                            <div className="md:hidden">
+                                <LogOut size={16} strokeWidth={2.5} />
+                            </div>
+                            <div className="hidden md:block">
+                                <RefreshCw size={16} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
+                            </div>
                         </button>
                     </div>
 

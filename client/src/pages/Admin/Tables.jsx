@@ -177,14 +177,15 @@ const AdminTables = () => {
         <div className="space-y-5 animate-fade-in">
 
             {/* ── Header ────────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--theme-bg-card2)] px-5 py-4 rounded-2xl border border-[var(--theme-border)] shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--theme-bg-card2)] p-5 sm:p-6 rounded-2xl border border-[var(--theme-border)] shadow-sm">
                 <div>
-                    <h1 className="text-xl font-bold text-[var(--theme-text-main)]">Table Map</h1>
+                    <h1 className="text-xl sm:text-2xl font-black text-[var(--theme-text-main)] uppercase tracking-tighter leading-tight">Table Map</h1>
+                    <p className="text-[10px] sm:text-sm text-[var(--theme-text-muted)] mt-1 font-bold uppercase tracking-widest opacity-60">Manage Floor Plan</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-orange-500/20 min-h-[44px]"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-600/30 whitespace-nowrap min-h-[44px]"
                     >
                         <Plus size={16} />
                         Add Table
@@ -196,28 +197,28 @@ const AdminTables = () => {
             <div className="flex flex-wrap gap-2">
                 <button
                     onClick={() => setStatusFilter('all')}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${
                         statusFilter === 'all'
                             ? 'bg-[var(--theme-text-main)] text-[var(--theme-bg-dark)] border-transparent'
                             : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-gray-400'
                     }`}
                 >
                     All
-                    <span className="bg-[var(--theme-bg-hover)] px-1.5 py-0.5 rounded-md tabular-nums">{tables.length}</span>
+                    <span className="bg-[var(--theme-bg-hover)] px-1.5 py-0.5 rounded-md tabular-nums opacity-60 font-mono text-[9px]">{tables.length}</span>
                 </button>
                 {Object.entries(STATUS_CONFIG).map(([key, config]) => (
                     <button
                         key={key}
                         onClick={() => setStatusFilter((k) => (k === key ? 'all' : key))}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${
                             statusFilter === key
                                 ? `${config.border} ${config.bg}`
                                 : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-gray-400'
                         }`}
                     >
-                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
-                        <span className={statusFilter === key ? config.text : ''}>{config.label}</span>
-                        <span className={`px-1.5 py-0.5 rounded-md tabular-nums ${statusFilter === key ? config.text : 'text-[var(--theme-text-muted)]'} bg-[var(--theme-bg-hover)]`}>
+                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${config.dot}`} />
+                        <span className={statusFilter === key ? config.text : 'opacity-80'}>{config.label}</span>
+                        <span className={`px-1.5 py-0.5 rounded-md tabular-nums ${statusFilter === key ? config.text : 'text-[var(--theme-text-muted)]'} bg-[var(--theme-bg-hover)] font-mono text-[9px]`}>
                             {statusCounts[key] || 0}
                         </span>
                     </button>

@@ -229,7 +229,7 @@ const AdminMenu = () => {
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setFilterCategory(null)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${filterCategory === null ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/30' : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-blue-500 hover:text-[var(--theme-text-main)]'}`}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-bold border transition-all whitespace-nowrap ${filterCategory === null ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/30' : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-blue-500 hover:text-[var(--theme-text-main)]'}`}
                     >
                         All
                     </button>
@@ -237,7 +237,7 @@ const AdminMenu = () => {
                         <button
                             key={cat._id}
                             onClick={() => setFilterCategory(cat._id)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${String(filterCategory) === String(cat._id) ? 'text-white border-transparent shadow-sm' : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-blue-500 hover:text-[var(--theme-text-main)]'}`}
+                            className={`px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-bold border transition-all whitespace-nowrap ${String(filterCategory) === String(cat._id) ? 'text-white border-transparent shadow-sm' : 'bg-[var(--theme-bg-card)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-blue-500 hover:text-[var(--theme-text-main)]'}`}
                             style={String(filterCategory) === String(cat._id) ? { backgroundColor: cat.color || '#3b82f6', boxShadow: `0 2px 8px ${cat.color || '#3b82f6'}40` } : {}}
                         >
                             {cat.name}

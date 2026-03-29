@@ -212,7 +212,7 @@ const OrderDetailsModal = ({
                             {/* RIGHT COLUMN: Grand Total */}
                             <div className="flex flex-col items-end text-right min-w-0 pl-4">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1.5 opacity-50 whitespace-nowrap">Order Total</p>
-                                <p className="text-3xl sm:text-4xl font-black leading-none tracking-tighter drop-shadow-sm whitespace-nowrap">
+                                <p className="text-2xl sm:text-3xl md:text-4xl font-black leading-none tracking-tighter drop-shadow-sm whitespace-nowrap">
                                     {formatPrice(order.finalAmount)}
                                 </p>
                                 <div className="mt-3">

@@ -136,18 +136,18 @@ const AdminCategories = () => {
             {/* ── Header ──────────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-[var(--theme-bg-card2)] p-5 sm:p-6 rounded-xl shadow-lg border border-[var(--theme-border)]">
                 <div>
-                    <h2 className="text-2xl font-bold text-[var(--theme-text-main)]">Categories</h2>
-                    <p className="text-sm text-[var(--theme-text-muted)] mt-1">
+                    <h2 className="text-xl sm:text-2xl font-black text-[var(--theme-text-main)] uppercase tracking-tighter leading-tight">Categories</h2>
+                    <p className="text-[10px] sm:text-sm text-[var(--theme-text-muted)] mt-1 font-bold uppercase tracking-widest opacity-60">
                         {active.length} active · {inactive.length} inactive
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 group/header-actions">
                     <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
                     <button
                         onClick={() => openModal()}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors min-h-[44px] w-full sm:w-auto"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 xs:px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/30 whitespace-nowrap min-h-[44px]"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} />
                         <span>Add Category</span>
                     </button>
                 </div>
@@ -182,7 +182,7 @@ const AdminCategories = () => {
                                 <div className="flex items-center gap-4">
                                     <button
                                         onClick={() => handleToggleStatus(cat)}
-                                        className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border transition-all ${cat.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}
+                                        className={`px-2 py-0.5 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${cat.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}
                                     >
                                         {cat.status}
                                     </button>
@@ -265,14 +265,14 @@ const AdminCategories = () => {
                                     {/* Status Badge - Pill Style */}
                                     <button
                                         onClick={() => handleToggleStatus(cat)}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-sm whitespace-nowrap ${
                                             cat.status === 'active'
                                                 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
+                                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                                         }`}
                                         title={cat.status === 'active' ? 'Click to deactivate' : 'Click to activate'}
                                     >
-                                        <div className={`w-1.5 h-1.5 rounded-full ${cat.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                                        <div className={`w-1 h-1 rounded-full ${cat.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
                                         {cat.status}
                                     </button>
 

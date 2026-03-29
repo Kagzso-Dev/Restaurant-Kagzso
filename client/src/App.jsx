@@ -30,6 +30,7 @@ const WaiterDashboard = lazy(() => import('./pages/Waiter/Dashboard'));
 const NewOrder = lazy(() => import('./pages/Waiter/NewOrder'));
 const DineIn = lazy(() => import('./pages/Waiter/DineIn'));
 const TakeAway = lazy(() => import('./pages/Waiter/TakeAway'));
+const LogoutConfirm = lazy(() => import('./pages/LogoutConfirm'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 
 /** Suspense fallback — shown when lazy chunks are loading */
@@ -118,6 +119,9 @@ function App() {
                 <Route path="/waiter/kitchen-view" element={<KitchenDashboard />} />
                 <Route path="/waiter/history" element={<WaiterDashboard />} />
               </Route>
+
+              {/* Shared Mobile-Specific Routes */}
+              <Route path="/logout" element={<LogoutConfirm />} />
 
             </Route>
 

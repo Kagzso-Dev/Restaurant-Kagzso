@@ -1,10 +1,11 @@
 import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import {
     TrendingUp, TrendingDown, ShoppingBag, Clock, DollarSign,
     Download, RefreshCw, ChevronDown, FileText,
-    Layers, Utensils, Package
+    Layers, Utensils, Package, LogOut
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -71,8 +72,8 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color, badge }) => {
                 <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-black tracking-[0.2em] mb-1 opacity-60">
                     {title}
                 </p>
-                <div className="flex items-baseline gap-2">
-                    <h3 className="text-3xl md:text-4xl font-black text-[var(--theme-text-main)] tracking-tighter">
+                <div className="flex items-baseline gap-1">
+                    <h3 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-black text-[var(--theme-text-main)] tracking-tighter whitespace-nowrap">
                         {value}
                     </h3>
                 </div>
@@ -108,6 +109,7 @@ const AdminDashboard = () => {
 
     const PER_PAGE = 10;
     const { user, socket, formatPrice, settings } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     /* ── Fetch Orders ─────────────────────────────────────────────────── */
     const fetchOrders = useCallback(async (forceRefresh = false) => {
@@ -283,29 +285,43 @@ const AdminDashboard = () => {
         <div className="space-y-5 animate-fade-in">
 
             {/* ── Page Header ─────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[var(--theme-bg-card2)] rounded-2xl p-5 border border-[var(--theme-border)]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 bg-[var(--theme-bg-card2)] rounded-3xl p-5 sm:p-6 border border-[var(--theme-border)] shadow-xl">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-[var(--theme-text-main)] leading-tight">
+                    <h1 className="text-xl sm:text-2xl font-black text-[var(--theme-text-main)] uppercase tracking-tighter leading-tight flex items-center">
                         KAGZSO
-                        <span className="text-[var(--theme-text-muted)] font-normal ml-2 text-base md:text-xl">Analytics</span>
+                        <span className="text-[var(--theme-text-muted)] font-bold ml-2 text-xs sm:text-base opacity-40 uppercase tracking-widest px-2 py-0.5 bg-[var(--theme-bg-dark)] rounded-lg border border-[var(--theme-border)] shadow-inner">
+                            Analytics
+                        </span>
                     </h1>
-
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    {/* Mobile: Logout | Desktop/Tablet: Refresh */}
                     <button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className="relative flex items-center gap-2 px-4 py-2.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl text-sm font-bold transition-all min-h-[44px] active:scale-95 disabled:opacity-60 shadow-sm"
+                        onClick={() => {
+                            if (window.innerWidth < 768) {
+                                navigate('/logout');
+                            } else {
+                                handleRefresh();
+                            }
+                        }}
+                        disabled={refreshing && window.innerWidth >= 768}
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all min-h-[44px] active:scale-95 disabled:opacity-60 shadow-sm whitespace-nowrap md:hover:-translate-y-1 md:hover:shadow-lg md:hover:shadow-rose-500/20"
                     >
-                        <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
-                        <span className="hidden sm:inline">Refresh</span>
+                        <div className="md:hidden flex items-center gap-2">
+                            <LogOut size={16} strokeWidth={2.5} />
+                            <span>Sign Out</span>
+                        </div>
+                        <div className="hidden md:flex items-center gap-2">
+                            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+                            <span>Refresh</span>
+                        </div>
                     </button>
                     <button
                         onClick={exportExcel}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl text-sm font-semibold transition-colors shadow-glow-orange min-h-[44px]"
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-500/30 min-h-[44px] whitespace-nowrap"
                     >
-                        <Download size={15} />
-                        <span>Export Excel</span>
+                        <Download size={14} />
+                        <span>Export</span>
                     </button>
                 </div>
             </div>
@@ -384,14 +400,14 @@ const AdminDashboard = () => {
                                 key={btn.id}
                                 onClick={() => setFilterType(btn.id)}
                                 className={`
-                                    flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
+                                    flex items-center gap-1.5 px-3 xs:px-4 py-2 rounded-xl text-[9px] xs:text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap
                                     ${filterType === btn.id 
                                         ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
                                         : 'text-[var(--theme-text-muted)] hover:text-orange-500 hover:bg-orange-500/5'}
                                 `}
                             >
                                 {btn.icon}
-                                <span className="hidden xs:inline">{btn.label}</span>
+                                <span>{btn.label}</span>
                             </button>
                         ))}
                     </div>
@@ -437,10 +453,10 @@ const AdminDashboard = () => {
                                                 </div>
                                             </td>
                                             <td className="px-5 py-4 hidden xs:table-cell">
-                                                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border ${
+                                                <span className={`px-2 py-0.5 rounded-lg text-[8px] xs:text-[9px] font-black uppercase tracking-wider border whitespace-nowrap ${
                                                     order.orderType === 'dine-in' 
-                                                        ? 'bg-emerald-500/5 text-emerald-500 border-emerald-500/20' 
-                                                        : 'bg-blue-500/5 text-blue-500 border-blue-500/20'
+                                                        ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/20' 
+                                                        : 'bg-blue-500/5 text-blue-400 border-blue-500/20'
                                                 }`}>
                                                     {order.orderType}
                                                 </span>
@@ -451,7 +467,7 @@ const AdminDashboard = () => {
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-2">
                                                     {isActive && <div className="w-1 h-1 rounded-full bg-orange-500 animate-ping" />}
-                                                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColors[order.orderStatus?.toLowerCase()] || ''}`}>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[8px] xs:text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${statusColors[order.orderStatus?.toLowerCase()] || ''}`}>
                                                         {order.orderStatus}
                                                     </span>
                                                 </div>

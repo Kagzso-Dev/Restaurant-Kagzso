@@ -358,10 +358,10 @@ const AdminOrders = () => {
         {/* ── Left: Orders list (independent scroll) ──────────────────── */}
         <div className="flex-1 w-full min-w-0 overflow-y-auto custom-scrollbar p-3 sm:p-6 space-y-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-[var(--theme-bg-card)] p-5 sm:p-6 rounded-3xl shadow-xl border border-[var(--theme-border)] w-full">
-                <div className="shrink-0">
+                <div className="shrink-0 text-center sm:text-left">
                     <h2 className="text-xl sm:text-2xl font-black text-[var(--theme-text-main)] whitespace-nowrap">Order History</h2>
-                    <p className="text-xs sm:text-sm text-[var(--theme-text-muted)] mt-1 whitespace-nowrap">
-                        Showing orders for: <span className="font-bold text-orange-500">{activeLabel}</span>
+                    <p className="text-[10px] sm:text-xs text-[var(--theme-text-muted)] mt-1 whitespace-nowrap opacity-70">
+                        {activeLabel}
                     </p>
                 </div>
 
@@ -385,12 +385,12 @@ const AdminOrders = () => {
 
 
                     {/* Quick date range buttons */}
-                    <div className="flex items-center gap-1 bg-[var(--theme-bg-deep)] p-1.5 rounded-2xl border border-[var(--theme-border)]">
+                    <div className="flex items-center gap-1 bg-[var(--theme-bg-deep)] p-1 rounded-2xl border border-[var(--theme-border)] overflow-x-auto no-scrollbar">
                         {DATE_RANGES.map(r => (
                             <button
                                 key={r.value}
                                 onClick={() => { setDateRange(r.value); setFromDate(''); setToDate(''); setShowDatePicker(false); }}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 ${dateRange === r.value
+                                className={`px-2.5 xs:px-3 py-1.5 rounded-xl text-[10px] xs:text-xs font-bold transition-all duration-200 whitespace-nowrap ${dateRange === r.value
                                         ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30'
                                         : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-card)]'
                                     }`}
@@ -461,12 +461,12 @@ const AdminOrders = () => {
                     <table className="w-full text-left">
                         <thead className="bg-[var(--theme-bg-deep)] text-[var(--theme-text-muted)] uppercase text-[10px] font-black tracking-widest">
                             <tr>
-                                <th className="px-3 sm:px-6 py-3 sm:py-5">Order ID</th>
-                                <th className="px-3 sm:px-6 py-3 sm:py-5 hidden xs:table-cell">Service</th>
-                                <th className="px-3 sm:px-6 py-3 sm:py-5 text-center hidden sm:table-cell">Items</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-5">ID</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-5 hidden sm:table-cell">Type</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-5 text-center hidden md:table-cell">Items</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-5">Amount</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-5">Status</th>
-                                <th className="px-3 sm:px-6 py-3 sm:py-5 text-right sm:pr-10">Details</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-5 text-right sm:pr-10 hidden xs:table-cell">Details</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--theme-border)]">

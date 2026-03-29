@@ -2,7 +2,7 @@ import { useContext, useState, useEffect, useRef, useCallback, useMemo, memo } f
 
 import { AuthContext } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
-import { Search, Menu, X, Loader2, ShoppingBag, RefreshCw } from 'lucide-react';
+import { Search, Menu, X, Loader2, ShoppingBag, RefreshCw, LogOut } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../api';
 import useDebounce from '../hooks/useDebounce';
@@ -119,7 +119,7 @@ const TopBar = memo(({ onMenuClick }) => {
             style={{ backgroundColor: 'var(--theme-topbar-bg)' }}
         >
             {/* ── Row 1: always visible ────────────────────────────────── */}
-            <div className="flex items-center w-full h-[54px] md:h-full">
+            <div className="flex items-center w-full h-[54px] md:h-full px-2">
                 <div id="topbar-portal" className="flex-1 flex items-center justify-start overflow-hidden"></div>
             </div>
 
