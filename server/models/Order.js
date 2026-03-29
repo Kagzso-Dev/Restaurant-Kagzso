@@ -286,19 +286,12 @@ const Order = {
         } catch (error) {
             // Self-repair: If attribute is missing, try to create it
             if (error.code === 400 && (error.message?.includes('Unknown attribute') || error.message?.includes('invalid document structure'))) {
-                console.warn('[Order] Schema mismatch detected during update. Attempting repair...');
                 try {
-                    const existingAttrs = await databases.listAttributes(databaseId, COLLECTIONS.orders);
-                    const attrNames = existingAttrs.attributes.map(a => a.key);
-
-                    if (!attrNames.includes('discount_label')) {
-                        await databases.createStringAttribute(databaseId, COLLECTIONS.orders, 'discount_label', 100, false, '');
-                        console.log('[Order] Schema repair tasks dispatched. Waiting for indexer...');
-                        await new Promise(r => setTimeout(r, 2000));
-                    }
+                    await ensureSchema('orders');
                     return this.updateById(id, updates);
                 } catch (schemaErr) {
                     console.error('[Order] Schema auto-repair failed:', schemaErr.message);
+                    throw error; // Re-throw original error
                 }
             }
             throw error;
@@ -330,20 +323,37 @@ const Order = {
     },
 
     async updateItemStatus(orderId, itemId, status) {
-        await databases.updateDocument(databaseId, COLLECTIONS.order_items, itemId, {
-            status: status
-        });
-        return this.findById(orderId);
+        try {
+            await databases.updateDocument(databaseId, COLLECTIONS.order_items, itemId, {
+                status: status
+            });
+            return this.findById(orderId);
+        } catch (error) {
+             if (error.code === 400) {
+                 await ensureSchema('order_items');
+                 return databases.updateDocument(databaseId, COLLECTIONS.order_items, itemId, { status: status });
+             }
+             throw error;
+        }
     },
 
     async cancelItem(orderId, itemId, { cancelledBy, cancelReason }) {
-        await databases.updateDocument(databaseId, COLLECTIONS.order_items, itemId, {
+        const updates = {
             status: 'CANCELLED',
             cancelled_by: cancelledBy,
             cancel_reason: cancelReason,
             cancelled_at: new Date().toISOString()
-        });
-        return this.findById(orderId);
+        };
+        try {
+            await databases.updateDocument(databaseId, COLLECTIONS.order_items, itemId, updates);
+            return this.findById(orderId);
+        } catch (error) {
+             if (error.code === 400) {
+                 await ensureSchema('order_items');
+                 return databases.updateDocument(databaseId, COLLECTIONS.order_items, itemId, updates);
+             }
+             throw error;
+        }
     },
 
     async search(q, limit = 30) {
@@ -404,22 +414,36 @@ const Order = {
 
             // 3. Insert new items
             const newItemDocs = await Promise.all(items.map(async (item) => {
-                return databases.createDocument(
-                    databaseId,
-                    COLLECTIONS.order_items,
-                    ID.unique(),
-                    {
-                        order_id: orderId,
-                        menu_item_id: item.menuItemId || null,
-                        name: item.name,
-                        price: parseFloat(item.price),
-                        quantity: parseInt(item.quantity),
-                        notes: item.notes || null,
-                        variant: item.variant ? JSON.stringify(item.variant) : null,
-                        status: 'PENDING',
-                        is_newly_added: true
+                const itemData = {
+                    order_id: orderId,
+                    menu_item_id: item.menuItemId || null,
+                    name: item.name,
+                    price: parseFloat(item.price),
+                    quantity: parseInt(item.quantity),
+                    notes: item.notes || null,
+                    variant: item.variant ? JSON.stringify(item.variant) : null,
+                    status: 'PENDING',
+                    is_newly_added: true
+                };
+
+                try {
+                    return await databases.createDocument(databaseId, COLLECTIONS.order_items, ID.unique(), itemData);
+                } catch (err) {
+                    if (err.code === 400 && (err.message?.includes('Unknown attribute') || err.message?.includes('invalid document structure'))) {
+                        console.warn(`[Order] Schema mismatch in order_items. Attempting to add "is_newly_added"...`);
+                        try {
+                            await databases.createBooleanAttribute(databaseId, COLLECTIONS.order_items, 'is_newly_added', false, false);
+                            await new Promise(r => setTimeout(r, 2000)); // wait for indexer
+                            return await databases.createDocument(databaseId, COLLECTIONS.order_items, ID.unique(), itemData);
+                        } catch (schemaErr) {
+                            console.error('[Order] Schema repair failed for order_items:', schemaErr.message);
+                            // Fallback: remove the offending attribute and retry once
+                            delete itemData.is_newly_added;
+                            return await databases.createDocument(databaseId, COLLECTIONS.order_items, ID.unique(), itemData);
+                        }
                     }
-                );
+                    throw err;
+                }
             }));
 
             // 4. Single Source calculation
@@ -434,14 +458,33 @@ const Order = {
             // Flag is true if ANY existing item was already READY before we added new ones
             const hasExistingReadyItems = existingItems.some(i => i.status?.toUpperCase() === 'READY');
 
-            await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, {
+            const orderUpdates = {
                 total_amount: subtotalSum,
                 tax: newTax,
                 final_amount: newFinal,
                 kot_status: 'Open',
                 order_status: 'pending',
                 is_partially_ready: hasExistingReadyItems || !!orderCount.is_partially_ready,
-            });
+            };
+
+            try {
+                await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, orderUpdates);
+            } catch (err) {
+                if (err.code === 400 && (err.message?.includes('Unknown attribute') || err.message?.includes('invalid document structure'))) {
+                    console.warn(`[Order] Schema mismatch in orders. Attempting to add "is_partially_ready"...`);
+                    try {
+                        await databases.createBooleanAttribute(databaseId, COLLECTIONS.orders, 'is_partially_ready', false, false);
+                        await new Promise(r => setTimeout(r, 2000)); // wait for indexer
+                        await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, orderUpdates);
+                    } catch (schemaErr) {
+                        console.error('[Order] Schema repair failed for orders:', schemaErr.message);
+                        delete orderUpdates.is_partially_ready;
+                        await databases.updateDocument(databaseId, COLLECTIONS.orders, orderId, orderUpdates);
+                    }
+                } else {
+                    throw err;
+                }
+            }
 
             // Return fresh formatted order
             const fullOrder = await databases.getDocument(databaseId, COLLECTIONS.orders, orderId);
@@ -453,6 +496,63 @@ const Order = {
         }
     },
 };
+
+// ─── Automated Schema Maintenance ──────────────────────────────────────
+const schemaRepaired = { orders: false, order_items: false };
+async function ensureSchema(colName = 'orders') {
+    if (schemaRepaired[colName]) return; 
+    
+    const collectionId = COLLECTIONS[colName];
+    if (!collectionId) return;
+
+    try {
+        console.warn(`[Order.Schema] Checking ${colName} attributes...`);
+        const existingAttrs = await databases.listAttributes(databaseId, collectionId);
+        const attrNames = existingAttrs.attributes.map(a => a.key);
+
+        let repairCount = 0;
+        const required = {
+            orders: [
+                { key: 'is_partially_ready', type: 'boolean', default: false },
+                { key: 'discount_label', type: 'string', size: 100, default: '' },
+                { key: 'prep_started_at', type: 'string', size: 50, default: null },
+                { key: 'ready_at', type: 'string', size: 50, default: null },
+                { key: 'completed_at', type: 'string', size: 50, default: null },
+                { key: 'payment_at', type: 'string', size: 50, default: null },
+                { key: 'paid_at', type: 'string', size: 50, default: null },
+                { key: 'cancelled_by', type: 'string', size: 100, default: null },
+                { key: 'cancel_reason', type: 'string', size: 300, default: null }
+            ],
+            order_items: [
+                { key: 'is_newly_added', type: 'boolean', default: false },
+                { key: 'cancelled_by', type: 'string', size: 100, default: null },
+                { key: 'cancel_reason', type: 'string', size: 300, default: null },
+                { key: 'cancelled_at', type: 'string', size: 50, default: null }
+            ]
+        };
+
+        for (const attr of (required[colName] || [])) {
+            if (!attrNames.includes(attr.key)) {
+                console.log(`[Order.Schema] Adding ${attr.key} to ${colName}...`);
+                if (attr.type === 'string') {
+                    await databases.createStringAttribute(databaseId, collectionId, attr.key, attr.size, false, attr.default);
+                } else if (attr.type === 'boolean') {
+                    await databases.createBooleanAttribute(databaseId, collectionId, attr.key, false, attr.default);
+                }
+                repairCount++;
+            }
+        }
+
+        if (repairCount > 0) {
+            console.warn(`[Order.Schema] ${repairCount} repairs dispatched. Waiting for indexer (4s)...`);
+            await new Promise(r => setTimeout(r, 4000));
+        }
+        schemaRepaired[colName] = true;
+    } catch (err) {
+        console.error(`[Order.Schema] Batch repair failed for ${colName}:`, err.message);
+        throw err;
+    }
+}
 
 // ─── Query builder ─────────────────────────────────────────────────────
 function buildQueries(filter) {

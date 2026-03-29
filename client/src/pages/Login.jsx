@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, CheckCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+import HeroSection from '../components/HeroSection';
 
 // Helper: get dashboard path by role
 const getDashboardPath = (role) => {
@@ -43,7 +44,13 @@ const Login = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-[100dvh] bg-[var(--theme-bg-dark)] relative overflow-y-auto overflow-x-hidden px-4">
+        <div className="flex flex-col min-h-[100dvh] bg-[var(--theme-bg-dark)] relative overflow-y-auto overflow-x-hidden">
+            {/* Hero Section */}
+            <HeroSection />
+
+            {/* Login Section Anchor */}
+            <div id="login-section" className="px-4">
+
             {/* Background Effects */}
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
                 <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
@@ -137,6 +144,8 @@ const Login = () => {
                     </form>
                 </div>
             </div>
+
+            </div>{/* end #login-section */}
 
             {/* Footer */}
             <div className="py-6 text-center text-[10px] sm:text-xs text-[var(--theme-text-subtle)] z-10 w-full px-4">

@@ -307,12 +307,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                 e.stopPropagation();
                                 if (isUpdatingOrder) return;
                                 
-                                // Prevent manual "Ready" if items are still pending/preparing
                                 const nextStatus = order.orderStatus === 'pending' ? 'accepted' : order.orderStatus === 'accepted' ? 'preparing' : 'ready';
-                                if (nextStatus === 'ready') {
-                                    const hasItemsNotReady = order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED');
-                                    if (hasItemsNotReady) return; // User must click READY on items first
-                                }
 
                                 setIsUpdatingOrder(true);
                                 try {
@@ -321,14 +316,17 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                                     setIsUpdatingOrder(false);
                                 }
                             }}
-                            disabled={isUpdatingOrder || (order.orderStatus === 'preparing' && order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED'))}
+                            disabled={isUpdatingOrder || order.isPartiallyReady}
                             className={`px-3 py-1.5 flex items-center justify-center min-w-[65px] h-[26px] text-white text-[10px] font-black rounded-lg shadow-sm transition-all active:scale-95 uppercase tracking-wider ${
                                 order.orderStatus === 'pending' ? 'bg-[var(--status-accepted)] hover:brightness-110' :
                                 order.orderStatus === 'accepted' ? 'bg-[var(--status-preparing)] hover:brightness-110' :
                                 'bg-[var(--status-ready)] hover:brightness-110 text-emerald-900 border border-emerald-900/10'
-                            } ${(isUpdatingOrder || (order.orderStatus === 'preparing' && order.items.some(i => i.status?.toUpperCase() !== 'READY' && i.status?.toUpperCase() !== 'CANCELLED'))) ? 'opacity-30 cursor-not-allowed grayscale-[0.5]' : ''}`}
+                            } ${(isUpdatingOrder || order.isPartiallyReady) ? 'opacity-30 cursor-not-allowed grayscale-[0.5]' : ''}`}
                         >
-                            {isUpdatingOrder ? <Loader2 size={12} className="animate-spin" /> : order.orderStatus === 'pending' ? 'Accept' : order.orderStatus === 'accepted' ? 'Start' : 'Ready'}
+                            {isUpdatingOrder ? <Loader2 size={12} className="animate-spin" /> : (
+                                order.orderStatus === 'pending' ? 'ACCEPT' : 
+                                order.orderStatus === 'accepted' ? 'START' : 'READY'
+                            )}
                         </button>
                     ) : null}
                 </div>
