@@ -76,7 +76,7 @@ const BottomNav = memo(() => {
                             className="flex-shrink-0"
                             strokeWidth={active ? 2.5 : 1.8}
                         />
-                        <span className={`text-[10px] font-semibold tracking-wide ${active ? 'text-orange-400' : ''}`}>
+                        <span className={`text-[10px] font-semibold tracking-wide whitespace-nowrap ${active ? 'text-orange-400' : ''}`}>
                             {label}
                         </span>
                     </button>

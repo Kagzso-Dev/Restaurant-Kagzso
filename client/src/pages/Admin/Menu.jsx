@@ -277,154 +277,197 @@ const AdminMenu = () => {
                 </div>
             )}
 
-            {/* ── Modal ────────────────────────────────────────────────── */}
+            {/* ── Modal (Right Drawer) ────────────────────────────────── */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[var(--theme-bg-card)] p-5 sm:p-8 rounded-xl w-full max-w-lg shadow-2xl border border-[var(--theme-border)] animate-fade-in max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-xl font-bold text-[var(--theme-text-main)] mb-6">
-                            {editingItem ? 'Edit Item' : 'Add New Item'}
-                        </h3>
-
-                        {formError && (
-                            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                                {formError}
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="fixed inset-0 z-[1000] flex justify-end animate-fade-in px-2 sm:px-0">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={closeModal} />
+                    <div className="relative z-10 w-full sm:w-[400px] bg-[var(--theme-bg-card)] shadow-2xl flex flex-col h-full border-l border-[var(--theme-border)] animate-slide-left pb-[64px] sm:pb-0 rounded-t-3xl sm:rounded-none">
+                        {/* Header */}
+                        <div className="px-5 py-4 border-b border-[var(--theme-border)] flex items-center justify-between bg-[var(--theme-bg-card2)] shrink-0">
                             <div>
-                                <label className="block text-sm text-[var(--theme-text-muted)] mb-1">Name *</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    required
-                                    className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none"
-                                />
+                                <h3 className="text-lg font-black text-[var(--theme-text-main)] uppercase tracking-tighter">
+                                    {editingItem ? 'Edit Item' : 'Add New Item'}
+                                </h3>
+                                <p className="text-[9px] text-[var(--theme-text-muted)] font-bold uppercase tracking-widest mt-0.5 opacity-60">Item Configuration</p>
                             </div>
-                            <div>
-                                <label className="block text-sm text-[var(--theme-text-muted)] mb-1">Description</label>
-                                <textarea
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none"
-                                    rows="2"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm text-[var(--theme-text-muted)] mb-1">Price *</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={formData.price}
-                                        onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                        required
-                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm text-[var(--theme-text-muted)] mb-1">Category *</label>
-                                    <select
-                                        value={formData.category}
-                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                        required
-                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none"
-                                    >
-                                        <option value="">-- Select category --</option>
-                                        {categories.map(c => (
-                                            <option key={c._id} value={c._id}>
-                                                {c.name}{c.status === 'inactive' ? ' (inactive)' : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm text-[var(--theme-text-muted)] mb-1">Image URL</label>
-                                <input
-                                    type="text"
-                                    value={formData.image}
-                                    onChange={e => setFormData({ ...formData, image: e.target.value })}
-                                    placeholder="https://..."
-                                    className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none"
-                                />
-                            </div>
+                            <button onClick={closeModal} className="p-2 hover:bg-[var(--theme-bg-hover)] rounded-xl transition-colors">
+                                <Plus size={20} className="rotate-45" />
+                            </button>
+                        </div>
 
-                            {/* Toggles row */}
-                            <div className="flex flex-wrap gap-4 pt-1">
-                                <label className="flex items-center gap-2 cursor-pointer select-none">
-                                    <div
-                                        onClick={() => setFormData(f => ({ ...f, isVeg: !f.isVeg }))}
-                                        className={`w-10 h-5 rounded-full transition-colors flex items-center px-0.5 ${formData.isVeg ? 'bg-emerald-500' : 'bg-gray-600'}`}
-                                    >
-                                        <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.isVeg ? 'translate-x-5' : 'translate-x-0'}`} />
-                                    </div>
-                                    <span className="text-sm text-[var(--theme-text-main)]">Vegetarian</span>
-                                </label>
-
-                                <label className="flex items-center gap-2 cursor-pointer select-none">
-                                    <div
-                                        onClick={() => setFormData(f => ({ ...f, availability: !f.availability }))}
-                                        className={`w-10 h-5 rounded-full transition-colors flex items-center px-0.5 ${formData.availability ? 'bg-blue-500' : 'bg-gray-600'}`}
-                                    >
-                                        <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.availability ? 'translate-x-5' : 'translate-x-0'}`} />
-                                    </div>
-                                    <span className="text-sm text-[var(--theme-text-main)]">
-                                        {formData.availability ? 'Available on menu' : 'Hidden from menu'}
-                                    </span>
-                                </label>
-                            </div>
-
-                            {/* Variants / Portion Sizes */}
-                            <div className="border border-[var(--theme-border)] rounded-xl p-3 bg-[var(--theme-bg-dark)]">
-                                <div className="flex items-center justify-between mb-3">
-                                    <label className="text-sm font-bold text-[var(--theme-text-main)]">Portion Sizes</label>
-                                    <button type="button" onClick={() => setFormData(f => ({ ...f, variants: [...(f.variants || []), { name: '', price: '' }] }))}
-                                        className="text-xs bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 border border-blue-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all">
-                                        <Plus size={12} /> Add Size
-                                    </button>
+                        {/* Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar pb-10">
+                            {formError && (
+                                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-medium animate-shake">
+                                    {formError}
                                 </div>
-                                {(formData.variants || []).length === 0 && (
-                                    <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                                        <span className="text-orange-400 text-lg">⚠️</span>
-                                        <p className="text-xs text-orange-300 font-medium">No sizes added — customers will order at base price. Add sizes like Half / Full / Quarter.</p>
-                                    </div>
-                                )}
-                                {(formData.variants || []).map((v, idx) => (
-                                    <div key={idx} className="flex gap-2 mb-2 items-center">
+                            )}
+
+                            <form id="menu-item-form" onSubmit={handleSubmit} className="space-y-4">
+                                {/* Basic Info */}
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Name *</label>
                                         <input
                                             type="text"
-                                            placeholder="e.g. Half"
-                                            value={v.name}
-                                            onChange={e => setFormData(f => ({ ...f, variants: f.variants.map((x, i) => i === idx ? { ...x, name: e.target.value } : x) }))}
-                                            className="flex-1 bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none text-sm"
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            required
+                                            placeholder="e.g. Masala Dosa"
+                                            className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2.5 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none transition-all text-sm font-bold"
                                         />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Description</label>
+                                        <textarea
+                                            value={formData.description}
+                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                            placeholder="Ingredients, style..."
+                                            className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2.5 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none transition-all text-sm"
+                                            rows="2"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Pricing & Category */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Base Price *</label>
                                         <input
                                             type="number"
-                                            placeholder="Price"
                                             min="0"
                                             step="0.01"
-                                            value={v.price}
-                                            onChange={e => setFormData(f => ({ ...f, variants: f.variants.map((x, i) => i === idx ? { ...x, price: e.target.value } : x) }))}
-                                            className="w-24 bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none text-sm"
+                                            value={formData.price}
+                                            onChange={e => setFormData({ ...formData, price: e.target.value })}
+                                            required
+                                            className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2.5 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none transition-all text-sm font-bold"
                                         />
-                                        <button type="button" onClick={() => setFormData(f => ({ ...f, variants: f.variants.filter((_, i) => i !== idx) }))}
-                                            className="text-red-400 hover:text-red-300 p-1">&#x2715;</button>
                                     </div>
-                                ))}
-                            </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Category *</label>
+                                        <select
+                                            value={formData.category}
+                                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                            required
+                                            className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2.5 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none transition-all text-sm font-bold appearance-none"
+                                        >
+                                            <option value="">-- Select --</option>
+                                            {categories.map(c => (
+                                                <option key={c._id} value={c._id}>
+                                                    {c.name}{c.status === 'inactive' ? ' (inactive)' : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
 
-                            <div className="flex justify-end space-x-3 mt-6">
-                                <button type="button" onClick={closeModal} className="px-4 py-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-lg transition-colors">
-                                    Cancel
-                                </button>
-                                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold">
-                                    {editingItem ? 'Update Item' : 'Add Item'}
-                                </button>
-                            </div>
-                        </form>
+                                {/* Image URL */}
+                                <div>
+                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Image URL</label>
+                                    <input
+                                        type="text"
+                                        value={formData.image}
+                                        onChange={e => setFormData({ ...formData, image: e.target.value })}
+                                        placeholder="https://..."
+                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none transition-all text-xs"
+                                    />
+                                </div>
+
+                                {/* Toggles */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(f => ({ ...f, isVeg: !f.isVeg }))}
+                                        className={`px-3 py-2.5 rounded-xl border transition-all flex items-center justify-between gap-1.5 ${formData.isVeg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-gray-500/5 text-gray-500 border-gray-500/20'}`}
+                                    >
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Veg</span>
+                                        <div className={`w-7 h-3.5 rounded-full relative transition-colors ${formData.isVeg ? 'bg-emerald-500' : 'bg-gray-600'}`}>
+                                            <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all ${formData.isVeg ? 'left-4' : 'left-0.5'}`} />
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(f => ({ ...f, availability: !f.availability }))}
+                                        className={`px-3 py-2.5 rounded-xl border transition-all flex items-center justify-between gap-1.5 ${formData.availability ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}
+                                    >
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Stock</span>
+                                        <div className={`w-7 h-3.5 rounded-full relative transition-colors ${formData.availability ? 'bg-blue-500' : 'bg-gray-600'}`}>
+                                            <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all ${formData.availability ? 'left-4' : 'left-0.5'}`} />
+                                        </div>
+                                    </button>
+                                </div>
+
+                                {/* Portion Sizes */}
+                                <div className="bg-[var(--theme-bg-dark)] rounded-2xl border border-[var(--theme-border)] overflow-hidden">
+                                    <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-bg-card2)] flex items-center justify-between">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-main)]">Portion Sizes</label>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setFormData(f => ({ ...f, variants: [...(f.variants || []), { name: '', price: '' }] }))}
+                                            className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all"
+                                        >
+                                            <Plus size={12} /> Add Size
+                                        </button>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        {(formData.variants || []).length === 0 && (
+                                            <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
+                                                <div className="w-5 h-5 rounded bg-orange-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                                    <span className="text-orange-500 text-[10px]">!</span>
+                                                </div>
+                                                <p className="text-[10px] text-orange-300 font-bold uppercase leading-normal">
+                                                    No sizes added. Customers will order at the base price.
+                                                </p>
+                                            </div>
+                                        )}
+                                        {(formData.variants || []).map((v, idx) => (
+                                            <div key={idx} className="flex gap-2 items-center animate-slide-right" style={{ animationDelay: `${idx * 50}ms` }}>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Half"
+                                                    value={v.name}
+                                                    onChange={e => setFormData(f => ({ ...f, variants: f.variants.map((x, i) => i === idx ? { ...x, name: e.target.value } : x) }))}
+                                                    className="flex-1 bg-[var(--theme-bg-card2)] text-[var(--theme-text-main)] rounded-lg px-3 py-2 border border-[var(--theme-border)] focus:border-blue-500 transition-all text-xs"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    placeholder="Price"
+                                                    value={v.price}
+                                                    onChange={e => setFormData(f => ({ ...f, variants: f.variants.map((x, i) => i === idx ? { ...x, price: e.target.value } : x) }))}
+                                                    className="w-24 bg-[var(--theme-bg-card2)] text-[var(--theme-text-main)] rounded-lg px-3 py-2 border border-[var(--theme-border)] focus:border-blue-500 transition-all text-xs font-bold"
+                                                />
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setFormData(f => ({ ...f, variants: f.variants.filter((_, i) => i !== idx) }))}
+                                                    className="w-8 h-8 flex items-center justify-center text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                                >
+                                                    <Plus size={16} className="rotate-45" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div className="p-5 pb-safe border-t border-[var(--theme-border)] bg-[var(--theme-bg-card2)] flex gap-2.5 shrink-0">
+                            <button 
+                                type="button" 
+                                onClick={closeModal} 
+                                className="flex-1 h-11 text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-xl transition-all border border-[var(--theme-border)]"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                form="menu-item-form"
+                                className="flex-[1.5] h-11 bg-orange-600 hover:bg-orange-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-600/30 active:scale-95"
+                            >
+                                {editingItem ? 'Update' : 'Save'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -656,7 +656,7 @@ const WaiterDashboard = () => {
                             ? [
                                 'opacity-100 shadow-2xl',
                                 // Mobile: fixed overlay covers the full viewport
-                                'max-md:fixed max-md:inset-0 max-md:z-50 max-md:w-full max-md:h-screen max-md:border-l-0',
+                                'max-md:fixed max-md:inset-0 max-md:z-[1000] max-md:w-full max-md:h-screen max-md:border-l-0 max-md:pb-[64px]',
                                 // Tablet/Desktop: side drawer
                                 'md:sticky md:top-0 md:self-start md:h-[calc(100vh-110px)]',
                                 isProductionMode ? 'md:w-[440px] xl:w-[500px]' : 'md:w-[400px] xl:w-[440px]',

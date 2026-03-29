@@ -1743,4 +1743,29 @@ main > div {
 .animate-scale-in {
   animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-left {
+  animation: slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Layout Utilities ── */
+.content-scroll-pad {
+  padding-bottom: 2rem; /* Desktop fallback */
+}
+
+@media (max-width: 1024px) {
+  .content-scroll-pad {
+    padding-bottom: 8rem; /* Enough room for BottomNav + gap on mobile/tablet */
+  }
+}
+
 

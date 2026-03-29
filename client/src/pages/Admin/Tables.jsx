@@ -7,92 +7,95 @@ import { Trash2, Plus, RotateCcw, X, Table2 } from 'lucide-react';
 import TableCard, { STATUS_CONFIG } from '../../components/TableCard';
 import { useTablesData } from '../../hooks/useTablesData';
 
-/* ── Add Table Modal ─────────────────────────────────────────────────────── */
+/* ── Add Table Modal (Right Drawer) ─────────────────────────────────────────── */
 const AddTableModal = ({ defaultNumber, onClose, onSubmit }) => {
     const [form, setForm] = useState({ number: defaultNumber, capacity: 4 });
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-4">
-            <div className="bg-[var(--theme-bg-card)] rounded-2xl w-full max-w-sm shadow-2xl border border-[var(--theme-border)] animate-fade-in overflow-hidden">
+        <div className="fixed inset-0 z-[1000] flex justify-end animate-fade-in px-2 sm:px-0">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+            <div className="relative z-10 w-full sm:w-[400px] bg-[var(--theme-bg-card)] shadow-2xl flex flex-col h-full border-l border-[var(--theme-border)] animate-slide-left pb-[64px] sm:pb-0 rounded-t-3xl sm:rounded-none">
                 {/* Header */}
-                <div className="px-6 pt-6 pb-2 flex items-center justify-between">
-                    <h3 className="text-2xl font-bold text-[var(--theme-text-main)] tracking-tight">Add New Table</h3>
-                    <button
-                        onClick={onClose}
-                        className="p-2 -mr-2 text-[var(--theme-text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all"
-                    >
-                        <X size={20} />
+                <div className="px-5 py-4 border-b border-[var(--theme-border)] flex items-center justify-between bg-[var(--theme-bg-card2)] shrink-0">
+                    <div>
+                        <h3 className="text-lg font-black text-[var(--theme-text-main)] uppercase tracking-tighter">Add New Table</h3>
+                        <p className="text-[9px] text-[var(--theme-text-muted)] font-bold uppercase tracking-widest mt-0.5 opacity-60">Floor Plan Settings</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-[var(--theme-bg-hover)] rounded-xl transition-colors">
+                        <Plus size={20} className="rotate-45" />
                     </button>
                 </div>
-                
-                <div className="px-6 pb-2">
-                    <p className="text-xs text-[var(--theme-text-muted)] font-medium">Configure table details for your floor plan</p>
-                </div>
 
-                <form
-                    onSubmit={(e) => { e.preventDefault(); onSubmit(form); }}
-                    className="p-6 space-y-5"
-                >
-                    <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-[var(--theme-text-subtle)] uppercase tracking-widest ml-1">
-                            Table Number
-                        </label>
-                        <div className="relative">
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
+                    <form id="add-table-form" onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="space-y-6">
+                        
+                        {/* Table Number */}
+                        <div className="space-y-2">
+                            <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] ml-1">
+                                Designation / Number
+                            </label>
                             <input
-                                type="number"
+                                type="text"
                                 value={form.number}
                                 onChange={(e) => setForm((f) => ({ ...f, number: e.target.value }))}
                                 required
-                                className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl px-5 py-4 border border-[var(--theme-border)] focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none font-bold text-lg"
-                                placeholder="00"
+                                placeholder="e.g. 12"
+                                className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl px-5 py-3.5 border border-[var(--theme-border)] focus:border-orange-500 focus:outline-none transition-all font-black text-xl tracking-tighter"
                             />
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-[var(--theme-text-subtle)] uppercase tracking-widest ml-1">
-                            Seating Capacity
-                        </label>
-                        <div className="grid grid-cols-5 gap-2">
-                            {[2, 4, 6, 8, 10].map((cap) => (
-                                <button
-                                    key={cap}
-                                    type="button"
-                                    onClick={() => setForm({ ...form, capacity: cap })}
-                                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${form.capacity === cap ? 'bg-orange-500 text-white border-transparent' : 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-gray-400'}`}
-                                >
-                                    {cap}
-                                </button>
-                            ))}
+                        {/* Capacity Selection */}
+                        <div className="space-y-3">
+                            <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] ml-1">
+                                Seating Capacity
+                            </label>
+                            
+                            <div className="grid grid-cols-5 gap-1.5">
+                                {[2, 4, 6, 8, 10].map((cap) => (
+                                    <button
+                                        key={cap}
+                                        type="button"
+                                        onClick={() => setForm({ ...form, capacity: cap })}
+                                        className={`h-10 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${form.capacity === cap ? 'bg-orange-500 text-white border-transparent shadow-lg shadow-orange-500/20' : 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)] hover:border-orange-500/50'}`}
+                                    >
+                                        {cap}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <input
+                                type="number"
+                                value={form.capacity}
+                                onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+                                required
+                                min="1"
+                                className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2 border border-[var(--theme-border)] focus:border-orange-500 focus:outline-none transition-all font-bold text-xs"
+                                placeholder="Custom"
+                            />
                         </div>
-                        <input
-                            type="number"
-                            value={form.capacity}
-                            onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
-                            required
-                            min="1"
-                            max="50"
-                            className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-2xl px-5 py-3.5 border border-[var(--theme-border)] focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none font-medium mt-2"
-                            placeholder="Custom capacity"
-                        />
-                    </div>
 
-                    <div className="flex gap-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 py-4 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest border border-[var(--theme-border)]"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="flex-1 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all shadow-lg shadow-orange-500/20 active:scale-95"
-                        >
-                            Create Table
-                        </button>
-                    </div>
-                </form>
+                        {/* Info Box */}
+                        <div className="p-3.5 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex gap-3 items-start">
+                            <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                                <Table2 size={14} className="text-orange-500" />
+                            </div>
+                            <p className="text-[9px] text-[var(--theme-text-muted)] font-bold leading-relaxed opacity-70 uppercase tracking-tight">
+                                New tables are added to the available pool. Manage status directly from the grid.
+                            </p>
+                        </div>
+                    </form>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-5 border-t border-[var(--theme-border)] bg-[var(--theme-bg-card2)] flex gap-2.5 shrink-0">
+                    <button type="button" onClick={onClose} className="flex-1 h-11 text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-xl transition-all border border-[var(--theme-border)]">
+                        Cancel
+                    </button>
+                    <button type="submit" form="add-table-form" className="flex-[1.5] h-11 bg-orange-600 hover:bg-orange-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-600/30 active:scale-95">
+                        Create
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -223,7 +226,7 @@ const AdminTables = () => {
 
             {/* ── Tables Grid — uses shared TableCard ───────────────────── */}
             {loading ? (
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {Array(12).fill(0).map((_, i) => (
                         <div key={i} className="skeleton rounded-2xl min-h-[130px]" />
                     ))}
@@ -238,7 +241,7 @@ const AdminTables = () => {
                 </div>
             ) : (
                 <div className={viewType === 'grid' 
-                    ? "grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
                     : "flex flex-col gap-3"
                 }>
                     {filteredTables.map((table) => (

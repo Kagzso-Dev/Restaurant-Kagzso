@@ -286,90 +286,113 @@ const AdminCategories = () => {
                 })}
             </div>
 
-            {/* ── Modal ────────────────────────────────────────────────── */}
+            {/* ── Modal (Right Drawer) ────────────────────────────────── */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[var(--theme-bg-card)] p-5 sm:p-8 rounded-xl w-full max-w-md shadow-2xl border border-[var(--theme-border)] animate-fade-in">
-                        <h3 className="text-xl font-bold text-[var(--theme-text-main)] mb-6">
-                            {editingCategory ? 'Edit Category' : 'Add Category'}
-                        </h3>
-
-                        {formError && (
-                            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                                {formError}
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="fixed inset-0 z-[1000] flex justify-end animate-fade-in px-2 sm:px-0">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={closeModal} />
+                    <div className="relative z-10 w-full sm:w-[400px] bg-[var(--theme-bg-card)] shadow-2xl flex flex-col h-full border-l border-[var(--theme-border)] animate-slide-left pb-[64px] sm:pb-0 rounded-t-3xl sm:rounded-none">
+                        {/* Header */}
+                        <div className="px-5 py-4 border-b border-[var(--theme-border)] flex items-center justify-between bg-[var(--theme-bg-card2)] shrink-0">
                             <div>
-                                <label className="block text-sm text-[var(--theme-text-muted)] mb-1">Name *</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    required
-                                    className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none"
-                                />
+                                <h3 className="text-lg font-black text-[var(--theme-text-main)] uppercase tracking-tighter">
+                                    {editingCategory ? 'Edit Category' : 'Add Category'}
+                                </h3>
+                                <p className="text-[9px] text-[var(--theme-text-muted)] font-bold uppercase tracking-widest mt-0.5 opacity-60">Management Panel</p>
                             </div>
-                            <div>
-                                <label className="block text-sm text-[var(--theme-text-muted)] mb-1">Description</label>
-                                <textarea
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-lg p-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none"
-                                    rows="2"
-                                />
-                            </div>
+                            <button onClick={closeModal} className="p-2 hover:bg-[var(--theme-bg-hover)] rounded-xl transition-colors">
+                                <Plus size={20} className="rotate-45" />
+                            </button>
+                        </div>
 
-                            <div>
-                                <label className="block text-sm text-[var(--theme-text-muted)] mb-2">Category Color</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {presetColors.map(c => (
+                        {/* Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+                            {formError && (
+                                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium animate-shake">
+                                    {formError}
+                                </div>
+                            )}
+
+                            <form id="category-form" onSubmit={handleSubmit} className="space-y-5">
+                                <div>
+                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Name *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                        placeholder="e.g. Beverages"
+                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2.5 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none transition-all text-sm font-bold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Description</label>
+                                    <textarea
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        placeholder="Brief description..."
+                                        className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2.5 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none transition-all text-sm"
+                                        rows="2"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-2.5 ml-1">Category Color Indicator</label>
+                                    <div className="flex flex-wrap gap-2.5">
+                                        {presetColors.map(c => (
+                                            <button
+                                                key={c.hex}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, color: c.hex })}
+                                                className={`w-9 h-9 rounded-full border-4 transition-all ${formData.color === c.hex ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'}`}
+                                                style={{ backgroundColor: c.hex }}
+                                                title={c.name}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-2.5 ml-1">Status</label>
+                                    <div className="flex gap-2.5">
                                         <button
-                                            key={c.hex}
                                             type="button"
-                                            onClick={() => setFormData({ ...formData, color: c.hex })}
-                                            className={`w-8 h-8 rounded-full border-2 transition-all ${formData.color === c.hex ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                                            style={{ backgroundColor: c.hex }}
-                                            title={c.name}
-                                        />
-                                    ))}
+                                            onClick={() => setFormData({ ...formData, status: 'active' })}
+                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 ${formData.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}`}
+                                        >
+                                            <div className="w-1 h-1 rounded-full bg-current" />
+                                            Active
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, status: 'inactive' })}
+                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 ${formData.status === 'inactive' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}`}
+                                        >
+                                            <div className="w-1 h-1 rounded-full bg-current" />
+                                            Inactive
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            </form>
+                        </div>
 
-                            {/* Status toggle */}
-                            <div>
-                                <label className="block text-sm text-[var(--theme-text-muted)] mb-2">Status</label>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, status: 'active' })}
-                                        className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-all ${formData.status === 'active' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}`}
-                                    >
-                                        ● Active
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, status: 'inactive' })}
-                                        className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-all ${formData.status === 'inactive' ? 'bg-red-500/15 text-red-400 border-red-500/30' : 'bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] border-[var(--theme-border)]'}`}
-                                    >
-                                        ○ Inactive
-                                    </button>
-                                </div>
-                                <p className="text-xs text-[var(--theme-text-muted)] mt-1">
-                                    Inactive categories are hidden from the ordering screen
-                                </p>
-                            </div>
-
-                            <div className="flex justify-end space-x-3 mt-6">
-                                <button type="button" onClick={closeModal} className="px-4 py-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-lg transition-colors">
-                                    Cancel
-                                </button>
-                                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold">
-                                    {editingCategory ? 'Update Category' : 'Add Category'}
-                                </button>
-                            </div>
-                        </form>
+                        {/* Footer Actions */}
+                        <div className="p-5 border-t border-[var(--theme-border)] bg-[var(--theme-bg-card2)] flex gap-2.5 shrink-0">
+                            <button 
+                                type="button" 
+                                onClick={closeModal} 
+                                className="flex-1 h-11 text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] rounded-xl transition-all border border-[var(--theme-border)]"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                form="category-form"
+                                className="flex-[1.5] h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/30 active:scale-95"
+                            >
+                                {editingCategory ? 'Update' : 'Save'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

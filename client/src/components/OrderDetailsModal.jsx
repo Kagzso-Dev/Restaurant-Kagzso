@@ -65,7 +65,7 @@ const OrderDetailsModal = ({
 
     /* ── Loading skeleton ─────────────────────────────────────────── */
     if (!order) return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
             <div className="relative z-10 w-full max-w-sm bg-[var(--theme-bg-card)] rounded-2xl p-5 shadow-2xl space-y-4">
                 <div className="skeleton h-8 w-1/2 rounded-xl" />
@@ -315,18 +315,18 @@ const OrderDetailsModal = ({
     }
 
     return (
-        <div className={`fixed inset-0 z-[200] flex justify-end transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`fixed inset-0 z-[1000] flex justify-end transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-            <div className={`relative z-10 w-full sm:w-[500px] md:w-[600px] bg-[var(--theme-bg-card)] shadow-2xl flex flex-col h-full border-l border-[var(--theme-border)] transition-transform duration-300 ease-out sm:rounded-l-[2rem] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`relative z-10 w-full sm:w-[500px] md:w-[600px] bg-[var(--theme-bg-card)] shadow-2xl flex flex-col h-full border-l border-[var(--theme-border)] transition-transform duration-300 ease-out sm:rounded-l-[2rem] pb-[64px] sm:pb-0 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 {innerCard}
 
             {/* ── TOP POPUP: Print Confirmation (iOS Style) ── */}
             {showPrintConfirm && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 animate-scale-in">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-scale-in">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-[4px]" onClick={() => setShowPrintConfirm(false)} />
-                    <div className="relative bg-white rounded-[1.3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col w-full max-w-[270px] sm:max-w-[280px]">
+                    <div className="relative bg-white rounded-[1.3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col w-full max-w-[260px]">
                         {/* Content Block */}
-                        <div className="p-6 flex flex-col items-center text-center gap-1.5 text-black">
+                        <div className="p-5 flex flex-col items-center text-center gap-1.5 text-black">
                             <h4 className="text-[17px] font-semibold tracking-tight leading-tight">Print Receipt?</h4>
                             <p className="text-[13px] text-gray-600 leading-tight">
                                 Send {order.orderNumber} to printer?
@@ -337,13 +337,13 @@ const OrderDetailsModal = ({
                         <div className="grid grid-cols-2 border-t border-gray-200">
                             <button 
                                 onClick={() => setShowPrintConfirm(false)}
-                                className="h-12 flex items-center justify-center text-[17px] text-[#007AFF] font-normal hover:bg-gray-50 active:bg-gray-100 transition-colors border-r border-gray-200"
+                                className="h-11 flex items-center justify-center text-[17px] text-[#007AFF] font-normal hover:bg-gray-50 active:bg-gray-100 transition-colors border-r border-gray-200"
                             >
                                 Cancel
                             </button>
                             <button 
                                 onClick={() => { printBill(order, formatPrice, settings); setShowPrintConfirm(false); }}
-                                className="h-12 flex items-center justify-center text-[17px] text-[#FF3B30] font-semibold hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                                className="h-11 flex items-center justify-center text-[17px] text-[#FF3B30] font-semibold hover:bg-gray-50 active:bg-gray-100 transition-colors"
                             >
                                 Print
                             </button>

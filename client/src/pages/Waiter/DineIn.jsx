@@ -319,7 +319,7 @@ const DineIn = () => {
 
                     {/* Cart Panel */}
                     <aside className={`
-                        fixed inset-0 z-40 md:relative md:inset-auto md:z-0 flex-shrink-0
+                        fixed inset-0 z-[100] md:relative md:inset-auto md:z-0 flex-shrink-0
                         transition-all duration-300 ease-in-out overflow-hidden
                         ${isCartOpen 
                             ? 'translate-x-0 w-full md:w-[300px] xl:w-[360px]' 
@@ -329,7 +329,7 @@ const DineIn = () => {
                         {isCartOpen && <div onClick={() => setIsCartOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" />}
 
 
-                        <div className="relative h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-none md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden">
+                        <div className="relative h-full w-full max-w-[400px] ml-auto md:ml-0 bg-[var(--theme-bg-card)] rounded-t-3xl md:rounded-3xl border-l md:border border-[var(--theme-border)] shadow-2xl flex flex-col overflow-hidden pb-[64px] md:pb-0">
                             {/* Header */}
                             <div className="px-5 py-4 border-b border-[var(--theme-border)] flex items-center justify-between flex-shrink-0">
                                 <div>
