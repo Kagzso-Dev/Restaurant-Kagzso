@@ -543,7 +543,7 @@ const KitchenDashboard = () => {
     });
 
     return (
-        <div className="space-y-5 animate-fade-in pb-10 text-left">
+        <div className="space-y-5 animate-fade-in pb-10 text-left flex-1 overflow-y-auto overscroll-contain min-h-0">
 
             {/* ── Row 1: Utility buttons pushed right ── */}
             {document.getElementById('topbar-portal') && createPortal(

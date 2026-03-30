@@ -234,7 +234,7 @@ const TakeAway = () => {
 
                     <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
                         {/* Categories Selection: Horizontal on Mobile, Vertical Rail on Desktop/Tablet */}
-                        <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto custom-scrollbar bg-black/5 border-b md:border-b-0 md:border-r border-[var(--theme-border)] flex-shrink-0 w-full md:w-28 lg:w-32 xl:w-36">
+                        <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto overscroll-contain custom-scrollbar bg-black/5 border-b md:border-b-0 md:border-r border-[var(--theme-border)] flex-shrink-0 w-full md:w-28 lg:w-32 xl:w-36">
                             <button
                                 onClick={() => setSelectedCategory(null)}
                                 className={`flex flex-shrink-0 flex-col md:flex-col items-center justify-center py-2.5 md:py-6 px-5 md:px-2 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4
@@ -271,7 +271,7 @@ const TakeAway = () => {
                         </div>
 
                         {/* Items Grid */}
-                        <div className={`flex-1 overflow-y-auto p-2 md:p-3 xl:p-4 custom-scrollbar content-visibility-auto`}>
+                        <div className={`flex-1 overflow-y-auto overscroll-contain p-2 md:p-3 xl:p-4 custom-scrollbar content-visibility-auto`}>
                             {filteredItems.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-64 text-[var(--theme-text-muted)]">
                                     <SearchX size={48} className="mb-4 opacity-10" />
@@ -336,7 +336,7 @@ const TakeAway = () => {
                         </div>
 
                         {/* Scrollable items */}
-                        <div className="overflow-y-auto px-4 py-4 space-y-3 custom-scrollbar">
+                        <div className="overflow-y-auto overscroll-contain px-4 py-4 space-y-3 custom-scrollbar">
                             {cart.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center text-gray-700 py-10">
                                     <ShoppingCart size={64} className="mb-4 opacity-5" strokeWidth={1} />

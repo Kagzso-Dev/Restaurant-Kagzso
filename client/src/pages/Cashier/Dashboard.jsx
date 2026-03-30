@@ -414,7 +414,7 @@ const CashierDashboard = () => {
         <div className="animate-fade-in flex-1 flex flex-col min-h-0 overflow-hidden">
 
             {/* ── POS Layout ────────────────────────────────────── */}
-            <div className="relative flex-1 flex flex-col min-h-0">
+            <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
 
             {/* ── Row 1: Utility buttons pushed right ── */}
             {document.getElementById('topbar-portal') && createPortal(
@@ -473,7 +473,7 @@ const CashierDashboard = () => {
                     `}>
                         
                         <div className={`
-                            flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar content-visibility-auto
+                            flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 custom-scrollbar content-visibility-auto
                             ${isCardView ? `grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 ${lgCols === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-2 content-start` : 'space-y-2.5'}
                         `}>
                             {loading ? (
@@ -518,7 +518,7 @@ const CashierDashboard = () => {
                         {selectedOrder ? (
                             <div className="flex flex-col h-full overflow-hidden">
                                 {/* Receipt Scroll Area */}
-                                <div className="flex-1 overflow-y-auto bg-[var(--theme-bg-deep)] relative custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto overscroll-contain bg-[var(--theme-bg-deep)] relative custom-scrollbar">
                                     {/* Payment Success Overlay */}
                                     {paymentSuccess && (
                                         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[var(--theme-bg-dark)]/95 backdrop-blur-sm animate-scale-in">

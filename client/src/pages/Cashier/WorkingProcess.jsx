@@ -196,7 +196,7 @@ const WorkingProcess = () => {
     };
 
     return (
-        <div className="flex flex-col animate-fade-in">
+        <div className="flex flex-col animate-fade-in flex-1 overflow-y-auto overscroll-contain min-h-0">
             {/* ── TopBar Portals ────────────────────────────────────────── */}
             {document.getElementById('topbar-portal') && createPortal(
                 <div className="flex items-center justify-between w-full px-1">

@@ -145,7 +145,7 @@ const Layout = () => {
                 )}
 
                 {/* Content Area */}
-                <main className={`flex-1 flex flex-col overflow-x-hidden pt-safe pb-4 md:pb-0 ${location.pathname === '/dine-in' || location.pathname === '/take-away' || location.pathname.startsWith('/cashier') ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+                <main className={`flex-1 flex flex-col overflow-x-hidden pt-safe pb-4 md:pb-0 ${location.pathname === '/dine-in' || location.pathname === '/take-away' || location.pathname.startsWith('/cashier') || location.pathname.startsWith('/waiter') || location.pathname === '/kitchen' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                     {/* Floating Mobile Trigger for Admins only - Premium White Glassmorphism */}
                     {isMobile && user.role === 'admin' && (
                         <div className="fixed top-4 left-4 z-[60] animate-fade-in">

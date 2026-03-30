@@ -434,7 +434,7 @@ const WaiterDashboard = () => {
     }, [tokenIdx, displayOrders]);
 
     return (
-        <div className="flex flex-col gap-2 animate-fade-in text-left">
+        <div className="flex flex-col gap-2 animate-fade-in text-left flex-1 overflow-y-auto overscroll-contain min-h-0 pb-4">
             {fetchError && (
                 <div id="net-error-alert" className="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-bounce-subtle">
                     <div className="flex items-center gap-3">

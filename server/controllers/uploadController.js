@@ -1,8 +1,9 @@
-const { storage, storageBucketId, InputFile, ID } = require('../config/appwrite');
+const { ID } = require('../config/appwrite');
+const path = require('path');
+const fs = require('fs');
 
 // POST /api/upload/image
-// Uploads an image file to Appwrite Storage and returns the public view URL.
-// The caller saves this URL into the existing `image` field — no schema change.
+// Uploads an image file locally to the public/images folder and returns the relative view URL.
 const uploadImage = async (req, res) => {
     try {
         const file = req.file;
@@ -11,32 +12,43 @@ const uploadImage = async (req, res) => {
             return res.status(400).json({ message: 'Image file is required' });
         }
 
-        if (!storageBucketId) {
-            return res.status(500).json({ message: 'Storage bucket not configured. Set APPWRITE_STORAGE_BUCKET_ID.' });
-        }
-
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
         if (!allowedTypes.includes(file.mimetype)) {
             return res.status(400).json({ message: 'Only image files are allowed (jpeg, png, webp, gif, avif)' });
         }
 
-        const fileId = ID.unique();
-        const uploadName = `img_${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const ext = path.extname(file.originalname) || '.png';
+        const uploadName = `img_${Date.now()}_${ID.unique()}${ext}`;
 
-        await storage.createFile(
-            storageBucketId,
-            fileId,
-            InputFile.fromBuffer(file.buffer, uploadName, file.mimetype)
-        );
+        // Define local paths based on the requested file structure
+        const publicImagesPath = path.join(__dirname, '../../client/public/images');
+        const distImagesPath = path.join(__dirname, '../../client/dist/images');
 
-        const endpoint = process.env.APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1';
-        const projectId = process.env.APPWRITE_PROJECT_ID;
-        const url = `${endpoint}/storage/buckets/${storageBucketId}/files/${fileId}/view?project=${projectId}`;
+        // Ensure public directory exists
+        if (!fs.existsSync(publicImagesPath)) {
+            fs.mkdirSync(publicImagesPath, { recursive: true });
+        }
 
-        res.json({ url, fileId });
+        // Write the file to the source public folder so it persists across builds
+        const publicPath = path.join(publicImagesPath, uploadName);
+        fs.writeFileSync(publicPath, file.buffer);
+
+        // Write to dist/images if the build folder exists, so it's served immediately in production mode
+        const distExists = fs.existsSync(path.join(__dirname, '../../client/dist'));
+        if (distExists) {
+            if (!fs.existsSync(distImagesPath)) {
+                fs.mkdirSync(distImagesPath, { recursive: true });
+            }
+            fs.writeFileSync(path.join(distImagesPath, uploadName), file.buffer);
+        }
+
+        // Return the local relative URL referencing the file
+        const url = `/images/${uploadName}`;
+
+        res.json({ url, fileId: uploadName });
     } catch (error) {
-        console.error('Image upload error:', error);
-        res.status(500).json({ message: 'Image upload failed', error: error.message });
+        console.error('Local image upload error:', error);
+        res.status(500).json({ message: 'Image upload failed locally', error: error.message });
     }
 };
 
