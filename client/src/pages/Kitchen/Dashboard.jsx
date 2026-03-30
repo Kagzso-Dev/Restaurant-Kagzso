@@ -412,6 +412,7 @@ const KitchenDashboard = () => {
     const { user, socket, settings } = useContext(AuthContext);
 
     const fetchOrders = useCallback(async () => {
+        setLoading(true);
         try {
             const res = await api.get('/api/orders', {
                 headers: { Authorization: `Bearer ${user.token}` }
@@ -546,15 +547,32 @@ const KitchenDashboard = () => {
 
             {/* ── Row 1: Utility buttons pushed right ── */}
             {document.getElementById('topbar-portal') && createPortal(
-                <div className="flex items-center justify-end w-full animate-fade-in pr-1 gap-1.5">
-                    {/* View/Stats toggles (Mobile) */}
-                    <div className="flex md:hidden items-center gap-1.5 shrink-0">
-                         <button
+                <div className="flex items-center justify-between w-full animate-fade-in px-1 gap-1.5">
+                    {/* Left: Filters (Visible everywhere) */}
+                    <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-2xl md:rounded-full border border-[var(--theme-border)] shadow-inner">
+                         {['all', 'dine-in', 'takeaway']
+                            .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
+                            .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
+                            .map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => setFilterType(t)}
+                                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${filterType === t ? 'bg-white dark:bg-[var(--theme-bg-card)] text-orange-500 shadow-md md:shadow-sm' : 'text-[var(--theme-text-muted)] hover:text-orange-500'}`}
+                                >
+                                    {t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}
+                                </button>
+                            ))}
+                    </div>
+
+                    {/* Right: Utilities */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <button
                             onClick={() => setShowTables(!showTables)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 relative overflow-hidden group ${
+                            title={showTables ? "Collapse Stats" : "Expand Stats"}
+                            className={`w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl border transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 relative overflow-hidden group ${
                                 showTables 
                                     ? 'bg-orange-500 border-orange-400 text-white shadow-md ring-2 ring-orange-500/20' 
-                                    : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'
+                                    : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500'
                             }`}
                         >
                             <ChevronLeft 
@@ -564,81 +582,30 @@ const KitchenDashboard = () => {
                                     showTables ? 'rotate-180 scale-110' : 'rotate-0'
                                 }`} 
                             />
-                            <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
                         </button>
-                        <div className="flex items-center p-0.5 rounded-xl bg-[var(--theme-bg-hover)] border border-[var(--theme-border)]">
+
+                        <div className="flex items-center p-0.5 rounded-xl bg-[var(--theme-bg-hover)] border border-[var(--theme-border)] gap-0.5">
                             <button
                                 onClick={() => { setIsCardView(true); localStorage.setItem('kitchenCardView', true); }}
-                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${isCardView ? 'bg-blue-600 text-white shadow-md' : 'text-[var(--theme-text-muted)]'}`}
+                                className={`w-8 h-8 md:w-auto md:px-3 md:py-1.5 flex items-center justify-center rounded-lg transition-all ${isCardView ? 'bg-blue-600 text-white shadow-md' : 'text-[var(--theme-text-muted)]'}`}
                             >
-                                <Grid size={14} strokeWidth={2.5} />
+                                <Grid size={13} strokeWidth={2.5} />
+                                <span className="hidden md:inline ml-1.5 text-[10px] font-black uppercase">Card</span>
                             </button>
                             <button
                                 onClick={() => { setIsCardView(false); localStorage.setItem('kitchenCardView', false); }}
-                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${!isCardView ? 'bg-orange-500 text-white shadow-md' : 'text-[var(--theme-text-muted)]'}`}
+                                className={`w-8 h-8 md:w-auto md:px-3 md:py-1.5 flex items-center justify-center rounded-lg transition-all ${!isCardView ? 'bg-orange-500 text-white shadow-md' : 'text-[var(--theme-text-muted)]'}`}
                             >
-                                <List size={14} strokeWidth={2.5} />
+                                <List size={13} strokeWidth={2.5} />
+                                <span className="hidden md:inline ml-1.5 text-[10px] font-black uppercase">List</span>
                             </button>
                         </div>
-                    </div>
 
-                    {/* Desktop controls */}
-                    <div className="hidden md:flex items-center gap-1.5 shrink-0">
-                        {/* Filter Pill (Desktop) */}
-                        <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-full border border-[var(--theme-border)] shadow-inner mr-2">
-                             {['all', 'dine-in', 'takeaway']
-                                .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
-                                .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
-                                .map(t => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setFilterType(t)}
-                                        className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${filterType === t ? 'bg-white dark:bg-[var(--theme-bg-card)] text-orange-500 shadow-sm' : 'text-[var(--theme-text-muted)] hover:text-orange-500'}`}
-                                    >
-                                        {t === 'all' ? 'All' : t === 'dine-in' ? 'Dine In' : 'Takeaway'}
-                                    </button>
-                                ))}
-                        </div>
-
-                        <button
-                            onClick={() => setShowTables(!showTables)}
-                            title={showTables ? "Collapse Stats" : "Expand Stats"}
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 relative overflow-hidden group ${
-                                showTables 
-                                    ? 'bg-orange-500 border-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] ring-2 ring-orange-500/20' 
-                                    : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/40 hover:shadow-lg'
-                            }`}
-                        >
-                            <ChevronLeft 
-                                size={18} 
-                                strokeWidth={3} 
-                                className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-                                    showTables ? 'rotate-180 scale-110' : 'rotate-0'
-                                } group-hover:scale-110`} 
-                            />
-                            {/* Subtle ripple effect overlay */}
-                            <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
-                        </button>
-
-                        <div className="flex items-center p-0.5 rounded-xl bg-[var(--theme-bg-hover)] border border-[var(--theme-border)] gap-1">
-                            <button
-                                onClick={() => { setIsCardView(true); localStorage.setItem('kitchenCardView', true); }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${isCardView ? 'bg-blue-600 text-white shadow-md' : 'text-[var(--theme-text-muted)]'}`}
-                            >
-                                <Grid size={13} strokeWidth={2.5} /> Card
-                            </button>
-                            <button
-                                onClick={() => { setIsCardView(false); localStorage.setItem('kitchenCardView', false); }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${!isCardView ? 'bg-orange-500 text-white shadow-md' : 'text-[var(--theme-text-muted)]'}`}
-                            >
-                                <List size={13} strokeWidth={2.5} /> List
-                            </button>
-                        </div>
                         <button
                             onClick={() => window.dispatchEvent(new CustomEvent('pos-refresh'))}
-                            className="w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-orange-500 transition-all active:scale-95 shadow-sm"
+                            className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-orange-500 transition-all active:scale-95"
                         >
-                            <RefreshCw size={16} strokeWidth={2.5} />
+                            <RefreshCw size={15} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
                         </button>
                     </div>
                 </div>,
@@ -646,32 +613,7 @@ const KitchenDashboard = () => {
             )}
 
             {/* ── Row 2 (mobile only): Filter Pills + Action ── */}
-            {document.getElementById('topbar-portal-row2') && createPortal(
-                <div className="flex items-center justify-between w-full h-full animate-fade-in px-1 pb-1">
-                    <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-2xl border border-[var(--theme-border)] shadow-inner">
-                        {['all', 'dine-in', 'takeaway']
-                            .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
-                            .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
-                            .map(t => (
-                                <button
-                                    key={t}
-                                    onClick={() => setFilterType(t)}
-                                    className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-white dark:bg-[var(--theme-bg-card)] text-orange-500 shadow-md' : 'text-[var(--theme-text-muted)]'}`}
-                                >
-                                    {t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}
-                                </button>
-                            ))}
-                    </div>
 
-                    <button
-                        onClick={() => navigate('/logout')}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/5 text-rose-500 transition-all active:scale-95"
-                    >
-                        <LogOut size={16} strokeWidth={2.5} />
-                    </button>
-                </div>,
-                document.getElementById('topbar-portal-row2')
-            )}
 
             {/* ── Status View (Slide-down Counters) ───────────────────── */}
             <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showTables ? 'max-h-[200px] opacity-100 mb-6' : 'max-h-0 opacity-0 mb-0'}`}>

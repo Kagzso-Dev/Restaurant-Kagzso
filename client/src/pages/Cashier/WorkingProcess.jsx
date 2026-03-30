@@ -65,6 +65,11 @@ const WorkingProcess = () => {
         };
     }, [user, socket, fetchOrders]);
 
+    useEffect(() => {
+        window.addEventListener('pos-refresh', fetchOrders);
+        return () => window.removeEventListener('pos-refresh', fetchOrders);
+    }, [fetchOrders]);
+
     const enabledOrders = orders
         .filter(o => settings?.takeawayEnabled !== false || o.orderType !== 'takeaway')
         .filter(o => settings?.dineInEnabled !== false || o.orderType !== 'dine-in');
@@ -195,9 +200,9 @@ const WorkingProcess = () => {
             {/* ── TopBar Portals ────────────────────────────────────────── */}
             {document.getElementById('topbar-portal') && createPortal(
                 <div className="flex items-center justify-between w-full px-1">
-                    {/* Left: Operational Filters */}
+                    {/* Left: Operational Filters — visible on tablet (md) and desktop (lg) */}
                     <div className="flex items-center gap-2">
-                        <div className="hidden lg:flex bg-[var(--theme-bg-dark)] p-0.5 rounded-xl border border-[var(--theme-border)] shadow-inner h-9 w-fit">
+                        <div className="flex bg-[var(--theme-bg-dark)] p-0.5 rounded-xl border border-[var(--theme-border)] shadow-inner h-9 w-fit">
                             {['all', 'dine-in', 'takeaway']
                                 .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
                                 .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
@@ -205,50 +210,50 @@ const WorkingProcess = () => {
                                 <button
                                     key={t}
                                     onClick={() => setFilterType(t)}
-                                    className={`px-4 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center whitespace-nowrap min-w-[80px] ${
+                                    className={`px-3 lg:px-4 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 flex items-center justify-center whitespace-nowrap ${
                                         filterType === t
-                                            ? 'bg-orange-500 text-white shadow-md'
-                                            : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
+                                            ? 'bg-orange-500 text-white shadow-md scale-[1.02]'
+                                            : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)] hover:text-[var(--theme-text-main)] active:bg-orange-500/10 active:text-orange-500 active:scale-95'
                                     }`}
                                 >
-                                    {t === 'all' ? 'ALL' : t.replace('-', ' ')}
+                                    {t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE' : 'TAKE'}
                                 </button>
                             ))}
                         </div>
                     </div>
 
                     {/* Right: Utilities (View Mode, Stats, Refresh) */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 lg:gap-2">
                         {/* View Mode Toggle */}
                         <button
                             onClick={() => setIsGridView(v => !v)}
                             className={`
-                                relative flex items-center h-10 w-24 rounded-full transition-all duration-300 shadow-inner overflow-hidden border shrink-0
-                                ${isGridView 
-                                    ? 'bg-blue-500/10 border-blue-500/20' 
+                                relative flex items-center h-9 lg:h-10 w-9 md:w-20 lg:w-24 rounded-full transition-all duration-300 shadow-inner overflow-hidden border shrink-0
+                                ${isGridView
+                                    ? 'bg-blue-500/10 border-blue-500/20'
                                     : 'bg-orange-500/10 border-orange-500/20'}
                             `}
                         >
-                            <div 
+                            <div
                                 className={`
-                                    absolute top-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                                    ${isGridView 
-                                        ? 'left-[calc(100%-36px)] bg-blue-600 rotate-[360deg]' 
-                                        : 'left-1 bg-orange-600 rotate-0'}
+                                    absolute top-0.5 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                    ${isGridView
+                                        ? 'left-[calc(100%-34px)] bg-blue-600 rotate-[360deg]'
+                                        : 'left-0.5 bg-orange-600 rotate-0'}
                                 `}
                             >
                                 {isGridView ? <Grid size={14} strokeWidth={3} className="text-white" /> : <List size={14} strokeWidth={3} className="text-white" />}
                             </div>
-                            <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
-                                <span className={`text-[9px] font-black transition-all duration-300 ${isGridView ? 'opacity-0 -translate-x-2' : 'opacity-100 translate-x-7 text-orange-600'}`}>LIST</span>
-                                <span className={`text-[9px] font-black transition-all duration-300 ${!isGridView ? 'opacity-0 translate-x-2' : 'opacity-100 -translate-x-7 text-blue-600'}`}>GRID</span>
+                            <div className="hidden md:flex absolute inset-0 items-center justify-between px-2.5 pointer-events-none">
+                                <span className={`text-[9px] font-black transition-all duration-300 ${isGridView ? 'opacity-0 -translate-x-2' : 'opacity-100 translate-x-6 text-orange-600'}`}>LIST</span>
+                                <span className={`text-[9px] font-black transition-all duration-300 ${!isGridView ? 'opacity-0 translate-x-2' : 'opacity-100 -translate-x-6 text-blue-600'}`}>GRID</span>
                             </div>
                         </button>
 
-                        <div className="h-8 w-px bg-[var(--theme-border)] mx-1 opacity-30 flex-shrink-0" />
+                        <div className="hidden md:block h-7 w-px bg-[var(--theme-border)] opacity-30 flex-shrink-0" />
 
                         {/* Quick Stats */}
-                        <div className="flex items-center gap-1.5 bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 shrink-0 overflow-x-auto no-scrollbar">
+                        <div className="hidden md:flex items-center gap-1 lg:gap-1.5 bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-9 lg:h-11 shrink-0 overflow-x-auto no-scrollbar">
                             {[
                                 { key: 'pending',   dot: 'bg-[var(--status-pending)]' },
                                 { key: 'accepted',  dot: 'bg-[var(--status-accepted)]' },
@@ -258,54 +263,32 @@ const WorkingProcess = () => {
                                 <button
                                     key={stat.key}
                                     onClick={() => setStatusFilter(f => f === stat.key ? null : stat.key)}
-                                    className={`px-2.5 sm:px-3.5 rounded-xl flex items-center gap-1.5 h-9 border transition-all duration-300 ${
+                                    className={`px-2 lg:px-3.5 rounded-xl flex items-center gap-1 lg:gap-1.5 h-7 lg:h-9 border transition-all duration-200 ${
                                         statusFilter === stat.key
-                                            ? 'bg-orange-500/10 border-orange-500/30 text-orange-400'
-                                            : 'bg-transparent border-transparent text-[var(--theme-text-muted)]'
+                                            ? 'bg-orange-500/10 border-orange-500/30 text-orange-400 scale-[1.05]'
+                                            : 'bg-transparent border-transparent text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)] hover:text-[var(--theme-text-main)] hover:border-[var(--theme-border)] hover:scale-105 active:scale-95'
                                     }`}
                                 >
-                                    <span className={`w-2 h-2 rounded-full ${stat.dot} ${statusFilter === stat.key ? 'animate-pulse' : 'opacity-60'}`} />
-                                    <span className="text-xs sm:text-sm font-black">{counts[stat.key]}</span>
+                                    <span className={`w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full ${stat.dot} ${statusFilter === stat.key ? 'animate-pulse' : 'opacity-60'}`} />
+                                    <span className="text-xs font-black">{counts[stat.key]}</span>
                                 </button>
                             ))}
                         </div>
 
                         <button
-                            onClick={fetchOrders}
-                            className="w-10 h-10 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/50 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                            onClick={() => window.dispatchEvent(new CustomEvent('pos-refresh'))}
+                            className="w-9 h-9 lg:w-10 lg:h-10 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/50 rounded-xl flex items-center justify-center transition-all active:scale-90"
                         >
-                            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                         </button>
                     </div>
                 </div>,
                 document.getElementById('topbar-portal')
             )}
 
-            {document.getElementById('topbar-portal-row2') && createPortal(
-                <div className="flex items-center gap-2 w-full overflow-x-auto no-scrollbar pb-1">
-                    <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-10 w-full">
-                        {['all', 'dine-in', 'takeaway']
-                            .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
-                            .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
-                            .map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setFilterType(t)}
-                                className={`flex-1 px-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${
-                                    filterType === t
-                                        ? 'bg-orange-500 text-white shadow-md'
-                                        : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
-                                }`}
-                            >
-                                {t === 'all' ? 'ALL' : t.replace('-', ' ')}
-                            </button>
-                        ))}
-                    </div>
-                </div>,
-                document.getElementById('topbar-portal-row2')
-            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 h-auto md:h-[calc(100dvh-120px)] min-h-0 md:min-h-[420px]">
+
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 h-auto md:h-[calc(100dvh-80px)] min-h-0 md:min-h-[420px]">
                 {/* Left: Active Orders List — 2/5 of available width */}
                 <div className="md:col-span-2 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] overflow-hidden flex flex-col min-h-[300px] md:min-h-0">
                     <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-bg-muted)] flex justify-between items-center shrink-0">
@@ -323,43 +306,43 @@ const WorkingProcess = () => {
                                 <button
                                     key={order._id}
                                     onClick={() => setSelectedOrder(order)}
-                                    className={`w-full min-h-[95px] h-[95px] sm:min-h-[120px] sm:h-[120px] rounded-2xl border-2 flex flex-col items-center justify-center p-2 sm:p-3 transition-all hover:scale-[1.02] active:scale-95 shadow-sm overflow-hidden relative ${
-                                        selectedOrder?._id === order._id 
-                                            ? 'ring-2 ring-offset-2 ring-current z-10 shadow-lg' 
-                                            : 'opacity-80 hover:opacity-100'
+                                    className={`group w-full min-h-[95px] h-[95px] sm:min-h-[120px] sm:h-[120px] rounded-2xl border-2 flex flex-col items-center justify-center p-2 sm:p-3 transition-all duration-200 shadow-sm overflow-hidden relative ${
+                                        selectedOrder?._id === order._id
+                                            ? 'ring-2 ring-offset-2 ring-current z-10 shadow-xl scale-[1.02]'
+                                            : 'hover:-translate-y-1 hover:shadow-xl hover:shadow-current/30 hover:scale-[1.03] hover:border-current active:scale-95 active:translate-y-0'
                                         } ${order.orderStatus === 'ready' ? 'animate-pulse' : ''} ${getStatusColor(order.orderStatus)}`}
                                 >
                                     {/* Top Row: Type & Status */}
                                     <div className="flex items-center justify-between w-full shrink-0 mb-auto">
-                                        <span className="text-[7px] sm:text-[9px] uppercase font-black opacity-60 tracking-tighter">
+                                        <span className="text-[7px] sm:text-[9px] uppercase font-black opacity-60 tracking-tighter group-hover:opacity-90 transition-opacity">
                                             {order.orderType === 'dine-in' ? 'DINE' : 'TAKE'}
                                         </span>
-                                        <span className={`text-[6px] sm:text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-current whitespace-nowrap overflow-hidden max-w-[50px] sm:max-w-none ${selectedOrder?._id === order._id ? 'bg-white text-black' : 'bg-white/10'}`}>
+                                        <span className={`text-[6px] sm:text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-current whitespace-nowrap overflow-hidden max-w-[50px] sm:max-w-none transition-colors ${selectedOrder?._id === order._id ? 'bg-white text-black' : 'bg-white/10 group-hover:bg-white/25'}`}>
                                             {order.orderStatus}
                                         </span>
                                     </div>
 
                                     {/* Centered Large Label */}
                                     <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 py-1">
-                                        <span className="text-sm sm:text-lg font-black leading-tight tracking-tighter text-center px-1 break-words w-full truncate">
+                                        <span className="text-sm sm:text-lg font-black leading-tight tracking-tighter text-center px-1 break-words w-full truncate group-hover:scale-105 transition-transform duration-200 inline-block">
                                             {tokenLabel}
                                         </span>
-                                        <span className="text-[7px] font-bold opacity-40 uppercase tracking-widest mt-0.5 hidden sm:block">
+                                        <span className="text-[7px] font-bold opacity-40 uppercase tracking-widest mt-0.5 hidden sm:block group-hover:opacity-70 transition-opacity">
                                             {order.orderNumber}
                                         </span>
                                     </div>
 
-                                    {/* Bottom aesthetic indicator bar */}
-                                    <div className="w-1/3 h-0.5 rounded-full bg-current opacity-25 shrink-0 mt-auto" />
+                                    {/* Bottom indicator bar — expands on hover */}
+                                    <div className="w-1/3 group-hover:w-2/3 h-0.5 rounded-full bg-current opacity-25 group-hover:opacity-60 shrink-0 mt-auto transition-all duration-300" />
                                 </button>
                             ) : (
                                 <div
                                     key={order._id}
                                     onClick={() => setSelectedOrder(order)}
-                                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer group flex flex-col ${
+                                    className={`p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer group flex flex-col ${
                                         selectedOrder?._id === order._id
                                             ? `${getStatusColor(order.orderStatus)} ring-4 ring-offset-2 ring-current z-10 scale-[1.01] shadow-xl`
-                                            : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] hover:bg-[var(--theme-bg-hover)]'
+                                            : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] hover:border-[var(--theme-text-muted)]/40 hover:shadow-md hover:-translate-y-0.5 hover:bg-[var(--theme-bg-hover)] active:scale-[0.99] active:translate-y-0'
                                         }`}
                                 >
                                     <div className="flex justify-between items-start mb-2">

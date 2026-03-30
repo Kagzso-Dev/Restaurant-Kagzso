@@ -1,9 +1,11 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo, useRef } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
-import { Plus, Search, SearchX, Utensils } from 'lucide-react';
+import { Plus, Search, SearchX, Utensils, Upload, X } from 'lucide-react';
 import ViewToggle from '../../components/ViewToggle';
 import FoodItem from '../../components/FoodItem';
+import useDebounce from '../../hooks/useDebounce';
+import OptimizedImage from '../../components/OptimizedImage';
 
 
 const AdminMenu = () => {
@@ -13,12 +15,15 @@ const AdminMenu = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 250);
     const [filterCategory, setFilterCategory] = useState(null);
     const [formError, setFormError] = useState('');
 
     const [formData, setFormData] = useState({
         name: '', description: '', price: '', category: '', image: '', isVeg: true, availability: true, variants: [],
     });
+    const [imageUploading, setImageUploading] = useState(false);
+    const imageFileRef = useRef(null);
     const [userInteracted, setUserInteracted] = useState(false);
     const [viewMode, setViewMode] = useState(() => {
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -82,6 +87,25 @@ const AdminMenu = () => {
             socket.off('category-updated', onCategoryUpdated);
         };
     }, [socket, filterCategory]);
+
+    const handleImageFileSelect = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setImageUploading(true);
+        try {
+            const fd = new FormData();
+            fd.append('image', file);
+            const res = await api.post('/api/upload/image', fd, {
+                headers: { Authorization: `Bearer ${user.token}`, 'Content-Type': 'multipart/form-data' },
+            });
+            setFormData(f => ({ ...f, image: res.data.url }));
+        } catch (err) {
+            setFormError(err.response?.data?.message || 'Image upload failed');
+        } finally {
+            setImageUploading(false);
+            if (imageFileRef.current) imageFileRef.current.value = '';
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -180,10 +204,10 @@ const AdminMenu = () => {
     const filteredItems = useMemo(() => {
         return items.filter(item => {
             const matchCat = filterCategory ? String(item.category?._id) === String(filterCategory) : true;
-            const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchSearch = item.name.toLowerCase().includes(debouncedSearch.toLowerCase());
             return matchCat && matchSearch;
         });
-    }, [items, filterCategory, searchQuery]);
+    }, [items, filterCategory, debouncedSearch]);
 
     const activeCategories = categories.filter(c => c.status === 'active');
 
@@ -361,14 +385,52 @@ const AdminMenu = () => {
                                     </div>
                                 </div>
 
-                                {/* Image URL */}
+                                {/* Image Upload */}
                                 <div>
-                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Image URL</label>
+                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] mb-1.5 ml-1">Image</label>
+
+                                    {/* Preview */}
+                                    {formData.image && (
+                                        <OptimizedImage 
+                                            src={formData.image} 
+                                            alt="Preview" 
+                                            aspectRatio="aspect-video"
+                                            containerClassName="w-full h-32 rounded-xl border border-[var(--theme-border)] mb-2"
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(f => ({ ...f, image: '' }))}
+                                                className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-red-600 text-white rounded-lg transition-colors z-20"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </OptimizedImage>
+                                    )}
+
+                                    {/* Upload button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => imageFileRef.current?.click()}
+                                        disabled={imageUploading}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mb-2 bg-[var(--theme-bg-dark)] hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] rounded-xl border border-dashed border-[var(--theme-border)] hover:border-blue-500 transition-all text-xs font-bold disabled:opacity-50"
+                                    >
+                                        <Upload size={14} />
+                                        {imageUploading ? 'Uploading...' : 'Upload from device'}
+                                    </button>
+                                    <input
+                                        ref={imageFileRef}
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleImageFileSelect}
+                                    />
+
+                                    {/* URL fallback */}
                                     <input
                                         type="text"
                                         value={formData.image}
                                         onChange={e => setFormData({ ...formData, image: e.target.value })}
-                                        placeholder="https://..."
+                                        placeholder="Or paste an image URL..."
                                         className="w-full bg-[var(--theme-bg-dark)] text-[var(--theme-text-main)] rounded-xl px-4 py-2 border border-[var(--theme-border)] focus:border-blue-500 focus:outline-none transition-all text-xs"
                                     />
                                 </div>

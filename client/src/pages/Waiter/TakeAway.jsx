@@ -4,10 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import {
     Search, ShoppingCart, ArrowLeft, ArrowRight,
-    Utensils, ChevronRight, ChevronLeft, SearchX, Trash2, Plus, Minus
+    Utensils, ChevronLeft, SearchX, Trash2, Plus, Minus
 } from 'lucide-react';
 import ViewToggle from '../../components/ViewToggle';
 import FoodItem from '../../components/FoodItem';
+import useMenuData from '../../hooks/useMenuData';
+import useDebounce from '../../hooks/useDebounce';
+import OptimizedImage from '../../components/OptimizedImage';
 
 /**
  * Take Away Order Page
@@ -17,7 +20,6 @@ const TakeAway = () => {
     const { user, formatPrice, settings, socket } = useContext(AuthContext);
     const navigate = useNavigate();
 
-
     // Redirect away if takeaway is disabled in settings
     useEffect(() => {
         if (settings && settings.takeawayEnabled === false) {
@@ -26,25 +28,27 @@ const TakeAway = () => {
     }, [settings, navigate]);
 
     const orderType = 'takeaway';
-    const [menuItems, setMenuItems] = useState([]);
-    const [allCategories, setAllCategories] = useState([]);
     const [cart, setCart] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 250);
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [userInteracted, setUserInteracted] = useState(false);
     const [viewMode, setViewMode] = useState(() => {
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
         if (isMobile && settings?.mobileMenuView) return settings.mobileMenuView;
-        return settings?.menuView || 'grid'
+        return settings?.menuView || 'grid';
     });
+
+    // ── Shared menu cache ────────────────────────────────────────────────
+    const { menuItems, categories: rawCategories, loading } = useMenuData();
 
     // Sync with global settings
     useEffect(() => {
         const isMobile = window.innerWidth < 768;
-        const defaultView = (isMobile && settings?.mobileMenuView) ? settings.mobileMenuView : (settings?.menuView || 'grid');
-
+        const defaultView = (isMobile && settings?.mobileMenuView)
+            ? settings.mobileMenuView
+            : (settings?.menuView || 'grid');
         if (settings?.enforceMenuView) {
             setViewMode(defaultView);
         } else if (!userInteracted && (settings?.menuView || settings?.mobileMenuView)) {
@@ -52,31 +56,29 @@ const TakeAway = () => {
         }
     }, [settings?.menuView, settings?.mobileMenuView, settings?.enforceMenuView, userInteracted]);
 
-    // Manual override helper
     const handleViewToggle = (newMode) => {
         setViewMode(newMode);
         setUserInteracted(true);
         localStorage.setItem('foodViewMode', newMode);
     };
 
+    // ── Cart-specific socket sync (prices/removal when menu changes) ─────
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const [menuRes, catRes] = await Promise.all([
-                    api.get('/api/menu'),
-                    api.get('/api/categories'),
-                ]);
-                setMenuItems(menuRes.data);
-                setAllCategories(catRes.data);
-            } catch (err) {
-                console.error('TakeAway: fetch error', err);
-            } finally {
-                setLoading(false);
+        if (!socket) return;
+        const onMenuUpdated = ({ action, item, id }) => {
+            if (action === 'update' && item) {
+                setCart(prev => prev.map(c =>
+                    c._id === item._id
+                        ? { ...c, name: item.name, price: c.variant ? c.variant.price : item.price }
+                        : c
+                ));
+            } else if (action === 'delete' && id) {
+                setCart(prev => prev.filter(c => c._id !== id));
             }
         };
-        fetchData();
-    }, []);
+        socket.on('menu-updated', onMenuUpdated);
+        return () => socket.off('menu-updated', onMenuUpdated);
+    }, [socket]);
 
     const addToCart = useCallback((item, variant = null) => {
         const cartKey = variant ? `${item._id}_${variant.name}` : item._id;
@@ -105,70 +107,39 @@ const TakeAway = () => {
 
     const clearCart = () => { if (window.confirm('Clear all items?')) setCart([]); };
 
+    // ── Deduplicated categories ──────────────────────────────────────────
     const categories = useMemo(() => {
         const seen = new Set();
         const result = [];
-        [...allCategories, ...menuItems.map(i => i.category).filter(Boolean)].forEach(cat => {
+        [...rawCategories, ...menuItems.map(i => i.category).filter(Boolean)].forEach(cat => {
             if (!seen.has(cat._id)) {
                 seen.add(cat._id);
                 result.push(cat);
             }
         });
         return result;
-    }, [allCategories, menuItems]);
+    }, [rawCategories, menuItems]);
 
     const filteredItems = useMemo(() =>
         menuItems.filter(item =>
             (selectedCategory ? item.category?._id === selectedCategory : true) &&
-            item.name.toLowerCase().includes(searchQuery.toLowerCase())
-        ), [menuItems, selectedCategory, searchQuery]);
+            item.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+        ), [menuItems, selectedCategory, debouncedSearch]);
+
+    // ── Pre-computed cart lookup — avoids O(n) filter on every item ──────
+    const cartByItemId = useMemo(() => {
+        const map = {};
+        cart.forEach(i => {
+            if (!map[i._id]) map[i._id] = [];
+            map[i._id].push(i);
+        });
+        return map;
+    }, [cart]);
 
     const totalAmount = useMemo(() => cart.reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
     const taxRate = settings?.taxRate || 5;
     const tax = totalAmount * (taxRate / 100);
     const finalAmount = totalAmount + tax;
-
-    // ── Real-time menu/category sync ─────────────────────────────────
-    useEffect(() => {
-        if (!socket) return;
-
-        const onMenuUpdated = ({ action, item, id }) => {
-            if (action === 'create' && item) {
-                if (item.availability) {
-                    setMenuItems(prev => prev.find(i => i._id === item._id) ? prev : [...prev, item]);
-                }
-            } else if (action === 'update' && item) {
-                setMenuItems(prev => {
-                    const exists = prev.find(i => i._id === item._id);
-                    if (!item.availability) return prev.filter(i => i._id !== item._id);
-                    return exists ? prev.map(i => i._id === item._id ? item : i) : [...prev, item];
-                });
-                setCart(prev => prev.map(c =>
-                    c._id === item._id ? { ...c, name: item.name, price: c.variant ? c.variant.price : item.price } : c
-                ));
-            } else if (action === 'delete' && id) {
-                setMenuItems(prev => prev.filter(i => i._id !== id));
-                setCart(prev => prev.filter(c => c._id !== id));
-            }
-        };
-
-        const onCategoryUpdated = ({ action, category, id }) => {
-            if (action === 'create' && category) {
-                setAllCategories(prev => prev.find(c => c._id === category._id) ? prev : [...prev, category]);
-            } else if (action === 'update' && category) {
-                setAllCategories(prev => prev.map(c => c._id === category._id ? category : c));
-            } else if (action === 'delete' && id) {
-                setAllCategories(prev => prev.filter(c => c._id !== id));
-            }
-        };
-
-        socket.on('menu-updated', onMenuUpdated);
-        socket.on('category-updated', onCategoryUpdated);
-        return () => {
-            socket.off('menu-updated', onMenuUpdated);
-            socket.off('category-updated', onCategoryUpdated);
-        };
-    }, [socket]);
 
     const handleSubmitOrder = async () => {
         if (!cart.length) return alert('Cart is empty!');
@@ -262,23 +233,23 @@ const TakeAway = () => {
                     </div>
 
                     <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
-                        {/* Categories Selection: Horizontal on Mobile, Vertical Rail on Desktop */}
-                        <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto custom-scrollbar bg-black/5 border-b md:border-b-0 md:border-r border-[var(--theme-border)] flex-shrink-0 w-full md:w-24 xl:w-28">
+                        {/* Categories Selection: Horizontal on Mobile, Vertical Rail on Desktop/Tablet */}
+                        <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto custom-scrollbar bg-black/5 border-b md:border-b-0 md:border-r border-[var(--theme-border)] flex-shrink-0 w-full md:w-28 lg:w-32 xl:w-36">
                             <button
                                 onClick={() => setSelectedCategory(null)}
-                                className={`flex flex-shrink-0 flex-row md:flex-col items-center justify-center py-2 md:py-4 px-4 md:px-1 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4
+                                className={`flex flex-shrink-0 flex-col md:flex-col items-center justify-center py-2.5 md:py-6 px-5 md:px-2 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4
                                     ${selectedCategory === null
                                         ? 'bg-gray-200 text-gray-900 border-gray-800 shadow-inner'
                                         : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] border-transparent'}`}
                             >
-                                <Utensils size={18} />
-                                <span className="text-[9px] font-black uppercase tracking-widest">All</span>
+                                <Utensils size={14} className="md:w-[20px] md:h-[20px] md:mb-1" />
+                                <span className="text-[10px] md:text-[10px] font-black uppercase tracking-widest leading-none">All</span>
                             </button>
                             {categories.map(cat => (
                                 <button
                                     key={cat._id}
                                     onClick={() => setSelectedCategory(cat._id)}
-                                    className="flex flex-shrink-0 flex-row md:flex-col items-center justify-center py-2 md:py-4 px-4 md:px-1 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4"
+                                    className="flex flex-shrink-0 flex-col items-center justify-center py-2.5 md:py-6 px-5 md:px-2 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4 relative group"
                                     style={{
                                         backgroundColor: selectedCategory === cat._id ? `${cat.color || '#f97316'}15` : 'transparent',
                                         borderColor: selectedCategory === cat._id ? (cat.color || '#f97316') : 'transparent',
@@ -286,7 +257,7 @@ const TakeAway = () => {
                                     }}
                                 >
                                     <div
-                                        className="w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[11px] md:text-[12px] font-black transition-colors flex-shrink-0"
+                                        className="w-5 h-5 md:w-11 md:h-11 rounded-full flex items-center justify-center text-[9px] md:text-[14px] font-black transition-colors flex-shrink-0 shadow-sm"
                                         style={{
                                             backgroundColor: selectedCategory === cat._id ? (cat.color || '#1f2937') : 'var(--theme-bg-hover)',
                                             color: selectedCategory === cat._id ? 'white' : 'var(--theme-text-muted)'
@@ -294,13 +265,13 @@ const TakeAway = () => {
                                     >
                                         {cat.name.charAt(0)}
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-tight text-center leading-tight whitespace-nowrap md:whitespace-normal line-clamp-1 md:line-clamp-2">{cat.name}</span>
+                                    <span className="text-[10px] md:text-[10px] font-black uppercase tracking-tighter text-center leading-tight break-words max-w-full">{cat.name}</span>
                                 </button>
                             ))}
                         </div>
 
                         {/* Items Grid */}
-                        <div className={`flex-1 overflow-y-auto p-2 md:p-3 xl:p-4 custom-scrollbar`}>
+                        <div className={`flex-1 overflow-y-auto p-2 md:p-3 xl:p-4 custom-scrollbar content-visibility-auto`}>
                             {filteredItems.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-64 text-[var(--theme-text-muted)]">
                                     <SearchX size={48} className="mb-4 opacity-10" />
@@ -313,18 +284,22 @@ const TakeAway = () => {
                                         ? 'grid-cols-3 md:[grid-template-columns:repeat(auto-fill,minmax(110px,1fr))]'
                                         : 'grid-cols-1'
                                 }`}>
-                                    {filteredItems.map(item => (
-                                        <FoodItem
-                                            key={item._id}
-                                            item={item}
-                                            viewMode={viewMode}
-                                            formatPrice={formatPrice}
-                                            onAdd={handleItemAdd}
-                                            onRemove={(key) => updateQuantity(key, -1)}
-                                            cartQty={cart.filter(i => i._id === item._id).reduce((s, i) => s + i.quantity, 0)}
-                                            itemCart={cart.filter(i => i._id === item._id)}
-                                        />
-                                    ))}
+                                    {filteredItems.map(item => {
+                                        const itemCartEntries = cartByItemId[item._id] || [];
+                                        const itemCartQty = itemCartEntries.reduce((s, i) => s + i.quantity, 0);
+                                        return (
+                                            <FoodItem
+                                                key={item._id}
+                                                item={item}
+                                                viewMode={viewMode}
+                                                formatPrice={formatPrice}
+                                                onAdd={handleItemAdd}
+                                                onRemove={(key) => updateQuantity(key, -1)}
+                                                cartQty={itemCartQty}
+                                                itemCart={itemCartEntries}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -369,41 +344,42 @@ const TakeAway = () => {
                                     <p className="text-xs">Add items from the menu to build your order</p>
                                 </div>
                             ) : (
-                                    cart.map(item => (
-                                        <div key={item.cartKey} className="flex items-center gap-3 animate-slide-up hover:bg-blue-500/5 p-1 -m-1 rounded-xl transition-colors group">
-                                            <div className="w-10 h-10 rounded-lg bg-[var(--theme-bg-dark)] flex-shrink-0 overflow-hidden border border-[var(--theme-border)] shadow-sm">
-                                                {item.image
-                                                    ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
-                                                    : <div className="w-full h-full flex items-center justify-center text-lg bg-[var(--theme-bg-hover)]">🥘</div>}
+                                cart.map(item => (
+                                    <div key={item.cartKey} className="flex items-center gap-3 animate-slide-up hover:bg-blue-500/5 p-1 -m-1 rounded-xl transition-colors group">
+                                            <OptimizedImage 
+                                                src={item.image} 
+                                                alt={item.name} 
+                                                width={100}
+                                                containerClassName="w-10 h-10 rounded-lg flex-shrink-0 shadow-sm"
+                                            />
+                                        <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5">
+                                            <div className="min-w-0 flex-1 pr-1">
+                                                <h4 className="text-[12px] font-black text-[var(--theme-text-main)] truncate leading-tight uppercase tracking-tighter">{item.name}</h4>
+                                                {item.variant && <p className="text-[8px] font-black text-blue-500 uppercase leading-none mt-0.5">{item.variant.name}</p>}
                                             </div>
-                                            <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5">
-                                                <div className="min-w-0 flex-1 pr-1">
-                                                    <h4 className="text-[12px] font-black text-[var(--theme-text-main)] truncate leading-tight uppercase tracking-tighter">{item.name}</h4>
-                                                    {item.variant && <p className="text-[8px] font-black text-blue-500 uppercase leading-none mt-0.5">{item.variant.name}</p>}
-                                                </div>
-                                                
-                                                <div className="flex items-center shrink-0">
-                                                    <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-full p-0.5 border border-[var(--theme-border)] shadow-inner">
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); updateQuantity(item.cartKey, -1); }} 
-                                                            className="w-6 h-6 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-blue-500 transition-all active:scale-75"
-                                                        >
-                                                            <Minus size={11} strokeWidth={3} />
-                                                        </button>
-                                                        <span className="w-5 text-center text-[10px] font-black text-[var(--theme-text-main)] tabular-nums">{item.quantity}</span>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); updateQuantity(item.cartKey, 1); }} 
-                                                            className="w-6 h-6 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-blue-500 transition-all active:scale-75"
-                                                        >
-                                                            <Plus size={11} strokeWidth={3} />
-                                                        </button>
-                                                    </div>
-                                                </div>
 
-                                                <span className="text-[12px] font-black text-blue-500 min-w-[50px] text-right tabular-nums tracking-tighter shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                                            <div className="flex items-center shrink-0">
+                                                <div className="flex items-center bg-[var(--theme-bg-dark)] rounded-full p-0.5 border border-[var(--theme-border)] shadow-inner">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); updateQuantity(item.cartKey, -1); }}
+                                                        className="w-6 h-6 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-blue-500 transition-all active:scale-75"
+                                                    >
+                                                        <Minus size={11} strokeWidth={3} />
+                                                    </button>
+                                                    <span className="w-5 text-center text-[10px] font-black text-[var(--theme-text-main)] tabular-nums">{item.quantity}</span>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); updateQuantity(item.cartKey, 1); }}
+                                                        className="w-6 h-6 flex items-center justify-center text-[var(--theme-text-muted)] hover:text-blue-500 transition-all active:scale-75"
+                                                    >
+                                                        <Plus size={11} strokeWidth={3} />
+                                                    </button>
+                                                </div>
                                             </div>
+
+                                            <span className="text-[12px] font-black text-blue-500 min-w-[50px] text-right tabular-nums tracking-tighter shrink-0">{formatPrice(item.price * item.quantity)}</span>
                                         </div>
-                                    ))
+                                    </div>
+                                ))
                             )}
                         </div>
 
@@ -426,7 +402,6 @@ const TakeAway = () => {
                                 Confirm & Place Order <ArrowRight size={16} />
                             </button>
                             <button className="md:hidden w-full py-2 text-[var(--theme-text-muted)] font-bold text-xs uppercase tracking-widest" onClick={() => setIsCartOpen(false)}>
-
                                 Continue Adding Items
                             </button>
                         </div>

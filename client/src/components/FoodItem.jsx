@@ -1,5 +1,7 @@
 import { useState, useEffect, memo } from 'react';
-import { Plus, Minus, Edit, Trash2, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Minus, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+
+import OptimizedImage from './OptimizedImage';
 
 /* ── Reusable +/- stepper ─────────────────────────────────────────────── */
 const QtyControl = ({ qty, onAdd, onRemove, size = 'md' }) => {
@@ -73,18 +75,19 @@ const FoodItem = memo(({
                     {/* Veg indicator */}
                     <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
 
-                    {/* Image */}
-                    <div className="relative w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0 shadow-sm">
-                        {item.image
-                            ? <img src={item.image} alt={item.name} className="img-cover group-hover:scale-105 transition-transform duration-300" />
-                            : <div className="w-full h-full flex items-center justify-center text-3xl">🍔</div>
-                        }
+                    <OptimizedImage 
+                        src={item.image} 
+                        alt={item.name} 
+                        width={150}
+                        className="group-hover:scale-105"
+                        containerClassName="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl shadow-sm"
+                    >
                         {item.availability === false && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                                 <span className="text-white text-[8px] font-bold uppercase">Off</span>
                             </div>
                         )}
-                    </div>
+                    </OptimizedImage>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
@@ -180,32 +183,32 @@ const FoodItem = memo(({
         <div
             className={`group relative bg-[var(--theme-bg-card)] rounded-3xl border transition-all flex flex-col items-center animate-fade-in overflow-hidden ${cartQty > 0 ? 'border-gray-400/50 shadow-lg' : 'border-[var(--theme-border)] hover:border-gray-400/50 hover:shadow-xl'}`}
         >
-            {/* Image section */}
-            <div className="relative w-full aspect-[1.3] overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
-                {item.image
-                    ? <img src={item.image} alt={item.name} className="img-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
-                    : <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400">🍔</div>
-                }
-                
+            <OptimizedImage 
+                src={item.image} 
+                alt={item.name} 
+                aspectRatio="aspect-food"
+                className="group-hover:scale-110 duration-700 ease-out"
+                containerClassName="w-full"
+            >
                 {/* Veg/Non-Veg Badge */}
-                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/90 backdrop-blur shadow-sm border border-black/5">
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/90 backdrop-blur shadow-sm border border-black/5 z-10">
                     <div className={`w-2 h-2 rounded-sm ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                     <span className="text-[7px] font-black uppercase tracking-widest text-gray-500">{isVeg ? 'VEG' : 'NON'}</span>
                 </div>
 
                 {/* Subcategory Label */}
-                <div className="absolute bottom-3 left-3">
+                <div className="absolute bottom-3 left-3 z-10">
                     <span className="text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-gray-200 text-gray-800 shadow-sm border border-black/5">
                         {item.category?.name || 'Item'}
                     </span>
                 </div>
                 
                 {item.availability === false && (
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20">
                         <span className="text-white text-[10px] font-black uppercase tracking-widest bg-red-600 px-3 py-1.5 rounded-xl">Sold Out</span>
                     </div>
                 )}
-            </div>
+            </OptimizedImage>
 
             {/* Content Area */}
             <div className="flex flex-col flex-1 p-3 w-full text-center">
@@ -222,8 +225,8 @@ const FoodItem = memo(({
                                     {/* Horizontal Variant Pills - Scrollable Rail */}
                                     <div className="relative group/rail flex items-center px-1">
                                         {/* Left Side Hint */}
-                                        <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-40 group-hover/rail:opacity-100 transition-opacity">
-                                            <ChevronLeft size={16} className="text-gray-900 animate-chevron-bounce-3d" strokeWidth={3} />
+                                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-60 group-hover/rail:opacity-100 transition-opacity">
+                                            <ChevronLeft size={10} className="text-blue-600 animate-chevron-bounce-3d" strokeWidth={4} />
                                         </div>
 
                                         <div className="flex-1 flex items-center gap-1.5 bg-gray-50/80 dark:bg-white/5 p-1 rounded-xl border border-[var(--theme-border)] overflow-x-auto hide-scrollbar snap-x snap-mandatory scroll-smooth min-h-[40px]">
@@ -247,8 +250,8 @@ const FoodItem = memo(({
                                         </div>
  
                                         {/* Right Side Hint */}
-                                        <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-40 group-hover/rail:opacity-100 transition-opacity">
-                                            <ChevronRight size={16} className="text-gray-900 animate-chevron-bounce-3d [animation-delay:0.3s]" strokeWidth={3} />
+                                        <div className="absolute -right-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-60 group-hover/rail:opacity-100 transition-opacity">
+                                            <ChevronRight size={10} className="text-blue-600 animate-chevron-bounce-3d [animation-delay:0.3s]" strokeWidth={4} />
                                         </div>
                                     </div>
                                     

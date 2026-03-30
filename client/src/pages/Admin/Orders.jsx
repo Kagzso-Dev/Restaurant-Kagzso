@@ -1,9 +1,10 @@
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api';
-import { Search, Eye, ShoppingBag, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, ShoppingBag, Calendar, X, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
+import CancelOrderModal from '../../components/CancelOrderModal';
 import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
 
@@ -224,6 +225,7 @@ const AdminOrders = () => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null });
     const datePickerRef = useRef(null);
     const { user, formatPrice, socket } = useContext(AuthContext);
     const location = useLocation();
@@ -345,6 +347,10 @@ const AdminOrders = () => {
             console.error("Payment error:", error);
             alert("Failed to process payment");
         }
+    };
+
+    const handleCancelOrder = async (orderId, reason) => {
+        await api.put(`/api/orders/${orderId}/cancel`, { reason }, { headers: { Authorization: `Bearer ${user.token}` } });
     };
 
     const fmt = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -543,6 +549,7 @@ const AdminOrders = () => {
                     onClose={() => setSelectedOrder(null)}
                     formatPrice={formatPrice}
                     onProcessPayment={handleProcessPayment}
+                    onCancelOrder={(o) => setCancelModal({ isOpen: true, order: o })}
                     userRole={user?.role}
                 />
             )}
@@ -556,10 +563,19 @@ const AdminOrders = () => {
                 onClose={() => setSelectedOrder(null)}
                 formatPrice={formatPrice}
                 onProcessPayment={handleProcessPayment}
+                onCancelOrder={(o) => setCancelModal({ isOpen: true, order: o })}
                 userRole={user?.role}
             />
         </div>
 
+        <CancelOrderModal
+            isOpen={cancelModal.isOpen}
+            order={cancelModal.order}
+            item={null}
+            title="Cancel Order"
+            onClose={() => setCancelModal({ isOpen: false, order: null })}
+            onConfirm={handleCancelOrder}
+        />
         </div>
     );
 };

@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import logoImg from '../assets/logo.png';
 
+
 const Logo = ({ size = 'md', showText = true }) => {
     const { settings } = useContext(AuthContext);
     const sizeClasses = {
@@ -13,7 +14,7 @@ const Logo = ({ size = 'md', showText = true }) => {
 
     return (
         <div className="flex flex-col items-center justify-center">
-            <div className={`${sizeClasses[size]} bg-white rounded-xl flex items-center justify-center shadow-lg p-1 border border-gray-200`}>
+            <div className={`${sizeClasses[size]} bg-white rounded-xl flex items-center justify-center shadow-lg p-1 border border-gray-200 flex-shrink-0`}>
                 <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
             </div>
             {showText && (

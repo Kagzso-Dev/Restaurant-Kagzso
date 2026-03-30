@@ -1,17 +1,18 @@
-import { useState, useEffect, useContext, useCallback, memo } from 'react';
+import { useState, useEffect, useContext, useCallback, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import logoImg from '../../assets/logo.png';
 import PaymentModal from '../../components/PaymentModal';
+import CancelOrderModal from '../../components/CancelOrderModal';
 import StatusBadge from '../../components/StatusBadge';
 import { tokenColors } from '../../utils/tokenColors';
 import { printBill } from '../../components/BillPrint';
 import {
     Printer, Banknote, CheckCircle,
     ShoppingBag, RefreshCw, ArrowLeft,
-    Clock, AlertTriangle, Grid, List, LogOut
+    Clock, AlertTriangle, Grid, List, LogOut, XCircle
 } from 'lucide-react';
 
 /* ── Order List Item ──────────────────────────────────────────────────────── */
@@ -229,6 +230,7 @@ const CashierDashboard = () => {
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [showPrintConfirm, setShowPrintConfirm] = useState(false);
     const [filterType, setFilterType] = useState('all'); // 'all' | 'dine-in' | 'takeaway'
+    const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null });
     const [isCardView, setIsCardView] = useState(() => localStorage.getItem('cashierCardView') !== 'false');
     const [lgCols, setLgCols] = useState(() => {
         const stored = parseInt(localStorage.getItem('cashierLgCols'));
@@ -255,6 +257,7 @@ const CashierDashboard = () => {
 
     /* ── Fetch Orders ────────────────────────────────────────────────── */
     const fetchOrders = useCallback(async () => {
+        setLoading(true);
         try {
             const res = await api.get('/api/orders', {
                 headers: { Authorization: `Bearer ${user.token}` }
@@ -273,20 +276,23 @@ const CashierDashboard = () => {
             setLoading(false);
         }
     }, [user, isHistoryMode]);
+    const filteredOrders = useMemo(() => {
+        return orders.filter(o => filterType === 'all' || o.orderType === filterType);
+    }, [orders, filterType]);
+
+    // ── Pre-calculate counts to avoid repeated filtering ───
+    const pendingCount = useMemo(() => orders.filter(o => o.paymentStatus !== 'paid' && o.orderStatus !== 'cancelled').length, [orders]);
 
     // ── Sync selected order when list updates ────────────
     useEffect(() => {
         if (selectedOrder) {
             const updated = orders.find(o => o._id === selectedOrder._id);
-            if (updated && JSON.stringify(updated) !== JSON.stringify(selectedOrder)) {
+            // Quick reference check or simple prop check instead of expensive stringify
+            if (updated && (updated.orderStatus !== selectedOrder.orderStatus || updated.paymentStatus !== selectedOrder.paymentStatus || updated.items?.length !== selectedOrder.items?.length)) {
                 setSelectedOrder(updated);
-            } else if (!updated && orders.length > 0) {
-              // If it disappeared (became paid), we handles that usually in update handlers,
-              // but if list refetched and it's gone, just clear selection.
-              // Note: we don't clear if list is still loading.
             }
         }
-    }, [orders]);
+    }, [orders, selectedOrder]);
 
     useEffect(() => {
         if (!user) return;
@@ -367,6 +373,17 @@ const CashierDashboard = () => {
         setShowPaymentModal(true);
     };
 
+    const handleCancelOrder = async (orderId, reason) => {
+        try {
+            await api.put(`/api/orders/${orderId}/cancel`, { reason }, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            setCancelModal({ isOpen: false, order: null });
+        } catch (err) {
+            console.error('Cancel Order failed', err);
+        }
+    };
+
     /* ── Payment Success Handler ──────────────────────────────────── */
     const handlePaymentSuccess = () => {
         setShowPaymentModal(false);
@@ -394,77 +411,49 @@ const CashierDashboard = () => {
 
     /* ── Layout ─────────────────────────────────────────────────────── */
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in flex-1 flex flex-col min-h-0 overflow-hidden">
 
             {/* ── POS Layout ────────────────────────────────────── */}
-            <div className="relative">
+            <div className="relative flex-1 flex flex-col min-h-0">
 
             {/* ── Row 1: Utility buttons pushed right ── */}
             {document.getElementById('topbar-portal') && createPortal(
-                <div className="flex items-center justify-end w-full gap-1.5 animate-fade-in pr-1">
-                    {/* View/Refresh (Mobile) */}
-                    <div className="flex md:hidden items-center gap-1.5 shrink-0">
-                         {/* Pending count badge */}
-                        <div className="bg-orange-500/10 border border-orange-500/20 text-orange-500 px-2.5 h-9 flex items-center justify-center rounded-xl text-[10px] font-black">
+                <div className="flex items-center w-full gap-1.5 animate-fade-in px-1">
+                    {/* Left: Filters */}
+                    <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-inner">
+                         {['all', 'dine-in', 'takeaway']
+                            .filter(t => settings?.takeawayEnabled !== false || t !== 'takeaway')
+                            .filter(t => settings?.dineInEnabled !== false || t !== 'dine-in')
+                            .map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`px-2.5 md:px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-orange-500 text-white shadow-sm' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                            >
+                                {t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Right Utilities (relocated to right using ml-auto) */}
+                    <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                        {/* Pending count badge */}
+                        <div className="bg-orange-500/10 border border-orange-500/20 text-orange-500 px-2.5 h-9 flex items-center justify-center rounded-xl text-[10px] font-black transition-all">
                             {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
                         </div>
 
                          <button
                             onClick={() => { const next = !isCardView; setIsCardView(next); localStorage.setItem('cashierCardView', next); }}
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-75 ${isCardView ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500 shadow-inner' : 'bg-orange-500/15 border-orange-500/30 text-orange-500 shadow-inner'}`}
+                            className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-75 ${isCardView ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500 shadow-inner' : 'bg-orange-500/15 border-orange-500/30 text-orange-500 shadow-inner'}`}
                         >
-                            {isCardView ? <Grid size={18} strokeWidth={2.5} /> : <List size={18} strokeWidth={2.5} />}
+                            {isCardView ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
                         </button>
-                    </div>
 
-                    {/* Desktop controls */}
-                    <div className="hidden md:flex items-center gap-2 md:gap-4 shrink-0">
-                        {/* Pending count — Premium Badge Style */}
-                        <div className="flex flex-col items-end pr-5 border-r border-[var(--theme-border)]">
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                                <span className="text-sm font-black text-[var(--theme-text-main)] tracking-tighter uppercase">
-                                    {orders.filter(o => filterType === 'all' || o.orderType === filterType).length} Pending
-                                </span>
-                            </div>
-                            <span className="text-[9px] font-black text-orange-500/60 uppercase tracking-[0.2em] mt-0.5">
-                                Operational View
-                            </span>
-                        </div>
-
-                        {/* View Toggle - Premium Redesign */}
-                        <div className="flex items-center bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner">
-                            <button
-                                onClick={() => { setIsCardView(false); localStorage.setItem('cashierCardView', false); }}
-                                className={`
-                                    flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
-                                    ${!isCardView 
-                                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' 
-                                        : 'text-[var(--theme-text-muted)] hover:text-orange-500 hover:bg-orange-500/5'}
-                                `}
-                            >
-                                <List size={14} strokeWidth={2.5} />
-                                <span>List</span>
-                            </button>
-                            <button
-                                onClick={() => { setIsCardView(true); localStorage.setItem('cashierCardView', true); }}
-                                className={`
-                                    flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
-                                    ${isCardView 
-                                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
-                                        : 'text-[var(--theme-text-muted)] hover:text-emerald-500 hover:bg-emerald-500/5'}
-                                `}
-                            >
-                                <Grid size={14} strokeWidth={2.5} />
-                                <span>Card</span>
-                            </button>
-                        </div>
-
-                         <button
-                            onClick={() => fetchOrders()}
-                            className="w-10 h-10 border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm"
+                        <button
+                            onClick={() => window.dispatchEvent(new CustomEvent('pos-refresh'))}
+                            className="w-9 h-9 border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm"
                         >
-                            <RefreshCw size={16} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
+                            <RefreshCw size={15} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
                         </button>
                     </div>
                 </div>,
@@ -472,31 +461,9 @@ const CashierDashboard = () => {
             )}
 
             {/* ── Row 2 (mobile only): Filters + Action ── */}
-            {document.getElementById('topbar-portal-row2') && createPortal(
-                <div className="flex items-center justify-between w-full h-full animate-fade-in px-1 pb-1">
-                    <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-2xl border border-[var(--theme-border)] shadow-inner">
-                        {['all', 'dine-in', 'takeaway'].map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setFilterType(t)}
-                                className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-white dark:bg-[var(--theme-bg-card)] text-orange-500 shadow-md' : 'text-[var(--theme-text-muted)]'}`}
-                            >
-                                {t === 'all' ? 'All Orders' : t === 'dine-in' ? 'Dine' : 'Take'}
-                            </button>
-                        ))}
-                    </div>
 
-                    <button
-                        onClick={() => navigate('/logout')}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/5 text-rose-500 transition-all active:scale-95"
-                    >
-                        <LogOut size={16} strokeWidth={2.5} />
-                    </button>
-                </div>,
-                document.getElementById('topbar-portal-row2')
-            )}
 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 h-[calc(100dvh-70px)] md:h-[calc(100dvh-113px)]">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-3 flex-1 min-h-0">
 
                     {/* ── Left: Order List ──────────────── */}
                     <div className={`
@@ -506,30 +473,28 @@ const CashierDashboard = () => {
                     `}>
                         
                         <div className={`
-                            flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar
+                            flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar content-visibility-auto
                             ${isCardView ? `grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 ${lgCols === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-2 content-start` : 'space-y-2.5'}
                         `}>
                             {loading ? (
                                 Array(4).fill(0).map((_, i) => <div key={i} className="skeleton h-20 rounded-xl" />)
-                            ) : orders.filter(o => filterType === 'all' || o.orderType === filterType).length === 0 ? (
+                            ) : filteredOrders.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-40 text-[var(--theme-text-subtle)]">
                                     <ShoppingBag size={40} className="mb-2 opacity-30" />
                                     <p className="text-sm font-medium">No orders</p>
                                 </div>
                             ) : (
-                                orders
-                                    .filter(o => filterType === 'all' || o.orderType === filterType)
-                                    .map(order => (
-                                        <OrderItem
-                                            key={order._id}
-                                            order={order}
-                                            selected={selectedOrder?._id === order._id}
-                                            onClick={() => handleSelect(order)}
-                                            formatPrice={formatPrice}
-                                            viewType={isCardView ? 'compact' : 'list'}
-                                            hideAmount={isHistoryMode}
-                                        />
-                                    ))
+                                filteredOrders.map(order => (
+                                    <OrderItem
+                                        key={order._id}
+                                        order={order}
+                                        selected={selectedOrder?._id === order._id}
+                                        onClick={() => handleSelect(order)}
+                                        formatPrice={formatPrice}
+                                        viewType={isCardView ? 'compact' : 'list'}
+                                        hideAmount={isHistoryMode}
+                                    />
+                                ))
                             )}
                         </div>
                     </div>
@@ -606,6 +571,15 @@ const CashierDashboard = () => {
                                             </p>
                                         </div>
                                         <div className="flex gap-3 flex-wrap">
+                                            {selectedOrder.orderStatus !== 'cancelled' && selectedOrder.paymentStatus !== 'paid' && (
+                                                <button
+                                                    onClick={() => setCancelModal({ isOpen: true, order: selectedOrder })}
+                                                    className="flex items-center justify-center w-11 h-11 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-500/20 active:scale-95"
+                                                    title="Cancel Order"
+                                                >
+                                                    <XCircle size={20} strokeWidth={2.5} />
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => setShowPrintConfirm(true)}
                                                 className="flex items-center gap-2 px-4 md:px-5 py-3 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-main)] rounded-xl font-semibold text-sm transition-colors min-h-[44px] border border-[var(--theme-border)]"
@@ -696,6 +670,15 @@ const CashierDashboard = () => {
                     settings={settings}
                 />
             )}
+
+            <CancelOrderModal
+                isOpen={cancelModal.isOpen}
+                order={cancelModal.order}
+                item={null}
+                title="Cancel Order"
+                onClose={() => setCancelModal({ isOpen: false, order: null })}
+                onConfirm={handleCancelOrder}
+            />
         </div>
     );
 };

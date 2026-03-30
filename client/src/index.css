@@ -1791,3 +1791,85 @@ main > div {
 .hero-float-delay-0 { animation-delay: 0s; }
 .hero-float-delay-1 { animation-delay: 0.25s; }
 .hero-float-delay-2 { animation-delay: 0.5s; }
+
+/* ─── PERFORMANCE OPTIMIZATIONS ────────────────────────────────────────── */
+
+/* Hardware acceleration for common animated elements */
+.animate-shimmer,
+.animate-pulse,
+.animate-spin,
+.hover\:scale-105 {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Skeleton animation with subtle pulse and shimmer */
+.skeleton {
+  background-color: var(--theme-bg-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Layout stability: enforce fixed aspect ratios for images */
+.aspect-food {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+@supports (aspect-ratio: 1/1) {
+  .aspect-food, .aspect-square {
+    height: auto;
+  }
+}
+
+/* Virtualized list hint: skip rendering outside viewport for long lists */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 500px; /* Adjust based on average component height */
+}
+
+/* Smooth scrolling but with optimized paint performance */
+.custom-scrollbar {
+  scrollbar-gutter: stable;
+}
+
+/* Performance: Reduce paint on hover by using opacity or transform ONLY */
+.performance-hover:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Prevent layout shift during font loading */
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── END PERFORMANCE OPTIMIZATIONS ────────────────────────────────────── */

@@ -133,6 +133,7 @@ app.set('io', io);
 // ─── API Routes ───────────────────────────────────────────────
 // Register specific routes BEFORE generic /api to avoid middleware conflicts
 app.use('/api/auth',           require('./routes/authRoutes'));
+app.use('/api/upload',         require('./routes/uploadRoutes'));
 app.use('/api/settings',       require('./routes/settingRoutes'));
 app.use('/api/tables',         require('./routes/tableRoutes'));
 app.use('/api/menu',           require('./routes/menuRoutes'));

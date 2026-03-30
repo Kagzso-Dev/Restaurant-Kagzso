@@ -109,6 +109,15 @@ const OrderDetailsModal = ({
                                         {String(order.orderNumber || '').startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
                                     </h2>
                                     <StatusBadge status={order.orderStatus} items={order.items || []} size="sm" />
+                                    {!isCancelled && !isPaid && onCancelOrder && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); onCancelOrder(order); }}
+                                            className="ml-1 w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-95 border border-red-500/20"
+                                            title="Cancel Order"
+                                        >
+                                            <X size={14} strokeWidth={3} />
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest bg-[var(--theme-bg-dark)]/20 px-1.5 py-0.5 rounded">
@@ -236,8 +245,17 @@ const OrderDetailsModal = ({
                                     <div className="flex items-center gap-3 ml-2">
                                         <p className="text-[13px] font-black tabular-nums text-[var(--theme-text-main)]">{formatPrice(item.price * item.quantity)}</p>
 
-                                        {userRole === 'waiter' && item.status?.toUpperCase() === 'PENDING' && !cancelled && onCancelItem && (
-                                            <button onClick={() => onCancelItem(order, item)} className="w-8 h-8 flex items-center justify-center rounded-lg transition-all bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white">
+                                        {(userRole === 'waiter' || userRole === 'admin') && onCancelItem && !cancelled && (
+                                            <button 
+                                                disabled={item.status?.toUpperCase() !== 'PENDING'}
+                                                onClick={() => onCancelItem(order, item)} 
+                                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all 
+                                                    ${item.status?.toUpperCase() === 'PENDING' 
+                                                        ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white active:scale-90 shadow-sm border border-red-500/20' 
+                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed grayscale'
+                                                    }`}
+                                                title={item.status?.toUpperCase() === 'PENDING' ? 'Cancel Item' : 'Already in Progress'}
+                                            >
                                                 <X size={14} strokeWidth={3} />
                                             </button>
                                         )}

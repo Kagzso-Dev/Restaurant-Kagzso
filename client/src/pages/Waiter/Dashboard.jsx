@@ -453,8 +453,8 @@ const WaiterDashboard = () => {
             {/* ── Desktop/Tablet: Action Bar ── */}
             {document.getElementById('topbar-portal') && createPortal(
                 <div className="flex items-center justify-between w-full animate-fade-in px-1 gap-2">
-                    {/* Left side: Filters Only */}
-                    <div className="hidden md:flex items-center">
+                    {/* Left side: Filters (Relocated from Row 2) */}
+                    <div className="hidden sm:flex items-center">
                         <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm h-9 w-fit">
                              {['all', 'dine-in', 'takeaway']
                                 .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
@@ -494,14 +494,14 @@ const WaiterDashboard = () => {
                         {/* Utility controls & Refresh */}
                         <div className="flex items-center gap-1.5">
                             {/* Mobile utilities */}
-                            <div className="flex md:hidden items-center gap-1 shrink-0">
+                            <div className="flex sm:hidden items-center gap-1 shrink-0">
                                 <button onClick={() => setShowCounters(!showCounters)} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/15 border-orange-500/40 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
                                     <Clock size={16} strokeWidth={2.5} />
                                 </button>
                             </div>
 
-                            {/* Desktop utilities */}
-                            <div className="hidden md:flex items-center gap-1.5">
+                            {/* Desktop/Tablet utilities */}
+                            <div className="hidden sm:flex items-center gap-1.5">
                                 <button onClick={() => setShowCounters(prev => !prev)} title="Stats"
                                     className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
                                     <Clock size={16} strokeWidth={2.5} />
@@ -512,13 +512,13 @@ const WaiterDashboard = () => {
                                 </button>
                                 {settings?.tableMapEnabled !== false && (
                                     <button onClick={() => setShowTables(t => !t)} title="Tables"
-                                        className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                                        className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-green-500/15 border-green-500/40 text-green-500 shadow-sm shadow-green-500/20' : 'bg-green-500/5 border-green-500/20 text-green-500 hover:bg-green-500/15 hover:border-green-500/40'}`}>
                                         <Armchair size={16} strokeWidth={2.5} />
                                     </button>
                                 )}
                             </div>
 
-                            <button onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }} title="Refresh"
+                            <button onClick={() => { if (refreshing) return; setRefreshing(true); window.dispatchEvent(new CustomEvent('pos-refresh')); setTimeout(() => setRefreshing(false), 1000); }} title="Refresh"
                                 className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ml-1 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
                                 <RefreshCw size={18} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
                             </button>
@@ -530,7 +530,7 @@ const WaiterDashboard = () => {
 
             {/* ── Row 2 (mobile only): Filters + Table action ── */}
             {document.getElementById('topbar-portal-row2') && createPortal(
-                <div className="flex flex-col w-full gap-2 animate-fade-in px-1 pb-1 md:hidden">
+                <div className="flex flex-col w-full gap-2 animate-fade-in px-1 pb-1 sm:hidden">
                     <div className="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar pb-1">
                          {/* Filter Pill (Mobile) */}
                          <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm shrink-0">

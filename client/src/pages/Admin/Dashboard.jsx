@@ -181,35 +181,48 @@ const AdminDashboard = () => {
         }
     }, [user]);
 
+    /* ── Handle Refresh (orders + DB stats + growth) ─────────────────── */
+    const handleRefresh = useCallback(() => {
+        fetchOrders(true);
+        fetchStats(true);
+        fetchGrowth(true);
+    }, [fetchOrders, fetchStats, fetchGrowth]);
+
     useEffect(() => {
         fetchOrders();
         fetchStats();
         fetchGrowth();
 
+        const onNew = (o) => {
+            setOrders(p => [o, ...p]);
+            fetchStats(true); // Re-fetch stats when new order comes
+        };
+        const onUpdate = (o) => {
+            setOrders(p => p.map(x => x._id === o._id ? o : x));
+            fetchStats(true);
+        };
+
         if (socket) {
-            const onNew = (o) => {
-                setOrders(p => [o, ...p]);
-                // Re-fetch MySQL stats whenever a new order comes in
-                fetchStats(true);
-            };
-            const onUpdate = (o) => {
-                setOrders(p => p.map(x => x._id === o._id ? o : x));
-                fetchStats(true);
-            };
             socket.on('new-order', onNew);
             socket.on('order-updated', onUpdate);
             socket.on('order-completed', onUpdate);
             socket.on('orderCancelled', onUpdate);
             socket.on('payment-success', () => fetchStats(true));
-            return () => {
+        }
+
+        window.addEventListener('pos-refresh', handleRefresh);
+
+        return () => {
+            window.removeEventListener('pos-refresh', handleRefresh);
+            if (socket) {
                 socket.off('new-order', onNew);
                 socket.off('order-updated', onUpdate);
                 socket.off('order-completed', onUpdate);
                 socket.off('orderCancelled', onUpdate);
                 socket.off('payment-success', () => fetchStats(true));
-            };
-        }
-    }, [user, socket, fetchOrders, fetchStats, fetchGrowth]);
+            }
+        };
+    }, [user, socket, fetchOrders, fetchStats, fetchGrowth, handleRefresh]);
 
     /* ── DB-backed stat values (from MySQL via API) ───────────────────── */
     // dbStats.today.active/completed/cancelled/revenue from /api/dashboard/stats
@@ -276,12 +289,6 @@ const AdminDashboard = () => {
         XLSX.writeFile(wb, `Kagzso_Dashboard_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
-    /* ── Handle Refresh (orders + DB stats + growth) ─────────────────── */
-    const handleRefresh = () => {
-        fetchOrders(true);
-        fetchStats(true);
-        fetchGrowth(true);
-    };
 
     return (
         <div className="space-y-5 animate-fade-in">
@@ -304,7 +311,7 @@ const AdminDashboard = () => {
                             if (window.innerWidth < 768) {
                                 navigate('/logout');
                             } else {
-                                handleRefresh();
+                                window.dispatchEvent(new CustomEvent('pos-refresh'));
                             }
                         }}
                         disabled={refreshing && window.innerWidth >= 768}
