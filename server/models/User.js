@@ -7,6 +7,7 @@ const fmt = (doc) => doc ? {
     password:     doc.passwordHash,   // Appwrite field is passwordHash; exposed as password internally for bcrypt compare
     name:         doc.name || null,
     role:         doc.role,
+    image:        doc.image || null,
     isVerified:   doc.isVerified ?? false,
     lastLoginAt:  doc.lastLoginAt || null,
     createdAt:    doc.$createdAt,
@@ -54,7 +55,7 @@ const User = {
         return response.total > 0;
     },
 
-    async create({ username, password, role, name }) {
+    async create({ username, password, role, name, image }) {
         const salt   = await bcrypt.genSalt(10);
         const hashed = await bcrypt.hash(password, salt);
 
@@ -67,6 +68,7 @@ const User = {
                 passwordHash: hashed,
                 role,
                 name:        name || null,
+                image:       image || null,
                 isVerified:  false,
             }
         );

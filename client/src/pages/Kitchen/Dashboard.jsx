@@ -138,7 +138,7 @@ const KotTicket = ({ order, onUpdateStatus, onUpdateItemStatus, onCancel, onCanc
                 {/* Row 1: order number + status badge */}
                 <div className="flex items-center justify-between gap-1 mb-2 relative">
                     <h3 className="text-[14px] font-black text-[var(--theme-text-main)] tracking-tight leading-none truncate pr-1">
-                        {order.orderNumber.replace('ORD-', '#')}
+                        {String(order.orderNumber).startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
                     </h3>
                     <div className="flex items-center gap-1.5 shrink-0">
                         {hasNewItems && <span className="text-[8px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wide animate-pulse">+New</span>}
@@ -373,7 +373,7 @@ const KitchenTokenCard = ({ order, onClick }) => {
                     {order.orderStatus}
                 </span>
                 {/* floating order # */}
-                <span className="absolute top-6 -left-0.5 text-[7px] font-black opacity-30 tracking-tight leading-none pointer-events-none">{order.orderNumber.replace('ORD-', '#')}</span>
+                <span className="absolute top-6 -left-0.5 text-[7px] font-black opacity-30 tracking-tight leading-none pointer-events-none">{String(order.orderNumber).startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}</span>
             </div>
 
             {/* Middle big identifier */}
@@ -447,10 +447,17 @@ const KitchenDashboard = () => {
                         return [order, ...prev];
                     }
                 });
+                if (detailsModal.isOpen && detailsModal.order?._id === order._id && 
+                    (order.orderStatus === 'completed' || order.orderStatus === 'cancelled' || order.kotStatus === 'Closed')) {
+                    setDetailsModal({ isOpen: false, order: null });
+                }
             };
 
             const onCancelled = (order) => {
                 setOrders(prev => prev.map(o => o._id === order._id ? order : o));
+                if (detailsModal.isOpen && detailsModal.order?._id === order._id) {
+                    setDetailsModal({ isOpen: false, order: null });
+                }
             };
 
             socket.on('new-order', onNewOrder);
@@ -473,26 +480,26 @@ const KitchenDashboard = () => {
 
 
     const updateStatus = async (orderId, newStatus) => {
-        if (user.role !== 'kitchen') return;
+        if (user.role !== 'kitchen' && user.role !== 'admin') return;
         try {
             await api.put(`/api/orders/${orderId}/status`,
                 { status: newStatus },
                 { headers: { Authorization: `Bearer ${user.token}` } }
             );
         } catch (err) {
-            console.error(err);
+            console.error('updateStatus failed:', err.response?.data?.message || err.message, err.response?.data);
         }
     };
 
     const updateItemStatus = async (orderId, itemId, newStatus) => {
-        if (user.role !== 'kitchen') return;
+        if (user.role !== 'kitchen' && user.role !== 'admin') return;
         try {
             await api.put(`/api/orders/${orderId}/items/${itemId}/status`,
                 { status: newStatus },
                 { headers: { Authorization: `Bearer ${user.token}` } }
             );
         } catch (err) {
-            console.error(err);
+            console.error('updateItemStatus failed:', err.response?.data?.message || err.message, err.response?.data);
         }
     };
 
@@ -759,7 +766,7 @@ const KitchenDashboard = () => {
                                 </div>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="text-[11px] font-black bg-gray-100 rounded-lg px-2.5 py-1 text-gray-700 border border-gray-200 shadow-sm uppercase">
-                                        {printConfirm.order?.orderNumber.replace('ORD-', '#')}
+                                        {String(printConfirm.order?.orderNumber).startsWith('ORD-') ? String(printConfirm.order?.orderNumber).replace('ORD-', '#') : `#${printConfirm.order?.orderNumber}`}
                                     </span>
                                     <span className="text-[11px] font-black bg-orange-500/10 rounded-lg px-2.5 py-1 text-orange-600 border border-orange-200 uppercase">
                                         {printConfirm.order?.orderType === 'dine-in' ? `Table ${printConfirm.order?.tableId?.number || printConfirm.order?.tableId}` : `Token ${printConfirm.order?.tokenNumber}`}

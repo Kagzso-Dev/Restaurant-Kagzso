@@ -79,6 +79,11 @@ const createOrder = async (req, res) => {
         return res.status(400).json({ message: 'No order items' });
     }
 
+    const missingName = items.find(i => !i.name?.trim());
+    if (missingName) {
+        return res.status(400).json({ message: `Order item is missing a name (menuItemId: ${missingName.menuItemId || 'unknown'})` });
+    }
+
     try {
         // Validate table availability before creating order
         if (orderType === 'dine-in' && tableId) {
@@ -158,6 +163,13 @@ const updateOrderStatus = async (req, res) => {
         if (status === 'ready') updates.isPartiallyReady = false;
         if (status === 'completed' && !order.completedAt) updates.completedAt = new Date().toISOString();
 
+        // Heal: if order_number is null (required field), Appwrite rejects any update on this document
+        if (!order.orderNumber) {
+            const Counter = require('../models/Counter');
+            const seq = await Counter.getNextSequence('tokenNumber_global');
+            updates.orderNumber = `ORD-${seq}`;
+        }
+
 
         // 1. If we are marking as Accepted/Preparing/Ready, sync all items FIRST
         if (['accepted', 'preparing', 'ready'].includes(status)) {
@@ -181,7 +193,7 @@ const updateOrderStatus = async (req, res) => {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'cleaning', currentOrderId: null });
             req.app.get('io').to('restaurant_main').emit('table-updated', {
-                tableId: tid, status: 'cleaning',
+                tableId: tid, status: 'cleaning', currentOrderId: null, lockedBy: null
             });
         }
 
@@ -327,12 +339,18 @@ const processPayment = async (req, res) => {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'cleaning', currentOrderId: null });
             req.app.get('io').to('restaurant_main').emit('table-updated', {
-                tableId: tid, status: 'cleaning',
+                tableId: tid, status: 'cleaning', currentOrderId: null, lockedBy: null
             });
         }
 
         req.app.get('io').to('restaurant_main').emit('order-updated', updatedOrder);
         req.app.get('io').to('restaurant_main').emit('order-completed', updatedOrder);
+        req.app.get('io').to('restaurant_main').emit('payment-success', {
+            orderId:       updatedOrder._id,
+            orderNumber:   updatedOrder.orderNumber,
+            paymentMethod: method,
+            amount:        updatedOrder.finalAmount
+        });
 
         // Audit trail
         PaymentAudit.create({
@@ -404,7 +422,7 @@ const cancelOrder = async (req, res) => {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'available', currentOrderId: null });
             req.app.get('io').to('restaurant_main').emit('table-updated', {
-                tableId: tid, status: 'available',
+                tableId: tid, status: 'available', currentOrderId: null, lockedBy: null
             });
         }
 
@@ -512,7 +530,7 @@ const cancelOrderItem = async (req, res) => {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'available', currentOrderId: null });
             req.app.get('io').to('restaurant_main').emit('table-updated', {
-                tableId: tid, status: 'available',
+                tableId: tid, status: 'available', currentOrderId: null, lockedBy: null
             });
         }
 
@@ -564,6 +582,11 @@ const addOrderItems = async (req, res) => {
     const { id } = req.params;
 
     if (!items || items.length === 0) return res.status(400).json({ message: 'No items' });
+
+    const missingName = items.find(i => !i.name?.trim());
+    if (missingName) {
+        return res.status(400).json({ message: `Item is missing a name (menuItemId: ${missingName.menuItemId || 'unknown'})` });
+    }
 
     try {
         const order = await Order.findById(id);

@@ -32,6 +32,16 @@ export const AuthProvider = ({ children }) => {
         gstNumber: '',
         dashboardView: 'all',
         menuView: 'grid',
+        mobileMenuView: 'grid',
+        dineInEnabled: true,
+        takeawayEnabled: true,
+        tableMapEnabled: true,
+        waiterServiceEnabled: true,
+        enforceMenuView: false,
+        cashierOfferEnabled: false,
+        cashierOfferDiscount: 0,
+        cashierOfferLabel: '',
+        cashierQrUploadEnabled: true,
     });
 
     // ── Socket init (joins restaurant-specific + role-specific rooms) ──────────
@@ -106,13 +116,28 @@ export const AuthProvider = ({ children }) => {
 
     // ── Fetch settings ────────────────────────────────────────────────────────
     const fetchSettings = useCallback(async () => {
-        try {
+        const attempt = async () => {
             const res = await api.get('/api/settings');
             setSettings(res.data);
             setServerStatus('online');
+        };
+        try {
+            await attempt();
         } catch (error) {
-            console.warn('⚠️ Settings fetch failed:', error.message);
-            if (!error.response) setServerStatus('offline');
+            const status = error.response?.status;
+            if (!status || status >= 500) {
+                // Retry once after 2s on network error or 5xx (e.g. Appwrite cold-start)
+                setTimeout(async () => {
+                    try {
+                        await attempt();
+                    } catch (retryErr) {
+                        console.warn('⚠️ Settings fetch failed (retry):', retryErr.message);
+                        if (!retryErr.response) setServerStatus('offline');
+                    }
+                }, 2000);
+            } else {
+                console.warn('⚠️ Settings fetch failed:', error.message);
+            }
         }
     }, []);
 

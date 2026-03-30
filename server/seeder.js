@@ -88,10 +88,10 @@ const importData = async () => {
             { id: ID.unique(), username: 'waiter',  passwordHash: await hash('waiter123'),  role: 'waiter',  name: 'Waiter' },
             { id: ID.unique(), username: 'kitchen', passwordHash: await hash('kitchen123'), role: 'kitchen', name: 'Kitchen' },
             { id: ID.unique(), username: 'cashier', passwordHash: await hash('cashier123'), role: 'cashier', name: 'Cashier' },
-            { id: ID.unique(), username: 'manager', passwordHash: await hash('manager123'), role: 'manager', name: 'Manager' },
         ];
 
         for (const u of staff) {
+            console.log(`Creating user: ${u.username} (${u.role})...`);
             await withRetry(
                 () => databases.createDocument(databaseId, COLLECTIONS.users, u.id, {
                     username:     u.username,
@@ -102,14 +102,17 @@ const importData = async () => {
                 }),
                 `creating user ${u.username}`
             );
+            console.log(`SUCCESS: Created user ${u.username}`);
             await delay(500);
         }
         const waiterId = staff.find(s => s.role === 'waiter').id;
 
         // ── Settings ─────────────────────────────────────────────────────────
         console.log('Creating settings...');
+        await databases.deleteDocument(databaseId, COLLECTIONS.settings, 'global_settings').catch(() => {});
         await withRetry(
             () => databases.createDocument(databaseId, COLLECTIONS.settings, 'global_settings', {
+                key: 'global_settings',
                 restaurant_name: 'KAGSZO',
                 currency: 'INR',
                 currency_symbol: '₹',
@@ -118,15 +121,18 @@ const importData = async () => {
             }),
             'creating settings'
         );
+        console.log('SUCCESS: Created settings');
         await delay(500);
 
         // ── Counters ─────────────────────────────────────────────────────────
+        await databases.deleteDocument(databaseId, COLLECTIONS.counters, 'tokenNumber_global').catch(() => {});
         await withRetry(
             () => databases.createDocument(databaseId, COLLECTIONS.counters, 'tokenNumber_global', {
                 sequence_value: 0
             }),
             'creating counter'
         ).catch(() => {});
+        console.log('SUCCESS: Created counters');
         await delay(500);
 
         // ── Categories ───────────────────────────────────────────────────────
@@ -148,6 +154,7 @@ const importData = async () => {
             );
             await delay(500);
         }
+        console.log('SUCCESS: Created categories');
 
         // ── Menu Items ───────────────────────────────────────────────────────
         console.log('Creating menu items...');
@@ -171,6 +178,7 @@ const importData = async () => {
             );
             await delay(500);
         }
+        console.log('SUCCESS: Created menu items');
 
         // ── Tables ───────────────────────────────────────────────────────────
         console.log('Creating tables...');
@@ -180,6 +188,7 @@ const importData = async () => {
             await withRetry(
                 () => databases.createDocument(databaseId, COLLECTIONS.tables, tid, {
                     number: i,
+                    table_number: i,
                     capacity: 4,
                     status: 'available'
                 }),
@@ -188,6 +197,7 @@ const importData = async () => {
             allTables.push({ id: tid });
             await delay(300);
         }
+        console.log('SUCCESS: Created 10 tables');
 
         // ── Sample Orders ────────────────────────────────────────────────────
         console.log('Creating sample orders...');
@@ -239,7 +249,7 @@ const importData = async () => {
                     name: item1.name,
                     price: parseFloat(item1.price),
                     quantity: 1,
-                    status: 'SERVED'
+                    status: 'READY'
                 }),
                 `creating order item 1 for order ${orderId}`
             );
@@ -252,30 +262,24 @@ const importData = async () => {
                     name: item2.name,
                     price: parseFloat(item2.price),
                     quantity: 1,
-                    status: 'SERVED'
+                    status: 'READY'
                 }),
                 `creating order item 2 for order ${orderId}`
             );
             await delay(200);
         }
+        console.log('SUCCESS: Created sample orders');
 
         console.log('\nSeed complete!\n');
-        console.log('=========================================');
-        console.log('  STAFF LOGIN CREDENTIALS:');
-        console.log('-----------------------------------------');
-        console.log('  Admin   -> admin   / admin123');
-        console.log('  Waiter  -> waiter  / waiter123');
-        console.log('  Kitchen -> kitchen / kitchen123');
-        console.log('  Cashier -> cashier / cashier123');
-        console.log('  Manager -> manager / manager123');
-        console.log('=========================================\n');
-
-        process.exit(0);
     } catch (error) {
-        console.error('Seed error:', error.message);
+        console.error('--- SEED ERROR ---');
+        console.error('Message:', error.message);
+        console.error('Code:', error.code);
+        if (error.response) console.error('Response:', JSON.stringify(error.response));
         console.error(error.stack);
-        process.exit(1);
     }
 };
 
-importData();
+importData().then(() => {
+    console.log('Seed process finished naturally.');
+});

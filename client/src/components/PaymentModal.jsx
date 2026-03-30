@@ -327,7 +327,7 @@ const PaymentModal = ({ order, formatPrice, onClose, onSuccess, api, settings })
                             {/* Order Context Badges (Relocated) */}
                             <div className="flex flex-col gap-1 shrink-0">
                                 <span className="text-[10px] w-fit font-black bg-black/5 dark:bg-white/5 rounded-lg px-3 py-1.5 text-[var(--theme-text-muted)] border border-[var(--theme-border)] shadow-sm uppercase">
-                                    {order.orderNumber.replace('ORD-', '#')}
+                                    {String(order.orderNumber).startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
                                 </span>
                                 <span className="text-[10px] w-fit font-black bg-orange-500/10 rounded-lg px-3 py-1.5 text-orange-600 border border-orange-200 uppercase">
                                     {order.orderType === 'dine-in' ? `Table ${order.tableId?.number || '?'}` : `Token ${order.tokenNumber}`}

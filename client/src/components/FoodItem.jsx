@@ -260,21 +260,21 @@ const FoodItem = memo(({
                                             <ChevronLeft size={16} className="text-gray-900 animate-chevron-bounce-3d" strokeWidth={3} />
                                         </div>
 
-                                        <div className="flex-1 flex items-center gap-1.5 bg-gray-50/80 dark:bg-white/5 p-1 rounded-xl border border-[var(--theme-border)] overflow-x-auto hide-scrollbar snap-x snap-mandatory scroll-smooth min-h-[48px]">
+                                        <div className="flex-1 flex items-center gap-1.5 bg-gray-50/80 dark:bg-white/5 p-1 rounded-xl border border-[var(--theme-border)] overflow-x-auto hide-scrollbar snap-x snap-mandatory scroll-smooth min-h-[40px]">
                                             {item.variants.map((v, i) => {
                                                 const isSelected = selectedSize?.name === v.name;
                                                 return (
                                                     <button
                                                         key={i}
                                                         onClick={(e) => { e.stopPropagation(); setSelectedSize(v); }}
-                                                        className={`flex-shrink-0 w-24 flex flex-col items-center justify-center py-1.5 px-2 rounded-lg transition-all duration-300 snap-center border-2 ${
+                                                        className={`flex-shrink-0 w-20 flex flex-col items-center justify-center py-1 px-1.5 rounded-lg transition-all duration-300 snap-center border-2 ${
                                                             isSelected 
                                                                 ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-[1.02]' 
                                                                 : 'bg-white text-gray-400 border-gray-100 opacity-80 hover:border-rose-100'
                                                         }`}
                                                     >
-                                                        <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>{v.name}</span>
-                                                        <span className={`text-[10px] font-black mt-0.5 ${isSelected ? 'text-white' : 'text-gray-500'}`}>₹{v.price}</span>
+                                                        <span className={`text-[7px] font-black uppercase tracking-widest leading-none ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>{v.name}</span>
+                                                        <span className={`text-[9px] font-black mt-0.5 ${isSelected ? 'text-white' : 'text-gray-500'}`}>₹{v.price}</span>
                                                     </button>
                                                 );
                                             })}

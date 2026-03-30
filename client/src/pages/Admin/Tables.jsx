@@ -246,31 +246,45 @@ const AdminTables = () => {
                     : "flex flex-col gap-3"
                 }>
                     {filteredTables.map((table) => (
-                        <TableCard
-                            key={table._id}
-                            table={table}
-                            variant={viewType}
-                            actions={
-                                <>
-                                    {table.status !== 'available' && (
+                        <div key={table._id} className="flex flex-col gap-1.5">
+                            <TableCard
+                                table={table}
+                                variant={viewType}
+                                actions={
+                                    <>
+                                        {table.status !== 'available' && (
+                                            <button
+                                                onClick={() => handleForceReset(table._id)}
+                                                title="Force Reset"
+                                                className="p-1.5 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors"
+                                            >
+                                                <RotateCcw size={13} />
+                                            </button>
+                                        )}
                                         <button
-                                            onClick={() => handleForceReset(table._id)}
-                                            title="Force Reset"
-                                            className="p-1.5 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors"
+                                            onClick={() => handleDelete(table._id)}
+                                            title="Delete"
+                                            className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                                         >
-                                            <RotateCcw size={13} />
+                                            <Trash2 size={13} />
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={() => handleDelete(table._id)}
-                                        title="Delete"
-                                        className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                    >
-                                        <Trash2 size={13} />
-                                    </button>
-                                </>
-                            }
-                        />
+                                    </>
+                                }
+                            />
+                            {table.status === 'cleaning' && (
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            await api.put(`/api/tables/${table._id}/clean`, {}, { headers: { Authorization: `Bearer ${user.token}` } });
+                                            // useTablesData socket will update state globally
+                                        } catch (err) { alert(err.response?.data?.message || 'Clean failed'); }
+                                    }}
+                                    className="w-full py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] font-black uppercase rounded-lg transition-colors"
+                                >
+                                    ✓ Clean
+                                </button>
+                            )}
+                        </div>
                     ))}
                 </div>
             )}

@@ -15,7 +15,7 @@ const VALID_ROLES = ['admin', 'waiter', 'kitchen', 'cashier', 'manager'];
 // @access  Private (Admin)
 const registerUser = async (req, res) => {
     try {
-        const { username, password, role } = req.body;
+        const { username, password, role, name, image } = req.body;
 
         if (!username?.trim())
             return res.status(400).json({ message: 'Username is required' });
@@ -30,7 +30,7 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        const user = await User.create({ username, password, role });
+        const user = await User.create({ username, password, role, name, image });
 
         res.status(201).json({
             _id:      user._id,

@@ -90,7 +90,9 @@ const OrderDetailsModal = ({
                     </button>
                 )}
                 <div className="flex items-center gap-2 pr-4">
-                    <h2 className="text-[18px] font-black uppercase tracking-tight text-[var(--theme-text-main)]">{(order.orderNumber || '').replace('ORD-', '#')}</h2>
+                    <h2 className="text-[18px] font-black uppercase tracking-tight text-[var(--theme-text-main)]">
+                        {String(order.orderNumber || '').startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
+                    </h2>
                     <StatusBadge status={order.orderStatus} items={order.items || []} size="sm" />
                 </div>
                 <div className="flex items-center gap-2 flex-wrap justify-center mt-1">
@@ -250,7 +252,9 @@ const OrderDetailsModal = ({
                             <div className="p-8 flex flex-col items-center text-center text-black">
                                 <Printer size={32} className="text-orange-500 mb-2" />
                                 <h4 className="text-lg font-black uppercase tracking-tight">Print Ticket?</h4>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase">#{(order.orderNumber || '').replace('ORD-', '')}</p>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase">
+                                    {String(order.orderNumber || '').startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
+                                </p>
                             </div>
                             <div className="grid grid-cols-2 border-t border-gray-100">
                                 <button onClick={() => setShowPrintConfirm(false)} className="h-14 text-[12px] text-gray-400 font-black uppercase border-r border-gray-100">No</button>
@@ -294,7 +298,9 @@ const OrderDetailsModal = ({
                         <div className="relative bg-white rounded-[1.5rem] shadow-2xl overflow-hidden flex flex-col w-full max-w-[260px]">
                             <div className="p-6 flex flex-col items-center text-center gap-1.5 text-black">
                                 <h4 className="text-[17px] font-black uppercase tracking-tight">Print Ticket?</h4>
-                                <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">#{(order.orderNumber || '').replace('ORD-', '')}</p>
+                                <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">
+                                    {String(order.orderNumber || '').startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
+                                </p>
                             </div>
                             <div className="grid grid-cols-2 border-t border-gray-100">
                                 <button onClick={() => setShowPrintConfirm(false)} className="h-14 text-[12px] text-gray-400 font-black uppercase border-r border-gray-100">No</button>

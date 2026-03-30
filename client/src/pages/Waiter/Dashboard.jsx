@@ -66,7 +66,7 @@ const WaiterBoxCard = memo(({ order, formatPrice }) => {
             <div className="px-2 pt-2.5 pb-2 border-b border-black/[0.04]">
                 <div className="flex items-center justify-between gap-1 mb-1">
                     <h3 className="text-[13px] font-black text-gray-900 tracking-tight leading-none truncate pr-1">
-                        {order.orderNumber.replace('ORD-', '#')}
+                        {String(order.orderNumber).startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
                     </h3>
                     <StatusBadge status={order.orderStatus} items={order.items || []} size="xs" />
                 </div>
@@ -234,7 +234,7 @@ const TokenSquare = memo(({ order, onClick, isSelected }) => {
                 </div>
                 <div className="flex flex-col items-center py-1.5">
                     <span className="text-[10px] font-black text-black tracking-tight leading-none">
-                        #{order.orderNumber.replace('ORD-', '')}
+                        #{String(order.orderNumber).startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '') : order.orderNumber}
                     </span>
                     <span className="text-[6px] font-black text-black uppercase tracking-widest mt-0.5">ORDER</span>
                 </div>
@@ -335,7 +335,10 @@ const WaiterDashboard = () => {
             const onNew = (o) => setOrders(p => { if (p.find(x => x._id === o._id)) return p; return [o, ...p]; });
             const onUpdate = (o) => {
                 setOrders(p => { const exists = p.find(x => x._id === o._id); return exists ? p.map(x => x._id === o._id ? o : x) : [o, ...p]; });
-                if (selectedOrder?._id === o._id) setSelectedOrder(o);
+                if (selectedOrder?._id === o._id) {
+                    if (o.paymentStatus === 'paid' || o.orderStatus === 'cancelled') setSelectedOrder(null);
+                    else setSelectedOrder(o);
+                }
             };
             socket.on('new-order', onNew);
             socket.on('order-updated', onUpdate);

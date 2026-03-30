@@ -449,7 +449,7 @@ const AdminDashboard = () => {
                                             <td className="px-5 py-4 font-black text-[var(--theme-text-main)] whitespace-nowrap text-xs sm:text-sm tracking-tight">
                                                 <div className="flex items-center gap-2">
                                                     {isRecent && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />}
-                                                    {order.orderNumber.replace('ORD-', '#')}
+                                                    {String(order.orderNumber).startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
                                                 </div>
                                             </td>
                                             <td className="px-5 py-4 hidden xs:table-cell">

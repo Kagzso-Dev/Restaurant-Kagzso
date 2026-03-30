@@ -139,10 +139,9 @@ const Layout = () => {
             {/* ── Main Content Area ────────────────────────────────────── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Top Bar with hamburger menu trigger */}
-                {!(location.pathname.startsWith('/admin') || 
-                   location.pathname === '/dine-in' || 
-                   location.pathname === '/take-away' ||
-                   location.pathname === '/waiter/new-order') && (
+                {location.pathname !== '/dine-in' &&
+                   location.pathname !== '/take-away' &&
+                   location.pathname !== '/waiter/new-order' && (
                     <TopBar onMenuClick={handleMenuClick} sidebarCollapsed={sidebarCollapsed} />
                 )}
 

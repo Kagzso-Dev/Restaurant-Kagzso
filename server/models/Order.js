@@ -214,7 +214,7 @@ const Order = {
                     final_amount: parseFloat(data.finalAmount),
                     waiter_id: data.waiterId || null,
                     order_status: 'pending',
-                    payment_status: 'pending',
+                    payment_status: 'unpaid',
                     payment_method: data.paymentMethod || null,
                     kot_status: 'Open'
                 }
@@ -230,9 +230,9 @@ const Order = {
                     ID.unique(),
                     {
                         order_id: orderId,
-                        menu_item_id: item.menuItemId,
-                        name: item.name,
-                        price: parseFloat(item.price),
+                        menu_item_id: item.menuItemId || null,
+                        name: item.name || 'Item',
+                        price: parseFloat(item.price || 0),
                         quantity: parseInt(item.quantity),
                         notes: item.notes || null,
                         variant: item.variant ? JSON.stringify(item.variant) : null,
@@ -252,6 +252,7 @@ const Order = {
 
     async updateById(id, updates) {
         const fieldMap = {
+            orderNumber: 'order_number',
             orderStatus: 'order_status',
             paymentStatus: 'payment_status',
             paymentMethod: 'payment_method',
@@ -417,7 +418,7 @@ const Order = {
                 const itemData = {
                     order_id: orderId,
                     menu_item_id: item.menuItemId || null,
-                    name: item.name,
+                    name: item.name || 'Item',
                     price: parseFloat(item.price),
                     quantity: parseInt(item.quantity),
                     notes: item.notes || null,

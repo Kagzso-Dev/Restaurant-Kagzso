@@ -20,6 +20,7 @@ const fmt = (doc) => doc ? {
     readyColor:        doc.ready_color      || '#10b981', // emerald-500
     dashboardView:     doc.dashboard_view   || 'all', // one, two, all
     menuView:          doc.menu_view        || 'grid', // grid, compact, list
+    mobileMenuView:    doc.mobile_menu_view || 'grid',
     dineInEnabled:     doc.dine_in_enabled !== false, 
     tableMapEnabled:    doc.table_map_enabled !== false,
     takeawayEnabled:    doc.takeaway_enabled !== false,
@@ -137,6 +138,7 @@ const Setting = {
         if (readyColor)     data.ready_color     = readyColor;
         if (dashboardView)  data.dashboard_view  = String(dashboardView);
         if (menuView)       data.menu_view       = String(menuView);
+        if (params.mobileMenuView !== undefined) data.mobile_menu_view = String(params.mobileMenuView);
         if (dineInEnabled  !== undefined) data.dine_in_enabled = (dineInEnabled === true || dineInEnabled === 'true');
         if (tableMapEnabled !== undefined) data.table_map_enabled = (tableMapEnabled === true || tableMapEnabled === 'true');
         if (takeawayEnabled !== undefined) data.takeaway_enabled = (takeawayEnabled === true || takeawayEnabled === 'true');

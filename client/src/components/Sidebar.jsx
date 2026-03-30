@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { NotificationContext } from '../context/NotificationContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     LogOut, LayoutDashboard, Monitor, Utensils, ChefHat,
@@ -19,6 +20,7 @@ import ThemeSwitcher from './ThemeSwitcher';
  */
 const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
     const { user, logout, settings } = useContext(AuthContext);
+    const { unreadCount } = useContext(NotificationContext);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -168,7 +170,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                         <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" />
                         <NavItem to="/admin/orders" icon={ClipboardList} label="Orders History" />
                         <NavItem to="/admin/analytics" icon={TrendingUp} label="Analytics" color="text-emerald-400" />
-                        <NavItem to="/admin/notifications" icon={Bell} label="Notifications" color="text-orange-400" />
+                        <NavItem to="/admin/notifications" icon={Bell} label="Notifications" color="text-orange-400" badge={unreadCount > 0 ? unreadCount : null} />
                         <NavItem to="/admin/menu" icon={Coffee} label="Menu Items" />
                         <NavItem to="/admin/categories" icon={Layers} label="Categories" />
                         {settings?.tableMapEnabled !== false && (

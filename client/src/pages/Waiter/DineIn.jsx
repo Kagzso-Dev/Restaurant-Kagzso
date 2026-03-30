@@ -258,7 +258,8 @@ const DineIn = () => {
                     </div>
                     <div className="flex-1 bg-[var(--theme-bg-card)] rounded-3xl p-6 border border-[var(--theme-border)] shadow-2xl overflow-y-auto custom-scrollbar">
                         <TableGrid
-                            allowedStatuses={['available']}
+                            allowedStatuses={['available', 'cleaning']}
+                            showCleanAction={true}
                             onSelectTable={(table) => { setSelectedTable(table); setStep(3); }}
                         />
                     </div>

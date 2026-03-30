@@ -6,6 +6,7 @@ const fmt = (doc) => doc ? {
     description: doc.description,
     color:       doc.color,
     status:      doc.status,
+    image:       doc.image || null,
     createdAt:   doc.$createdAt,
     updatedAt:   doc.$updatedAt,
 } : null;
@@ -39,7 +40,7 @@ const Category = {
         }
     },
 
-    async create({ name, description, color }) {
+    async create({ name, description, color, image }) {
         const doc = await databases.createDocument(
             databaseId,
             COLLECTIONS.categories,
@@ -48,6 +49,7 @@ const Category = {
                 name,
                 description: description || null,
                 color: color || '#f97316',
+                image: image || null,
                 status: 'active'
             }
         );
@@ -55,7 +57,7 @@ const Category = {
     },
 
     async updateById(id, updates) {
-        const allowed = ['name', 'description', 'color', 'status'];
+        const allowed = ['name', 'description', 'color', 'status', 'image'];
         const data = {};
         for (const [key, val] of Object.entries(updates)) {
             if (allowed.includes(key)) {

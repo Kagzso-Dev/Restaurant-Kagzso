@@ -19,12 +19,12 @@ const getCategories = async (req, res) => {
 // @route   POST /api/categories
 // @access  Private (Admin)
 const createCategory = async (req, res) => {
-    const { name, description, color } = req.body;
+    const { name, description, color, image } = req.body;
     if (!name || !name.trim()) {
         return res.status(400).json({ message: 'Category name is required' });
     }
     try {
-        const category = await Category.create({ name: name.trim(), description, color });
+        const category = await Category.create({ name: name.trim(), description, color, image });
         invalidateCache('categories');
         invalidateCache('menu');
         req.app.get('io').to('restaurant_main').emit('category-updated', { action: 'create', category });

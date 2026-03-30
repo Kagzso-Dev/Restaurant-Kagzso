@@ -326,8 +326,12 @@ const CashierDashboard = () => {
                         return [order, ...prev];
                     }
                 });
-                // Keep selected order in sync
-                setSelectedOrder(sel => sel?._id === order._id ? order : sel);
+                // Keep selected order in sync or deselect if closed
+                setSelectedOrder(sel => {
+                    if (sel?._id !== order._id) return sel;
+                    if (!isHistoryMode && (order.paymentStatus === 'paid' || order.orderStatus === 'cancelled')) return null;
+                    return order;
+                });
             };
 
             socket.on('new-order', onNewOrder);

@@ -56,7 +56,12 @@ export const useTablesData = () => {
                     setTables((prev) =>
                         prev.map((t) =>
                             t._id === data.tableId
-                                ? { ...t, status: data.status, lockedBy: data.lockedBy ?? null }
+                                ? { 
+                                    ...t, 
+                                    status: data.status || t.status, 
+                                    lockedBy: data.hasOwnProperty('lockedBy') ? (data.lockedBy || null) : t.lockedBy,
+                                    currentOrderId: data.hasOwnProperty('currentOrderId') ? (data.currentOrderId || null) : t.currentOrderId
+                                  }
                                 : t
                         )
                     );

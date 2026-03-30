@@ -27,11 +27,11 @@ router.route('/orders')
 
 // ── Specific /orders/:id/... routes (must be BEFORE generic /orders/:id) ─────────
 router.post('/orders/:id/add-items', authorize('waiter', 'admin', 'cashier'), addOrderItems);
-router.put('/orders/:id/status', authorize('kitchen'), updateOrderStatus);
+router.put('/orders/:id/status', authorize('kitchen', 'admin'), updateOrderStatus);
 router.put('/orders/:id/cancel', authorize('waiter', 'kitchen', 'admin'), cancelOrder);
 router.put('/orders/:id/payment', authorize('cashier'), processPayment);
 
-router.put('/orders/:id/items/:itemId/status', authorize('kitchen'), updateItemStatus);
+router.put('/orders/:id/items/:itemId/status', authorize('kitchen', 'admin'), updateItemStatus);
 router.put('/orders/:id/items/:itemId/cancel', authorize('waiter', 'kitchen', 'admin'), cancelOrderItem);
 
 // ── Generic /orders/:id route ──────────────────────────────────────────

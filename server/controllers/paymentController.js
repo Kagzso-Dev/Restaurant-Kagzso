@@ -21,8 +21,8 @@ const initiatePayment = async (req, res) => {
         if (preCheck.paymentStatus === 'paid')   return res.status(400).json({ message: 'Order is already paid' });
         if (preCheck.orderStatus   !== 'ready')  return res.status(400).json({ message: 'Payment not allowed. Kitchen process not completed.' });
 
-        // Atomic: only transition pending → payment_pending
-        const order = await Order.atomicPaymentStatusUpdate(orderId, 'pending', 'payment_pending');
+        // Atomic: only transition unpaid → payment_pending
+        const order = await Order.atomicPaymentStatusUpdate(orderId, 'unpaid', 'payment_pending');
         if (!order) {
             const existing = await Order.findById(orderId);
             if (!existing)                                return res.status(404).json({ message: 'Order not found' });
@@ -57,7 +57,7 @@ const initiatePayment = async (req, res) => {
 const cancelPayment = async (req, res) => {
     const { orderId } = req.params;
     try {
-        const order = await Order.atomicPaymentStatusUpdate(orderId, 'payment_pending', 'pending');
+        const order = await Order.atomicPaymentStatusUpdate(orderId, 'payment_pending', 'unpaid');
         if (!order) {
             return res.status(400).json({ message: 'No pending payment to cancel' });
         }
@@ -87,7 +87,7 @@ const processPayment = async (req, res) => {
         if (!order)                              return res.status(404).json({ message: 'Order not found' });
         if (order.paymentStatus === 'paid')      return res.json({ success: true, message: 'Payment already processed', order });
         if (order.orderStatus   !== 'ready')     return res.status(400).json({ message: 'Payment not allowed. Kitchen process not completed.' });
-        if (!['pending', 'payment_pending'].includes(order.paymentStatus)) {
+        if (!['unpaid', 'payment_pending'].includes(order.paymentStatus)) {
             return res.status(400).json({ message: 'Order is not eligible for payment' });
         }
 
@@ -165,8 +165,8 @@ const processPayment = async (req, res) => {
         if (order.orderType === 'dine-in' && order.tableId) {
             const tid = rawTableId(order.tableId);
             await Table.updateById(tid, { status: 'cleaning', currentOrderId: null });
-            req.app.get('io').to('restaurant_main').emit('table-updated', {
-                tableId: tid, status: 'cleaning',
+            req.app.get('io').to('restaurant_main').emit('table-updated', { 
+                tableId: tid, status: 'cleaning', currentOrderId: null 
             });
         }
 

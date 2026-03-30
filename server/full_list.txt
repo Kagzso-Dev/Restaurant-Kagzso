@@ -1,4 +1,0 @@
-Databases found: 1
-
-DB: restaurantPOS (ID: 69bbdd33003a159004ff)
-  Collections: 0
