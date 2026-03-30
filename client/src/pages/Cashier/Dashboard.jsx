@@ -399,97 +399,102 @@ const CashierDashboard = () => {
             {/* ── POS Layout ────────────────────────────────────── */}
             <div className="relative">
 
-                    {/* ── TopBar Portal ────────────────────────────────────────── */}
-                    {document.getElementById('topbar-portal') && createPortal(
-                        <div className="flex items-center gap-2 w-full animate-fade-in px-2 md:px-4">
-                            {/* Filters */}
-                            <div className="flex bg-[var(--theme-bg-dark)] p-0.5 rounded-xl md:rounded-2xl border border-[var(--theme-border)] shadow-inner h-9 md:h-11 shrink-0">
-                                {['all', 'dine-in', 'takeaway'].map(t => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setFilterType(t)}
-                                        className={`flex-1 px-2 md:px-4 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-wide md:tracking-widest transition-all duration-300 flex items-center justify-center whitespace-nowrap ${
-                                            filterType === t
-                                                ? 'bg-orange-500 text-white shadow-[0_2px_4px_rgba(249,115,22,0.4)] scale-[1.02]'
-                                                : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
-                                        }`}
-                                    >
-                                        <span className="hidden sm:inline">{t === 'all' ? 'ALL' : t === 'dine-in' ? 'DINE-IN' : 'TAKEAWAY'}</span>
-                                        <span className="inline sm:hidden">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}</span>
-                                    </button>
-                                ))}
-                            </div>
+            {/* ── Row 1: Utility buttons pushed right ── */}
+            {document.getElementById('topbar-portal') && createPortal(
+                <div className="flex items-center justify-end w-full gap-1.5 animate-fade-in pr-1">
+                    {/* View/Refresh (Mobile) */}
+                    <div className="flex md:hidden items-center gap-1.5 shrink-0">
+                         {/* Pending count badge */}
+                        <div className="bg-orange-500/10 border border-orange-500/20 text-orange-500 px-2.5 h-9 flex items-center justify-center rounded-xl text-[10px] font-black">
+                            {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
+                        </div>
 
-                            {/* Right Controls */}
-                            <div className="ml-auto flex items-center gap-2 md:gap-4 shrink-0">
-                                {/* Pending count — text only on md+ */}
-                                <div className="hidden md:flex flex-col items-end pr-4 border-r border-[var(--theme-border)]">
-                                    <span className="text-[11px] font-black text-orange-400 tracking-tight leading-none uppercase">
-                                        {orders.filter(o => filterType === 'all' || o.orderType === filterType).length} Pending
-                                    </span>
-                                    <span className="text-[8px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest mt-0.5">
-                                        Point View
-                                    </span>
-                                </div>
-                                {/* Mobile: badge only */}
-                                <span className="md:hidden inline-flex items-center justify-center px-2 h-7 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[10px] font-black">
-                                    {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
+                         <button
+                            onClick={() => { const next = !isCardView; setIsCardView(next); localStorage.setItem('cashierCardView', next); }}
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-75 ${isCardView ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500 shadow-inner' : 'bg-orange-500/15 border-orange-500/30 text-orange-500 shadow-inner'}`}
+                        >
+                            {isCardView ? <Grid size={18} strokeWidth={2.5} /> : <List size={18} strokeWidth={2.5} />}
+                        </button>
+                    </div>
+
+                    {/* Desktop controls */}
+                    <div className="hidden md:flex items-center gap-2 md:gap-4 shrink-0">
+                        {/* Pending count — Premium Badge Style */}
+                        <div className="flex flex-col items-end pr-5 border-r border-[var(--theme-border)]">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                                <span className="text-sm font-black text-[var(--theme-text-main)] tracking-tighter uppercase">
+                                    {orders.filter(o => filterType === 'all' || o.orderType === filterType).length} Pending
                                 </span>
-
-                                {/* View Toggle */}
-                                <button
-                                    onClick={() => { const next = !isCardView; setIsCardView(next); localStorage.setItem('cashierCardView', next); }}
-                                    className={`
-                                        relative flex items-center h-9 md:h-10 w-9 md:w-32 rounded-full transition-all duration-500 shadow-lg overflow-hidden border-2
-                                        ${isCardView
-                                            ? 'bg-emerald-500/5 border-emerald-500/20 shadow-emerald-500/5'
-                                            : 'bg-orange-500/5 border-orange-500/20 shadow-orange-500/5'}
-                                    `}
-                                >
-                                    {/* Mobile: icon only */}
-                                    <div className="md:hidden absolute inset-0 flex items-center justify-center">
-                                        {isCardView ? <Grid size={16} strokeWidth={2.5} className="text-emerald-500" /> : <List size={16} strokeWidth={2.5} className="text-orange-500" />}
-                                    </div>
-
-                                    {/* Desktop: Sliding Icon Circle */}
-                                    <div className={`
-                                        hidden md:flex absolute top-1 w-8 h-8 rounded-full items-center justify-center shadow-xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-10
-                                        ${isCardView 
-                                            ? 'left-[calc(100%-36px)] bg-emerald-500 rotate-[360deg] shadow-emerald-500/40' 
-                                            : 'left-1 bg-orange-500 rotate-0 shadow-orange-500/40'}
-                                    `}>
-                                        {isCardView ? <Grid size={15} strokeWidth={2.5} className="text-white" /> : <List size={15} strokeWidth={2.5} className="text-white" />}
-                                    </div>
-
-                                    {/* Desktop: Background Labels */}
-                                    <div className="hidden md:flex absolute inset-0 items-center justify-between px-3.5 select-none">
-                                        <span className={`text-[10px] font-black tracking-widest transition-all duration-500 ${!isCardView ? 'opacity-100 translate-x-8 text-orange-600' : 'opacity-0 translate-x-4'}`}>LIST</span>
-                                        <span className={`text-[10px] font-black tracking-widest transition-all duration-500 ${isCardView ? 'opacity-100 -translate-x-8 text-emerald-600' : 'opacity-0 -translate-x-4'}`}>CARD</span>
-                                    </div>
-                                </button>
-
-                                {/* Mobile: Logout | Desktop: Refresh */}
-                                <button
-                                    onClick={() => {
-                                        if (window.innerWidth < 768) {
-                                            navigate('/logout');
-                                        } else {
-                                            fetchOrders();
-                                        }
-                                    }}
-                                    className="relative w-8 h-8 md:w-10 md:h-10 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm md:hover:-translate-y-1 md:hover:shadow-lg md:hover:shadow-rose-500/20"
-                                >
-                                    <div className="md:hidden">
-                                        <LogOut size={16} strokeWidth={2.5} />
-                                    </div>
-                                    <div className="hidden md:block">
-                                        <RefreshCw size={14} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
-                                    </div>
-                                </button>
                             </div>
-                        </div>,
-                        document.getElementById('topbar-portal')
-                    )}
+                            <span className="text-[9px] font-black text-orange-500/60 uppercase tracking-[0.2em] mt-0.5">
+                                Operational View
+                            </span>
+                        </div>
+
+                        {/* View Toggle - Premium Redesign */}
+                        <div className="flex items-center bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner">
+                            <button
+                                onClick={() => { setIsCardView(false); localStorage.setItem('cashierCardView', false); }}
+                                className={`
+                                    flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
+                                    ${!isCardView 
+                                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' 
+                                        : 'text-[var(--theme-text-muted)] hover:text-orange-500 hover:bg-orange-500/5'}
+                                `}
+                            >
+                                <List size={14} strokeWidth={2.5} />
+                                <span>List</span>
+                            </button>
+                            <button
+                                onClick={() => { setIsCardView(true); localStorage.setItem('cashierCardView', true); }}
+                                className={`
+                                    flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
+                                    ${isCardView 
+                                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                                        : 'text-[var(--theme-text-muted)] hover:text-emerald-500 hover:bg-emerald-500/5'}
+                                `}
+                            >
+                                <Grid size={14} strokeWidth={2.5} />
+                                <span>Card</span>
+                            </button>
+                        </div>
+
+                         <button
+                            onClick={() => fetchOrders()}
+                            className="w-10 h-10 border border-[var(--theme-border)] bg-[var(--theme-bg-dark)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm"
+                        >
+                            <RefreshCw size={16} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
+                        </button>
+                    </div>
+                </div>,
+                document.getElementById('topbar-portal')
+            )}
+
+            {/* ── Row 2 (mobile only): Filters + Action ── */}
+            {document.getElementById('topbar-portal-row2') && createPortal(
+                <div className="flex items-center justify-between w-full h-full animate-fade-in px-1 pb-1">
+                    <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-2xl border border-[var(--theme-border)] shadow-inner">
+                        {['all', 'dine-in', 'takeaway'].map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-white dark:bg-[var(--theme-bg-card)] text-orange-500 shadow-md' : 'text-[var(--theme-text-muted)]'}`}
+                            >
+                                {t === 'all' ? 'All Orders' : t === 'dine-in' ? 'Dine' : 'Take'}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => navigate('/logout')}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/5 text-rose-500 transition-all active:scale-95"
+                    >
+                        <LogOut size={16} strokeWidth={2.5} />
+                    </button>
+                </div>,
+                document.getElementById('topbar-portal-row2')
+            )}
 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3 h-[calc(100dvh-70px)] md:h-[calc(100dvh-113px)]">
 

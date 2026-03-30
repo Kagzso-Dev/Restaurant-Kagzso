@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+import NotificationBell from '../../components/NotificationBell';
+
 /* ── Analytics Module ─────────────────────────────────────────────────── */
 
 const Analytics = () => {
@@ -209,6 +211,7 @@ const Analytics = () => {
                             </button>
                         ))}
                     </div>
+                    <NotificationBell />
                     <button
                         onClick={() => fetchAllData(null, true)}
                         className="p-2.5 bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-orange-500 rounded-xl transition-all border border-[var(--theme-border)] hover:border-orange-500/50 active:scale-95 shadow-sm min-h-[44px] min-w-[44px] flex items-center justify-center"

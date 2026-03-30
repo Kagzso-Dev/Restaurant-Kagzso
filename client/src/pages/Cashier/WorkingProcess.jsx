@@ -192,75 +192,38 @@ const WorkingProcess = () => {
 
     return (
         <div className="flex flex-col animate-fade-in">
-            {/* ── TopBar Portal ────────────────────────────────────────── */}
+            {/* ── TopBar Portals ────────────────────────────────────────── */}
             {document.getElementById('topbar-portal') && createPortal(
-                <div className="flex items-center gap-3 w-full animate-fade-in px-4">
-                    {/* Operational Filters - 3D Mechanical Switch */}
-                    <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 min-w-[320px]">
-                        {['all', 'dine-in', 'takeaway']
-                            .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
-                            .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
-                            .map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setFilterType(t)}
-                                className={`flex-1 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center ${
-                                    filterType === t
-                                        ? 'bg-orange-500 text-white shadow-[0_2px_4px_rgba(249,115,22,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] scale-[1.02] border-t border-white/20 active:translate-y-[1px] active:shadow-none'
-                                        : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
-                                }`}
-                            >
-                                {t === 'all' ? 'ALL' : t.replace('-', ' ')}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Dashboard Status Counters - 3D Mechanical Pills */}
-                    <div className="flex items-center gap-1.5 bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 shrink-0">
-                        {[
-                            { key: 'pending',   count: counts.pending,   dot: 'bg-[var(--status-pending)]',    label: 'Q', icon: Clock },
-                            { key: 'accepted',  count: counts.accepted,  dot: 'bg-[var(--status-accepted)]',   label: 'A', icon: CheckCircle },
-                            { key: 'preparing', count: counts.preparing, dot: 'bg-[var(--status-preparing)]',  label: 'C', icon: Timer },
-                            { key: 'ready',     count: counts.ready,     dot: 'bg-[var(--status-ready)]',      label: 'R', icon: Play },
-                        ].map((stat) => {
-                            const isActive = statusFilter === stat.key;
-                            // Dynamic active styles based on status key
-                            const activeStyles = {
-                                pending:   'bg-orange-500/20 border-orange-500/40 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.15)] scale-105',
-                                accepted:  'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] scale-105',
-                                preparing: 'bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-[0_0_15px_rgba(139,92,246,0.15)] scale-105',
-                                ready:     'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] scale-105'
-                            };
-
-                            return (
+                <div className="flex items-center justify-between w-full px-1">
+                    {/* Left: Operational Filters */}
+                    <div className="flex items-center gap-2">
+                        <div className="hidden lg:flex bg-[var(--theme-bg-dark)] p-0.5 rounded-xl border border-[var(--theme-border)] shadow-inner h-9 w-fit">
+                            {['all', 'dine-in', 'takeaway']
+                                .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
+                                .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
+                                .map(t => (
                                 <button
-                                    key={stat.key}
-                                    onClick={() => setStatusFilter(f => f === stat.key ? null : stat.key)}
-                                    className={`px-4 rounded-xl flex items-center gap-2 h-9 border transition-all duration-300 ${
-                                        isActive
-                                            ? `${activeStyles[stat.key]} border-current active:translate-y-[0.5px]`
-                                            : 'bg-transparent border-transparent text-[var(--theme-text-muted)] hover:bg-white/5'
+                                    key={t}
+                                    onClick={() => setFilterType(t)}
+                                    className={`px-4 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center whitespace-nowrap min-w-[80px] ${
+                                        filterType === t
+                                            ? 'bg-orange-500 text-white shadow-md'
+                                            : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
                                     }`}
                                 >
-                                    <span className={`w-2.5 h-2.5 rounded-full ${stat.dot} ${isActive ? 'shadow-[0_0_12px_currentColor] scale-110' : 'opacity-60 shadow-none'}`} />
-                                    <span className={`text-sm font-black transition-colors ${isActive ? 'text-white' : 'text-inherit'}`}>
-                                        {stat.count}
-                                    </span>
+                                    {t === 'all' ? 'ALL' : t.replace('-', ' ')}
                                 </button>
-                            );
-                        })}
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="h-8 w-px bg-[var(--theme-border)] mx-2 opacity-50 flex-shrink-0" />
-
-                    <div className="ml-auto flex items-center gap-4">
-                        {/* View Mode Toggle moved to right TopBar point */}
-
-                        {/* View Mode Toggle moved to right TopBar point */}
+                    {/* Right: Utilities (View Mode, Stats, Refresh) */}
+                    <div className="flex items-center gap-2">
+                        {/* View Mode Toggle */}
                         <button
                             onClick={() => setIsGridView(v => !v)}
                             className={`
-                                relative flex items-center h-10 w-28 rounded-full transition-all duration-300 shadow-inner overflow-hidden border
+                                relative flex items-center h-10 w-24 rounded-full transition-all duration-300 shadow-inner overflow-hidden border shrink-0
                                 ${isGridView 
                                     ? 'bg-blue-500/10 border-blue-500/20' 
                                     : 'bg-orange-500/10 border-orange-500/20'}
@@ -277,14 +240,39 @@ const WorkingProcess = () => {
                                 {isGridView ? <Grid size={14} strokeWidth={3} className="text-white" /> : <List size={14} strokeWidth={3} className="text-white" />}
                             </div>
                             <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
-                                <span className={`text-[10px] font-black transition-all duration-300 ${isGridView ? 'opacity-0 -translate-x-2' : 'opacity-100 translate-x-7 text-orange-600'}`}>LIST</span>
-                                <span className={`text-[10px] font-black transition-all duration-300 ${!isGridView ? 'opacity-0 translate-x-2' : 'opacity-100 -translate-x-7 text-blue-600'}`}>GRID</span>
+                                <span className={`text-[9px] font-black transition-all duration-300 ${isGridView ? 'opacity-0 -translate-x-2' : 'opacity-100 translate-x-7 text-orange-600'}`}>LIST</span>
+                                <span className={`text-[9px] font-black transition-all duration-300 ${!isGridView ? 'opacity-0 translate-x-2' : 'opacity-100 -translate-x-7 text-blue-600'}`}>GRID</span>
                             </div>
                         </button>
-                        
+
+                        <div className="h-8 w-px bg-[var(--theme-border)] mx-1 opacity-30 flex-shrink-0" />
+
+                        {/* Quick Stats */}
+                        <div className="flex items-center gap-1.5 bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-11 shrink-0 overflow-x-auto no-scrollbar">
+                            {[
+                                { key: 'pending',   dot: 'bg-[var(--status-pending)]' },
+                                { key: 'accepted',  dot: 'bg-[var(--status-accepted)]' },
+                                { key: 'preparing', dot: 'bg-[var(--status-preparing)]' },
+                                { key: 'ready',     dot: 'bg-[var(--status-ready)]' },
+                            ].map((stat) => (
+                                <button
+                                    key={stat.key}
+                                    onClick={() => setStatusFilter(f => f === stat.key ? null : stat.key)}
+                                    className={`px-2.5 sm:px-3.5 rounded-xl flex items-center gap-1.5 h-9 border transition-all duration-300 ${
+                                        statusFilter === stat.key
+                                            ? 'bg-orange-500/10 border-orange-500/30 text-orange-400'
+                                            : 'bg-transparent border-transparent text-[var(--theme-text-muted)]'
+                                    }`}
+                                >
+                                    <span className={`w-2 h-2 rounded-full ${stat.dot} ${statusFilter === stat.key ? 'animate-pulse' : 'opacity-60'}`} />
+                                    <span className="text-xs sm:text-sm font-black">{counts[stat.key]}</span>
+                                </button>
+                            ))}
+                        </div>
+
                         <button
                             onClick={fetchOrders}
-                            className="w-10 h-10 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/50 rounded-xl flex items-center justify-center transition-all active:translate-y-[1px] active:shadow-inner"
+                            className="w-10 h-10 bg-[var(--theme-bg-card)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-orange-500 hover:border-orange-500/50 rounded-xl flex items-center justify-center transition-all active:scale-90"
                         >
                             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                         </button>
@@ -293,13 +281,37 @@ const WorkingProcess = () => {
                 document.getElementById('topbar-portal')
             )}
 
+            {document.getElementById('topbar-portal-row2') && createPortal(
+                <div className="flex items-center gap-2 w-full overflow-x-auto no-scrollbar pb-1">
+                    <div className="flex bg-[var(--theme-bg-dark)] p-1 rounded-2xl border border-[var(--theme-border)] shadow-inner h-10 w-full">
+                        {['all', 'dine-in', 'takeaway']
+                            .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
+                            .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
+                            .map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`flex-1 px-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${
+                                    filterType === t
+                                        ? 'bg-orange-500 text-white shadow-md'
+                                        : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg-hover)]'
+                                }`}
+                            >
+                                {t === 'all' ? 'ALL' : t.replace('-', ' ')}
+                            </button>
+                        ))}
+                    </div>
+                </div>,
+                document.getElementById('topbar-portal-row2')
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 h-auto md:h-[calc(100dvh-120px)] min-h-0 md:min-h-[420px]">
                 {/* Left: Active Orders List — 2/5 of available width */}
                 <div className="md:col-span-2 bg-[var(--theme-bg-card)] rounded-xl shadow-lg border border-[var(--theme-border)] overflow-hidden flex flex-col min-h-[300px] md:min-h-0">
-                    <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-bg-hover)] flex justify-between items-center">
+                    <div className="px-4 py-3 border-b border-[var(--theme-border)] bg-[var(--theme-bg-muted)] flex justify-between items-center shrink-0">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-lg font-bold text-[var(--theme-text-main)]">Active Orders</h2>
-                            <span className="bg-orange-600/20 text-orange-400 text-xs px-2 py-1 rounded-full font-bold">{displayOrders.length}</span>
+                            <h2 className="text-sm sm:text-lg font-black tracking-tighter text-[var(--theme-text-main)] uppercase">Active Orders</h2>
+                            <span className="bg-orange-600/20 text-orange-400 text-[10px] sm:text-xs px-2 py-0.5 rounded-lg font-black ring-1 ring-orange-500/20">{displayOrders.length}</span>
                         </div>
                     </div>
                     <div className={`overflow-y-auto flex-1 p-3 custom-scrollbar ${isGridView ? 'grid grid-cols-2 gap-3 content-start' : 'space-y-2.5'}`}>
@@ -311,31 +323,34 @@ const WorkingProcess = () => {
                                 <button
                                     key={order._id}
                                     onClick={() => setSelectedOrder(order)}
-                                    className={`w-full min-h-[100px] h-[100px] sm:min-h-[120px] sm:h-[120px] max-w-[150px] mx-auto rounded-2xl border-2 flex flex-col items-center justify-center p-2.5 sm:p-3 transition-all hover:scale-[1.02] active:scale-95 shadow-sm overflow-hidden ${
+                                    className={`w-full min-h-[95px] h-[95px] sm:min-h-[120px] sm:h-[120px] rounded-2xl border-2 flex flex-col items-center justify-center p-2 sm:p-3 transition-all hover:scale-[1.02] active:scale-95 shadow-sm overflow-hidden relative ${
                                         selectedOrder?._id === order._id 
-                                            ? 'ring-4 ring-offset-2 ring-current z-10 scale-105 shadow-xl shadow-current/20' 
+                                            ? 'ring-2 ring-offset-2 ring-current z-10 shadow-lg' 
                                             : 'opacity-80 hover:opacity-100'
                                         } ${order.orderStatus === 'ready' ? 'animate-pulse' : ''} ${getStatusColor(order.orderStatus)}`}
                                 >
                                     {/* Top Row: Type & Status */}
-                                    <div className="flex items-start justify-between w-full shrink-0">
-                                        <span className="text-[9px] uppercase font-black opacity-60 tracking-wider">
-                                            {order.orderType === 'dine-in' ? 'Dine' : 'Take'}
+                                    <div className="flex items-center justify-between w-full shrink-0 mb-auto">
+                                        <span className="text-[7px] sm:text-[9px] uppercase font-black opacity-60 tracking-tighter">
+                                            {order.orderType === 'dine-in' ? 'DINE' : 'TAKE'}
                                         </span>
-                                        <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-current transition-colors ${selectedOrder?._id === order._id ? 'bg-white text-black' : 'bg-white/10'}`}>
+                                        <span className={`text-[6px] sm:text-[7px] font-black uppercase px-1.5 py-0.5 rounded border border-current whitespace-nowrap overflow-hidden max-w-[50px] sm:max-w-none ${selectedOrder?._id === order._id ? 'bg-white text-black' : 'bg-white/10'}`}>
                                             {order.orderStatus}
                                         </span>
                                     </div>
 
                                     {/* Centered Large Label */}
-                                    <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0">
-                                        <span className="text-lg sm:text-xl font-black leading-[1.1] tracking-tight text-center px-1 break-words w-full truncate">
+                                    <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 py-1">
+                                        <span className="text-sm sm:text-lg font-black leading-tight tracking-tighter text-center px-1 break-words w-full truncate">
                                             {tokenLabel}
+                                        </span>
+                                        <span className="text-[7px] font-bold opacity-40 uppercase tracking-widest mt-0.5 hidden sm:block">
+                                            {order.orderNumber}
                                         </span>
                                     </div>
 
                                     {/* Bottom aesthetic indicator bar */}
-                                    <div className="w-1/3 h-1 rounded-full bg-current opacity-25 shrink-0 mt-auto" />
+                                    <div className="w-1/3 h-0.5 rounded-full bg-current opacity-25 shrink-0 mt-auto" />
                                 </button>
                             ) : (
                                 <div
@@ -443,16 +458,6 @@ const WorkingProcess = () => {
                                 </div>
                             </div>
 
-                            {/* Actions */}
-                            <div className="px-4 py-3 bg-[var(--theme-bg-hover)] border-t border-[var(--theme-border)] flex items-center justify-end gap-3">
-                                <button
-                                    onClick={printKOT}
-                                    className="flex items-center space-x-2 px-6 py-3 bg-[var(--theme-bg-card)] hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-main)] rounded-xl transition-colors font-semibold border border-[var(--theme-border)]"
-                                >
-                                    <Printer size={20} />
-                                    <span>Print KOT</span>
-                                </button>
-                            </div>
                         </div>
                     ) : (
                         <div className="flex flex-col h-full items-center justify-center text-[var(--theme-text-muted)] p-8 space-y-6">

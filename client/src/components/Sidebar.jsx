@@ -5,7 +5,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
     LogOut, LayoutDashboard, Monitor, Utensils, ChefHat,
     Layers, Coffee, Settings, ClipboardList, ChevronLeft,
-    ChevronRight, X, TrendingUp, Bell, History, XCircle, CheckCircle2, Armchair
+    ChevronRight, X, TrendingUp, Bell, History, XCircle, CheckCircle2, Armchair,
+    Package
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -50,14 +51,18 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
                 onClick={() => handleNav(to)}
                 title={collapsed ? label : undefined}
                 className={`
-                    w-full flex items-center rounded-xl transition-all duration-200 group relative tap-scale
+                    w-full flex items-center rounded-xl transition-all duration-200 group relative tap-scale overflow-hidden
                     ${collapsed ? 'justify-center px-0 py-3' : 'space-x-3 px-4 py-3'}
                     ${active
-                        ? 'bg-gradient-to-r from-orange-500/20 to-orange-600/5 text-[var(--theme-text-main)] border-l-4 border-orange-500'
-                        : 'hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] border-l-4 border-transparent'
+                        ? 'bg-gradient-to-r from-orange-500/20 to-orange-600/5 text-[var(--theme-text-main)] font-black'
+                        : 'hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'
                     }
                 `}
             >
+                {/* Active Indicator Bar - Pure straight bit at the edge of the button */}
+                {active && (
+                    <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.3)] z-10" />
+                )}
                 <Icon
                     size={20}
                     className={`flex-shrink-0 transition-colors ${active ? 'text-orange-400' : color} group-hover:text-[var(--theme-text-main)]`}
@@ -87,7 +92,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
 
     /* ── Section Label ───────────────────────────────────────────────── */
     const SectionLabel = ({ children }) => !collapsed ? (
-        <div className="px-4 pt-5 pb-1.5 text-[9px] font-bold text-[var(--theme-text-subtle)] uppercase tracking-widest">
+        <div className="px-4 pt-6 pb-2 text-[10px] font-black text-[var(--theme-text-subtle)] uppercase tracking-[0.15em] opacity-80">
             {children}
         </div>
     ) : (
@@ -100,7 +105,6 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
             style={{ backgroundColor: 'var(--theme-sidebar-bg)' }}
         >
 
-            {/* ── Header ─────────────────────────────────────────────── */}
             {/* ── Header ─────────────────────────────────────────────── */}
             <div className={`flex items-center border-b border-[var(--theme-border)] flex-shrink-0 pt-safe relative h-[70px] justify-center`}>
                 
@@ -139,22 +143,22 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
 
             {/* ── User Profile ────────────────────────────────────────── */}
             {!collapsed && (
-                <div className="px-4 py-3 flex-shrink-0">
-                    <div className="bg-[var(--theme-bg-muted)] rounded-xl p-3 border border-[var(--theme-border)] flex items-center space-x-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0 ring-2 ring-[var(--theme-bg-dark)]">
+                <div className="px-4 py-4 flex-shrink-0">
+                    <div className="bg-[var(--theme-bg-muted)] rounded-xl p-3 border border-[var(--theme-border)] flex items-center space-x-3 shadow-sm">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0 ring-2 ring-[var(--theme-bg-dark)] shadow-md">
                             {user.username?.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-[var(--theme-text-main)] truncate">{user.username}</p>
-                            <p className="text-xs text-orange-400 font-medium capitalize truncate">{user.role}</p>
+                            <p className="text-sm font-black text-[var(--theme-text-main)] truncate uppercase tracking-tight">{user.username}</p>
+                            <p className="text-[10px] text-orange-400 font-black uppercase tracking-widest mt-0.5 truncate">{user.role}</p>
                         </div>
                     </div>
                 </div>
             )}
 
             {collapsed && (
-                <div className="flex justify-center py-3 flex-shrink-0">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold">
+                <div className="flex justify-center py-4 flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold shadow-md">
                         {user.username?.charAt(0).toUpperCase()}
                     </div>
                 </div>
@@ -203,9 +207,9 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
 
                         {user.role === 'waiter' && (
                             <>
-                                <NavItem to="/waiter" icon={Utensils} label="Waiter Mode" color="text-pink-400" />
+                                <NavItem to="/waiter" icon={LayoutDashboard} label="Waiter Dashboard" color="text-pink-400" />
                                 <NavItem to="/waiter/working-process" icon={ClipboardList} label="Working Process" color="text-blue-400" />
-                                <NavItem to="/waiter/kitchen-view" icon={ChefHat} label="Kitchen View" color="text-orange-400" />
+                                <NavItem to="/waiter/kitchen-view" icon={ChefHat} label="Kitchen View" color="text-emerald-400" />
                                 <NavItem to="/waiter/history" icon={History} label="Order History" color="text-purple-400" />
                             </>
                         )}
@@ -242,12 +246,12 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
 
 
             {/* ── Theme Switcher ───────────────────────────────────────── */}
-            <div className={`px-3 pb-1 flex-shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
+            <div className={`px-4 pb-1 flex-shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
                 <ThemeSwitcher collapsed={collapsed} />
             </div>
 
             {/* ── Sign Out ─────────────────────────────────────────────── */}
-            <div className={`p-3 border-t border-[var(--theme-border)] flex-shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
+            <div className={`p-4 border-t border-[var(--theme-border)] flex-shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
                 <button
                     onClick={handleLogout}
                     title={collapsed ? 'Sign Out' : undefined}

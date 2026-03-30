@@ -450,128 +450,128 @@ const WaiterDashboard = () => {
                 </div>
             )}
 
-            {/* ── Row 1: Filter + action buttons ── */}
+            {/* ── Desktop/Tablet: Action Bar ── */}
             {document.getElementById('topbar-portal') && createPortal(
-                <div className="flex items-center justify-between w-full h-full animate-fade-in pr-2 md:pr-3">
-                    {/* Left: filter pill */}
-                    <div className="flex items-center gap-2 min-w-0">
-                        {/* Filter Pill */}
-                        <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm flex-1 md:flex-none">
-                            {['all', 'dine-in', 'takeaway']
+                <div className="flex items-center justify-between w-full animate-fade-in px-1 gap-2">
+                    {/* Left side: Filters Only */}
+                    <div className="hidden md:flex items-center">
+                        <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm h-9 w-fit">
+                             {['all', 'dine-in', 'takeaway']
                                 .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
                                 .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
                                 .map(t => (
                                     <button
                                         key={t}
                                         onClick={() => setFilterType(t)}
-                                        className={`flex-1 px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-[11px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                                        className={`px-4 h-full rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-w-[80px] ${
+                                            filterType === t 
+                                                ? 'bg-orange-500 text-white shadow-md' 
+                                                : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-card)]'
+                                        }`}
                                     >
-                                        <span className="hidden sm:inline">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine-In' : 'Takeaway'}</span>
-                                        <span className="inline sm:hidden">{t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}</span>
+                                        {t === 'all' ? 'ALL' : t.replace('-', ' ')}
                                     </button>
                                 ))}
                         </div>
                     </div>
 
-                    {/* Right: Mobile-only utility buttons — now pushed right by justify-between */}
-                    <div className="flex md:hidden items-center gap-1.5 shrink-0 ml-auto">
-                        <button onClick={() => setShowCounters(!showCounters)} className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/15 border-orange-500/40 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
-                            <Clock size={16} strokeWidth={2.5} />
-                        </button>
-                        <button onClick={() => setIsProductionMode(!isProductionMode)} className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
-                            {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
-                        </button>
-                        <button 
-                            onClick={() => { 
-                                if (window.innerWidth < 768) {
-                                    navigate('/logout');
-                                } else {
-                                    if (refreshing) return; 
-                                    setRefreshing(true); 
-                                    fetchOrders(); 
-                                    setTimeout(() => setRefreshing(false), 1000); 
-                                }
-                            }} 
-                            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 md:hover:-translate-y-1 md:hover:shadow-lg md:hover:shadow-rose-500/20 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}
-                        >
-                            <div className="md:hidden">
-                                <LogOut size={16} strokeWidth={2.5} />
+                    {/* Right side: Actions + Utilities */}
+                    <div className="flex items-center gap-2 ml-auto">
+                        {/* Primary Order Actions (Relocated to Right) */}
+                        <div className="hidden md:flex items-center gap-2 mr-2 border-r border-[var(--theme-border)] pr-2">
+                            {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
+                                <button onClick={() => navigate('/dine-in')} className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-600/20 whitespace-nowrap min-h-[40px] active:scale-95">
+                                    <Utensils size={14} strokeWidth={3} /> Dine In
+                                </button>
+                            )}
+                            {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
+                                <button onClick={() => navigate('/take-away')} className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/20 whitespace-nowrap min-h-[40px] active:scale-95">
+                                    <Package size={14} strokeWidth={3} /> Takeaway
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Utility controls & Refresh */}
+                        <div className="flex items-center gap-1.5">
+                            {/* Mobile utilities */}
+                            <div className="flex md:hidden items-center gap-1 shrink-0">
+                                <button onClick={() => setShowCounters(!showCounters)} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/15 border-orange-500/40 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
+                                    <Clock size={16} strokeWidth={2.5} />
+                                </button>
                             </div>
-                            <div className="hidden md:block">
-                                <RefreshCw size={16} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
+
+                            {/* Desktop utilities */}
+                            <div className="hidden md:flex items-center gap-1.5">
+                                <button onClick={() => setShowCounters(prev => !prev)} title="Stats"
+                                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                                    <Clock size={16} strokeWidth={2.5} />
+                                </button>
+                                <button onClick={() => setIsProductionMode(!isProductionMode)} title={isProductionMode ? 'Grid view' : 'List view'}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                                    {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
+                                </button>
+                                {settings?.tableMapEnabled !== false && (
+                                    <button onClick={() => setShowTables(t => !t)} title="Tables"
+                                        className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                                        <Armchair size={16} strokeWidth={2.5} />
+                                    </button>
+                                )}
                             </div>
-                        </button>
-                    </div>
 
-                    {/* Right: desktop controls — icon-only utility buttons + action buttons */}
-                    <div className="hidden md:flex items-center gap-1.5 shrink-0">
-                        {/* Icon-only utility buttons */}
-                        <button onClick={() => setShowCounters(prev => !prev)} title="Stats"
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
-                            <Clock size={16} strokeWidth={2.5} />
-                        </button>
-                        <button onClick={() => setIsProductionMode(!isProductionMode)} title={isProductionMode ? 'Grid view' : 'List view'}
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
-                            {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
-                        </button>
-                        {settings?.tableMapEnabled !== false && (
-                            <button onClick={() => setShowTables(t => !t)} title="Tables"
-                                className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
-                                <Armchair size={16} strokeWidth={2.5} />
+                            <button onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }} title="Refresh"
+                                className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ml-1 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
+                                <RefreshCw size={18} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
                             </button>
-                        )}
-
-                        <div className="w-px h-6 bg-[var(--theme-border)] mx-1" />
-
-                        {/* Action buttons */}
-                        {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
-                            <button onClick={() => navigate('/dine-in')} className="flex items-center gap-2 h-10 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-[11px] uppercase tracking-wide transition-all active:scale-95 whitespace-nowrap">
-                                <Utensils size={14} strokeWidth={3} />Dine In
-                            </button>
-                        )}
-                        {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
-                            <button onClick={() => navigate('/take-away')} className="flex items-center gap-2 h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[11px] uppercase tracking-wide transition-all active:scale-95 whitespace-nowrap">
-                                <Package size={14} strokeWidth={3} />Takeaway
-                            </button>
-                        )}
-
-                        {/* Refresh */}
-                        <button onClick={() => { if (refreshing) return; setRefreshing(true); fetchOrders(); setTimeout(() => setRefreshing(false), 1000); }} title="Refresh"
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ml-1 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
-                            <RefreshCw size={16} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
-                        </button>
+                        </div>
                     </div>
                 </div>,
                 document.getElementById('topbar-portal')
             )}
 
-            {/* ── Row 2 (mobile only): secondary controls ── */}
+            {/* ── Row 2 (mobile only): Filters + Table action ── */}
             {document.getElementById('topbar-portal-row2') && createPortal(
-                <div className="flex items-center justify-between w-full gap-1.5 animate-fade-in px-1">
-                    {/* Tables Toggle */}
-                    {settings?.tableMapEnabled !== false && (
-                        <button
-                            onClick={() => setShowTables(t => !t)}
-                            className={`flex flex-[0.8] min-w-0 items-center justify-center gap-1.5 h-10 rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 shadow-inner' : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60'}`}
-                        >
-                            <Armchair size={13} className="shrink-0" />
-                            <span className="text-[9px] font-black uppercase truncate">Tables</span>
-                        </button>
-                    )}
+                <div className="flex flex-col w-full gap-2 animate-fade-in px-1 pb-1 md:hidden">
+                    <div className="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                         {/* Filter Pill (Mobile) */}
+                         <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm shrink-0">
+                             {['all', 'dine-in', 'takeaway']
+                                .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
+                                .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
+                                .map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setFilterType(t)}
+                                        className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-[var(--theme-bg-card)] text-orange-500 shadow-sm border border-[var(--theme-border)]' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                                    >
+                                        {t === 'all' ? 'All' : t === 'dine' ? 'Dine' : t}
+                                    </button>
+                                ))}
+                        </div>
 
-                    {/* Dine In Action */}
-                    {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
-                        <button onClick={() => navigate('/dine-in')} className="flex-1 min-w-0 flex items-center justify-center gap-2 h-10 bg-orange-500 text-white rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-wider active:scale-95 shadow-lg shadow-orange-500/20">
-                            <Utensils size={12} strokeWidth={3} className="shrink-0" /> <span className="truncate">Dine In</span>
-                        </button>
-                    )}
+                         <div className="flex items-center gap-1.5 ml-auto">
+                            {settings?.tableMapEnabled !== false && (
+                                <button onClick={() => setShowTables(t => !t)} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
+                                    <Armchair size={16} strokeWidth={2.5} />
+                                </button>
+                            )}
+                            <button onClick={() => navigate('/logout')} className="w-9 h-9 flex items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/5 text-rose-500 transition-all active:scale-95">
+                                <LogOut size={16} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                    </div>
 
-                    {/* Take Away Action */}
-                    {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
-                        <button onClick={() => navigate('/take-away')} className="flex-1 min-w-0 flex items-center justify-center gap-2 h-10 bg-blue-600 text-white rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-wider active:scale-95 shadow-lg shadow-blue-600/20">
-                            <Package size={12} strokeWidth={3} className="shrink-0" /> <span className="truncate">Takeaway</span>
-                        </button>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                        {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
+                            <button onClick={() => navigate('/dine-in')} className="flex-1 flex items-center justify-center gap-2 h-10 bg-orange-500 text-white rounded-xl font-black text-[10px] uppercase tracking-wider active:scale-95 shadow-lg shadow-orange-500/20">
+                                <Utensils size={13} strokeWidth={3} /> Dine In
+                            </button>
+                        )}
+                        {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
+                            <button onClick={() => navigate('/take-away')} className="flex-1 flex items-center justify-center gap-2 h-10 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-wider active:scale-95 shadow-lg shadow-blue-600/20">
+                                <Package size={13} strokeWidth={3} /> Takeaway
+                            </button>
+                        )}
+                    </div>
                 </div>,
                 document.getElementById('topbar-portal-row2')
             )}
@@ -794,31 +794,16 @@ const WaiterDashboard = () => {
                     )}
                 </div>
 
-                {/* ── Right panel ────────────────────────────────────── */}
-                {/* Mobile (<md): full-screen fixed overlay. Tablet/Desktop: side drawer. */}
-                <div
-                    style={{ transition: 'flex 550ms cubic-bezier(0.4,0,0.2,1), width 550ms cubic-bezier(0.4,0,0.2,1), opacity 350ms cubic-bezier(0.4,0,0.2,1)' }}
-                    className={`flex-shrink-0 border-l border-[var(--theme-border)] overflow-y-auto overflow-x-hidden ${
-                        selectedOrder
-                            ? [
-                                'opacity-100 shadow-2xl',
-                                // Mobile: fixed overlay covers the full viewport
-                                'max-md:fixed max-md:inset-0 max-md:z-[1000] max-md:w-full max-md:h-screen max-md:border-l-0 max-md:pb-[64px]',
-                                // Tablet/Desktop: side drawer
-                                'md:sticky md:top-0 md:self-start md:h-[calc(100vh-110px)]',
-                                isProductionMode ? 'md:w-[440px] xl:w-[500px]' : 'md:w-[400px] xl:w-[440px]',
-                              ].join(' ')
-                            : 'w-0 opacity-0 overflow-hidden pointer-events-none md:sticky md:top-0 md:self-start md:h-[calc(100vh-110px)]'
-                    }`}
-                >
-                    {selectedOrder && (
+                {/* ── Desktop Side Panel / Mobile Portal ── */}
+                {selectedOrder && (
+                    <>
                         <div
-                            key={selectedOrder._id}
-                            className="w-full min-h-full flex flex-col bg-[var(--theme-bg-card)] animate-in fade-in slide-in-from-right-6 duration-500"
-                            style={{ animationTimingFunction: 'cubic-bezier(0.4,0,0.2,1)' }}
+                            style={{ transition: 'width 550ms cubic-bezier(0.4,0,0.2,1), opacity 350ms cubic-bezier(0.4,0,0.2,1)' }}
+                            className={`hidden md:flex flex-col flex-shrink-0 border-l border-[var(--theme-border)] bg-[var(--theme-bg-card)] sticky top-0 self-start h-[calc(100vh-110px)] overflow-hidden
+                                ${isProductionMode ? 'md:w-[440px] xl:w-[500px]' : 'md:w-[400px] xl:w-[440px]'}`}
                         >
-                            {/* TOKEN mode: navigation bar */}
-                            {isProductionMode && (
+                            <div className="flex-1 flex flex-col min-h-0">
+                                {isProductionMode && (
                                 <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--theme-bg-hover)] border-b border-[var(--theme-border)] shrink-0">
                                     <button
                                         onClick={() => setSelectedOrder(null)}
@@ -867,9 +852,38 @@ const WaiterDashboard = () => {
 
 
 
+                            </div>
                         </div>
-                    )}
-                </div>
+
+                        {createPortal(
+                            <div className="md:hidden fixed inset-0 z-[2000] bg-[var(--theme-bg-card)] flex flex-col animate-in slide-in-from-right duration-500">
+                                <div className="flex items-center justify-between px-3 h-16 border-b border-[var(--theme-border)] bg-[var(--theme-bg-card)] flex-shrink-0">
+                                    <button onClick={() => setSelectedOrder(null)} className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-black text-[var(--theme-text-muted)] active:scale-90 bg-[var(--theme-bg-dark)]/40">
+                                        <ChevronLeft size={18} strokeWidth={3} /> BACK
+                                    </button>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[14px] font-black tracking-tight leading-none uppercase">Order Details</span>
+                                        <span className="text-[9px] font-bold text-orange-500 uppercase tracking-widest mt-0.5">{tokenIdx + 1} of {displayOrders.length}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <button onClick={goPrev} disabled={tokenIdx <= 0} className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--theme-bg-dark)]/40 text-[var(--theme-text-muted)] active:scale-90 disabled:opacity-20"><ChevronLeft size={20} strokeWidth={2.5} /></button>
+                                        <button onClick={goNext} disabled={tokenIdx >= displayOrders.length - 1} className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--theme-bg-dark)]/40 text-[var(--theme-text-muted)] active:scale-90 disabled:opacity-20"><ChevronRight size={20} strokeWidth={2.5} /></button>
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-y-auto">
+                                    <OrderDetailsModal
+                                        variant="panel" isOpen={true} order={selectedOrder} onClose={() => setSelectedOrder(null)}
+                                        formatPrice={formatPrice} userRole={user.role} onCancelItem={(o, i) => setCancelModal({ isOpen: true, order: o, item: i })}
+                                        onCancelOrder={(o) => setCancelModal({ isOpen: true, order: o, item: null })}
+                                        onUpdateStatus={handleUpdateStatus} onAddItem={handleAddItems} settings={settings}
+                                    />
+                                </div>
+                                <div className="h-safe-bottom" />
+                            </div>,
+                            document.body
+                        )}
+                    </>
+                )}
             </div>
 
             <CancelOrderModal isOpen={cancelModal.isOpen} order={cancelModal.order} item={cancelModal.item} title={cancelModal.item ? "Cancel Item" : "Cancel Order"} onClose={() => setCancelModal({ isOpen: false, order: null, item: null })} onConfirm={handleCancelAction} />

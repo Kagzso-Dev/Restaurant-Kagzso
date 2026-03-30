@@ -239,12 +239,12 @@ const DineIn = () => {
     );
 
     return (
-        <div className="h-[100dvh] flex flex-col relative overflow-hidden">
+        <div className="flex-1 flex flex-col relative overflow-hidden min-h-0">
 
             {/* ── STEP 2: TABLE SELECTION ─────────────────────────────── */}
             {step === 2 && (
-                <div className="flex-1 flex flex-col animate-fade-in">
-                    <div className="flex items-center justify-between mb-6 px-2">
+                <div className="flex-1 flex flex-col animate-fade-in min-h-0">
+                    <div className="flex items-center justify-between mb-6 px-2 shrink-0">
                         <div>
                             <h2 className="text-2xl font-black text-[var(--theme-text-main)]">Select a Table</h2>
                             <p className="text-[var(--theme-text-muted)] text-sm">Tap an available table to start the dine-in order</p>
@@ -256,7 +256,7 @@ const DineIn = () => {
                             <ArrowLeft size={20} />
                         </button>
                     </div>
-                    <div className="flex-1 bg-[var(--theme-bg-card)] rounded-3xl p-6 border border-[var(--theme-border)] shadow-2xl overflow-y-auto custom-scrollbar">
+                    <div className="flex-1 bg-[var(--theme-bg-card)] rounded-3xl p-6 border border-[var(--theme-border)] shadow-2xl overflow-y-auto custom-scrollbar min-h-0">
                         <TableGrid
                             allowedStatuses={['available', 'cleaning']}
                             showCleanAction={true}
@@ -341,35 +341,37 @@ const DineIn = () => {
                             <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto custom-scrollbar bg-black/5 border-b md:border-b-0 md:border-r border-[var(--theme-border)] flex-shrink-0 w-full md:w-24 xl:w-28">
                                 <button
                                     onClick={() => setSelectedCategory(null)}
-                                    className={`flex flex-shrink-0 flex-row md:flex-col items-center justify-center py-2 md:py-4 px-4 md:px-1 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4
+                                    className={`flex flex-shrink-0 items-center justify-center py-2.5 md:py-4 px-5 md:px-1 gap-2 transition-all border-b-2 md:border-b-0 md:border-l-4
                                         ${selectedCategory === null
-                                            ? 'bg-gray-200 text-gray-900 border-gray-800 shadow-inner'
+                                            ? 'bg-gray-100 text-gray-900 border-gray-900 shadow-inner'
                                             : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] border-transparent'}`}
                                 >
-                                    <Utensils size={18} />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">All</span>
+                                    <Utensils size={14} className="md:w-[18px] md:h-[18px]" />
+                                    <span className="text-[10px] md:text-[9px] font-black uppercase tracking-widest leading-none">All</span>
                                 </button>
                                 {categories.map(cat => (
                                     <button
                                         key={cat._id}
                                         onClick={() => setSelectedCategory(cat._id)}
-                                        className="flex flex-shrink-0 flex-row md:flex-col items-center justify-center py-2 md:py-4 px-4 md:px-1 gap-1.5 transition-all border-b-2 md:border-b-0 md:border-l-4"
+                                        className="flex flex-shrink-0 items-center justify-center py-2.5 md:py-4 px-5 md:px-1 gap-2 transition-all border-b-2 md:border-b-0 md:border-l-4 relative group"
                                         style={{
-                                            backgroundColor: selectedCategory === cat._id ? `${cat.color || '#1f2937'}15` : 'transparent',
+                                            backgroundColor: selectedCategory === cat._id ? `${cat.color || '#1f2937'}12` : 'transparent',
                                             borderColor: selectedCategory === cat._id ? (cat.color || '#1f2937') : 'transparent',
                                             color: selectedCategory === cat._id ? (cat.color || '#1f2937') : 'var(--theme-text-muted)'
                                         }}
                                     >
                                         <div
-                                            className="w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[11px] md:text-[12px] font-black transition-colors flex-shrink-0"
+                                            className="w-5 h-5 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[9px] md:text-[12px] font-black transition-all flex-shrink-0 shadow-sm"
                                             style={{
                                                 backgroundColor: selectedCategory === cat._id ? (cat.color || '#1f2937') : 'var(--theme-bg-hover)',
-                                                color: selectedCategory === cat._id ? 'white' : 'var(--theme-text-muted)'
+                                                color: selectedCategory === cat._id ? 'white' : 'var(--theme-text-muted)',
+                                                transform: selectedCategory === cat._id ? 'scale(1.1)' : 'scale(1)'
                                             }}
                                         >
-                                            {cat.name.charAt(0)}
+                                            {cat.name.charAt(0).toUpperCase()}
                                         </div>
-                                        <span className="text-[9px] font-black uppercase tracking-tight text-center leading-tight whitespace-nowrap md:whitespace-normal line-clamp-1 md:line-clamp-2">{cat.name}</span>
+                                        <span className="text-[10px] md:text-[9px] font-black uppercase tracking-tighter text-center leading-none whitespace-nowrap min-w-[40px]">{cat.name}</span>
+                                        {selectedCategory === cat._id && <div className="absolute inset-0 bg-current/5 animate-pulse pointer-events-none md:hidden" />}
                                     </button>
                                 ))}
                             </div>
@@ -384,9 +386,7 @@ const DineIn = () => {
                                 ) : (
                                     <div className={`grid gap-2 sm:gap-4 ${viewMode === 'grid'
                                         ? 'grid-cols-2 md:[grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]'
-                                        : viewMode === 'compact'
-                                            ? 'grid-cols-3 md:[grid-template-columns:repeat(auto-fill,minmax(110px,1fr))]'
-                                            : 'grid-cols-1'
+                                        : 'grid-cols-1'
                                     }`}>
                                         {filteredItems.map(item => (
                                             <FoodItem
@@ -554,29 +554,35 @@ const DineIn = () => {
                 </div>
             )}
 
-            {/* ── Mobile Cart Trigger (Sticky Bottom) ──────────────────── */}
+            {/* ── Mobile Floating Cart Bar ── */}
             {step === 3 && cart.length > 0 && !isCartOpen && (
-                <div className="md:hidden fixed bottom-6 left-4 right-4 z-40 bg-orange-600 rounded-3xl shadow-[0_15px_40px_rgba(249,115,22,0.4)] p-4 flex items-center justify-between animate-slide-up border border-orange-500/30 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="relative w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-                            <ShoppingCart size={24} className="text-white" />
-                            <span className="absolute -top-2 -right-2 w-6 h-6 bg-white text-orange-600 rounded-full flex items-center justify-center text-xs font-black shadow-lg border-2 border-orange-600">
-                                {cart.length}
-                            </span>
-                        </div>
-                        <div className="text-white">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none opacity-80 mb-1">Check Order</p>
-                            <p className="text-xl font-black leading-tight tabular-nums">{formatPrice(finalAmount)}</p>
-                        </div>
-                    </div>
+                <div className="md:hidden fixed bottom-6 left-4 right-4 z-[90] animate-in slide-in-from-bottom-10 fade-in duration-500">
                     <button
                         onClick={() => setIsCartOpen(true)}
-                        className="bg-white text-orange-600 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg flex items-center gap-2"
+                        className="w-full h-14 bg-gray-900 text-white rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.3)] flex items-center justify-between px-5 active:scale-[0.98] transition-all overflow-hidden relative group"
                     >
-                        Review <ChevronRight size={16} strokeWidth={3} />
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <ShoppingCart size={20} className="text-orange-500" />
+                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-orange-600 rounded-full flex items-center justify-center text-[9px] font-black border border-gray-900">
+                                    {cart.length}
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-start leading-tight">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">View Cart</span>
+                                <span className="text-sm font-black">{formatPrice(finalAmount)}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-black uppercase tracking-[0.1em]">Place Order</span>
+                            <ChevronRight size={16} strokeWidth={3} className="text-orange-500" />
+                        </div>
+                        {/* Animated gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                     </button>
                 </div>
             )}
+
         </div>
     );
 };

@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import BottomNav from './BottomNav';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 
 /**
  * Responsive Layout
@@ -138,28 +139,31 @@ const Layout = () => {
 
             {/* ── Main Content Area ────────────────────────────────────── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {/* Top Bar with hamburger menu trigger */}
-                {location.pathname !== '/dine-in' &&
-                   location.pathname !== '/take-away' &&
-                   location.pathname !== '/waiter/new-order' && (
+                {/* Top Bar with hamburger menu trigger - Hidden for Admins to provide more screen space */}
+                {user.role !== 'admin' && (
                     <TopBar onMenuClick={handleMenuClick} sidebarCollapsed={sidebarCollapsed} />
                 )}
 
-                {/* Page Content */}
-                <main className="flex-1 overflow-y-auto overflow-x-hidden pt-safe">
+                {/* Content Area */}
+                <main className={`flex-1 flex flex-col overflow-x-hidden pt-safe pb-4 md:pb-0 ${location.pathname === '/dine-in' || location.pathname === '/take-away' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+                    {/* Floating Mobile Trigger for Admins only - Premium White Glassmorphism */}
+                    {isMobile && user.role === 'admin' && (
+                        <div className="fixed top-4 left-4 z-[60] animate-fade-in">
+                            <button
+                                onClick={handleMenuClick}
+                                className="w-12 h-12 bg-white/90 text-slate-800 rounded-2xl shadow-2xl flex items-center justify-center border border-[var(--theme-border)] backdrop-blur-xl active:scale-90 transition-all shadow-black/20"
+                            >
+                                <Menu size={20} strokeWidth={3} />
+                            </button>
+                        </div>
+                    )}
                     <div
-                        className="w-full animate-fade-in max-w-[1600px] mx-auto overflow-x-hidden content-scroll-pad"
+                        className="w-full flex-1 flex flex-col animate-fade-in max-w-[1600px] mx-auto overflow-x-hidden min-h-0"
                         style={{ paddingInline: 'var(--content-px)' }}
                     >
                         <Outlet />
                     </div>
                 </main>
-            </div>
-
-            {/* ── Mobile Bottom Nav ────────────────────────────────────── */}
-            {/* Mobile only (<768px). Tablet/Desktop use the sidebar instead. */}
-            <div className="md:hidden">
-                <BottomNav />
             </div>
         </div>
     );

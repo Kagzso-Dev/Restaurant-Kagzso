@@ -16,19 +16,7 @@ const ViewToggle = ({ viewMode, setViewMode }) => {
             >
                 <LayoutGrid size={18} />
             </button>
-            <button
-                onClick={() => setViewMode('compact')}
-                className={`
-                    p-2 rounded-lg transition-all 
-                    ${viewMode === 'compact'
-                        ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20'
-                        : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
-                    }
-                `}
-                title="Compact View"
-            >
-                <Grid2X2 size={18} />
-            </button>
+
             <button
                 onClick={() => setViewMode('list')}
                 className={`

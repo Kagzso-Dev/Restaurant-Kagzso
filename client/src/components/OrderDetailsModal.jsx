@@ -89,11 +89,35 @@ const OrderDetailsModal = ({
                         <X size={18} />
                     </button>
                 )}
-                <div className="flex items-center gap-2 pr-4">
-                    <h2 className="text-[18px] font-black uppercase tracking-tight text-[var(--theme-text-main)]">
-                        {String(order.orderNumber || '').startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
-                    </h2>
-                    <StatusBadge status={order.orderStatus} items={order.items || []} size="sm" />
+                <div className="flex flex-col gap-1.5 w-full">
+                    <div className="flex items-center justify-between w-full px-2">
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <div className={`px-3 py-1 rounded-xl border flex flex-col items-center justify-center min-w-[60px] shadow-sm ${order.orderType === 'dine-in' ? 'bg-orange-500/10 border-orange-500/30 text-orange-600' : 'bg-blue-500/10 border-blue-500/30 text-blue-600'}`}>
+                                <span className="text-[14px] font-black leading-none">
+                                    {order.orderType === 'dine-in'
+                                        ? (order.tableId?.number || order.tableId || '?')
+                                        : (order.tokenNumber || '?')
+                                    }
+                                </span>
+                                <span className="text-[6px] font-black uppercase tracking-widest mt-0.5 opacity-70">
+                                    {order.orderType === 'dine-in' ? 'TABLE' : 'TOKEN'}
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-start leading-none">
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-[20px] font-black uppercase tracking-tight text-[var(--theme-text-main)]">
+                                        {String(order.orderNumber || '').startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
+                                    </h2>
+                                    <StatusBadge status={order.orderStatus} items={order.items || []} size="sm" />
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest bg-[var(--theme-bg-dark)]/20 px-1.5 py-0.5 rounded">
+                                        {order.orderType === 'dine-in' ? 'Dine-In' : 'Takeaway'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap justify-center mt-1">
                     <span className="px-2.5 py-1 bg-gray-100 dark:bg-white/5 border border-[var(--theme-border)] rounded-lg text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider shadow-sm">

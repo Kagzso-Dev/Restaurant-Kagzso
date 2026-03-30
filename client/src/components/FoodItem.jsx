@@ -175,40 +175,6 @@ const FoodItem = memo(({
     }
 
     /* ── COMPACT VIEW ───────────────────────────────────────────────────── */
-    if (viewMode === 'compact') {
-        return (
-            <div
-                onClick={() => { if (!isAdmin && showActions && cartQty === 0) onAdd(item); }}
-                className={`group relative bg-[var(--theme-bg-card)] rounded-xl border transition-all flex items-center p-2 gap-2.5 ${cartQty > 0 ? 'border-gray-400/50' : 'border-[var(--theme-border)] hover:border-gray-400/40 hover:shadow-md'} ${!isAdmin && cartQty === 0 ? 'cursor-pointer active:scale-[0.98]' : 'cursor-default'}`}
-            >
-                <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-[var(--theme-bg-dark)] flex-shrink-0">
-                    {item.image
-                        ? <img src={item.image} alt={item.name} className="img-cover" />
-                        : <div className="w-full h-full flex items-center justify-center text-xl">🍔</div>
-                    }
-                    <div className={`absolute top-0.5 left-0.5 w-2 h-2 rounded-full border border-white ${isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-bold text-[var(--theme-text-main)] truncate">{item.name}</h3>
-                    <span className="text-gray-500 font-extrabold text-[10px] whitespace-nowrap">{formatPrice(item.price)}</span>
-                </div>
-                {!isAdmin && showActions && !item.variants?.length && (
-                    <QtyControl qty={cartQty} onAdd={() => onAdd(item)} onRemove={() => onRemove(item._id)} size="sm" />
-                )}
-                {isAdmin && (
-                    <div className="flex items-center gap-1">
-                        <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1 text-[var(--theme-text-muted)] hover:text-blue-400">
-                            <Edit size={12} />
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(item._id); }} className="p-1 text-[var(--theme-text-muted)] hover:text-red-400">
-                            <Trash2 size={12} />
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    }
-
     /* ── GRID VIEW ──────────────────────────────────────────────────────── */
     return (
         <div
@@ -249,7 +215,7 @@ const FoodItem = memo(({
 
                 {/* ACTIONS - Horizontal Pill Theme */}
                 <div className="mt-auto space-y-2.5">
-                    {showActions && !isAdmin && (
+                    {showActions && !isAdmin ? (
                         <>
                             {item.variants?.length > 0 ? (
                                 <div className="flex flex-col gap-2.5">
@@ -288,31 +254,45 @@ const FoodItem = memo(({
                                     
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onAdd(item, selectedSize); }}
-                                        className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-sm active:scale-[0.97] transition-all flex items-center justify-center gap-2 border-2 border-rose-600/20"
+                                        className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-[0_4px_15px_rgba(244,63,94,0.2)] active:scale-[0.97] transition-all flex items-center justify-center gap-2 border border-rose-400/20"
                                     >
                                         Add Item
                                     </button>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center gap-2.5">
-                                    <span className="text-2xl font-black text-gray-900 leading-none">₹{item.price}</span>
+                                <div className="flex flex-col items-center gap-2">
+                                    <span className="text-xl md:text-2xl font-black text-[var(--theme-text-main)] leading-none tabular-nums tracking-tight">₹{item.price}</span>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onAdd(item); }}
-                                        className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-2xl shadow-sm active:scale-[0.97] transition-all border-2 border-rose-600/20"
+                                        className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.1em] rounded-2xl shadow-[0_4px_15px_rgba(244,63,94,0.3)] active:scale-[0.96] transition-all border border-rose-400/20"
                                     >
                                         Add Item
                                     </button>
                                 </div>
                             )}
 
-                            {/* Cart quantity overlay footer if added */}
+                            {/* Cart quantity overlay - Premium high-density design */}
                             {cartQty > 0 && (
-                                <div className="flex items-center justify-center gap-2 pt-2 animate-fade-in">
-                                    <QtyControl qty={cartQty} onAdd={() => onAdd(item, selectedSize)} onRemove={() => onRemove(selectedSize ? `${item._id}_${selectedSize.name}` : item._id)} size="sm" />
+                                <div className="flex items-center justify-center gap-1.5 pt-1 animate-in zoom-in-95 duration-200">
+                                    <div className="flex items-center bg-gray-100 dark:bg-white/5 rounded-2xl p-1 border border-black/5 shadow-inner">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); onRemove(selectedSize ? `${item._id}_${selectedSize.name}` : item._id); }} 
+                                            className="w-8 h-8 flex items-center justify-center bg-rose-500 text-white rounded-xl shadow-lg active:scale-75 transition-all"
+                                        >
+                                            <Minus size={14} strokeWidth={4} />
+                                        </button>
+                                        <span className="w-8 text-center text-xs font-black text-gray-900 dark:text-white tabular-nums">{cartQty}</span>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); onAdd(item, selectedSize); }} 
+                                            className="w-8 h-8 flex items-center justify-center bg-emerald-500 text-white rounded-xl shadow-lg active:scale-75 transition-all"
+                                        >
+                                            <Plus size={14} strokeWidth={4} />
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </>
-                    )}
+                    ) : null}
 
                     {showActions && isAdmin && (
                         <div className="flex items-center justify-center gap-2 pt-3 border-t border-[var(--theme-border)] mt-2">

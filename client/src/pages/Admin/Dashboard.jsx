@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+import NotificationBell from '../../components/NotificationBell';
+
 /* ── Skeleton Card ───────────────────────────────────────────────────────── */
 const SkeletonCard = () => (
     <div className="bg-[var(--theme-bg-card)] p-5 rounded-2xl border border-[var(--theme-border)] space-y-3">
@@ -73,7 +75,7 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color, badge }) => {
                     {title}
                 </p>
                 <div className="flex items-baseline gap-1">
-                    <h3 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-black text-[var(--theme-text-main)] tracking-tighter whitespace-nowrap">
+                    <h3 className="text-2xl lg:text-3xl xl:text-4xl font-black text-[var(--theme-text-main)] tracking-tighter whitespace-nowrap">
                         {value}
                     </h3>
                 </div>
@@ -289,12 +291,13 @@ const AdminDashboard = () => {
                 <div>
                     <h1 className="text-xl sm:text-2xl font-black text-[var(--theme-text-main)] uppercase tracking-tighter leading-tight flex items-center">
                         KAGZSO
-                        <span className="text-[var(--theme-text-muted)] font-bold ml-2 text-xs sm:text-base opacity-40 uppercase tracking-widest px-2 py-0.5 bg-[var(--theme-bg-dark)] rounded-lg border border-[var(--theme-border)] shadow-inner">
+                        <span className="text-black font-black ml-2 text-xs sm:text-base uppercase tracking-widest px-2 py-0.5 bg-[var(--theme-bg-dark)] rounded-lg border border-[var(--theme-border)] shadow-inner">
                             Analytics
                         </span>
                     </h1>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <NotificationBell />
                     {/* Mobile: Logout | Desktop/Tablet: Refresh */}
                     <button
                         onClick={() => {
@@ -327,8 +330,8 @@ const AdminDashboard = () => {
             </div>
 
             {/* ── Stats Grid — values sourced from MySQL via API ─────── */}
-            {/* Mobile: 1-col → xs: 2-col → md: 4-col */}
-            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Mobile: 1-col → xs: 2-col → md: 2-col (iPad Mini) → xl: 4-col */}
+            <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
                 {statsLoading ? (
                     Array(4).fill(0).map((_, i) => <SkeletonCard key={i} />)
                 ) : (
@@ -341,10 +344,10 @@ const AdminDashboard = () => {
                             icon={DollarSign}
                             color="orange"
                             badge={
-                                <div className="flex flex-col items-end gap-0.5">
+                                <div className="flex flex-col items-end gap-1">
                                     <GrowthBadge growth={growth} loading={growthLoading} />
                                     {!growthLoading && growth !== null && (
-                                        <span className="text-[9px] text-[var(--theme-text-subtle)]">vs yesterday</span>
+                                        <span className="text-[9px] text-[var(--theme-text-subtle)] font-bold uppercase tracking-tight opacity-60">vs yesterday</span>
                                     )}
                                 </div>
                             }
@@ -357,7 +360,7 @@ const AdminDashboard = () => {
                             icon={ShoppingBag}
                             color="blue"
                             badge={
-                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400">
+                                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
                                     Live
                                 </span>
                             }
