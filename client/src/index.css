@@ -848,6 +848,32 @@ button,
 .theme-light .text-white,
 .theme-light .text-gray-100,
 .theme-light .text-gray-200 {
+  color: var(--theme-text-main) !important;
+}
+
+/* Restore white text on colored/dark button & badge backgrounds */
+.theme-light .bg-orange-500,
+.theme-light .bg-orange-600,
+.theme-light .bg-blue-500,
+.theme-light .bg-blue-600,
+.theme-light .bg-emerald-500,
+.theme-light .bg-emerald-600,
+.theme-light .bg-red-500,
+.theme-light .bg-red-600,
+.theme-light .bg-rose-500,
+.theme-light .bg-rose-600,
+.theme-light .bg-violet-500,
+.theme-light .bg-violet-600,
+.theme-light .bg-indigo-500,
+.theme-light .bg-indigo-600,
+.theme-light .bg-green-500,
+.theme-light .bg-green-600,
+.theme-light .bg-amber-500,
+.theme-light .bg-amber-600,
+.theme-light .bg-gray-700,
+.theme-light .bg-gray-800,
+.theme-light .bg-gray-900,
+.theme-light .bg-black {
   color: #ffffff !important;
 }
 

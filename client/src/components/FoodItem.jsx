@@ -25,7 +25,7 @@ const QtyControl = ({ qty, onAdd, onRemove, size = 'md' }) => {
         <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
             <button
                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                className={`${btnCls} rounded-xl flex items-center justify-center bg-rose-500/15 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/30 active:scale-90 transition-all`}
+                className={`${btnCls} rounded-xl flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white border border-rose-500/30 shadow-sm active:scale-90 transition-all`}
             >
                 <Minus size={size === 'sm' ? 12 : 14} strokeWidth={3} />
             </button>
@@ -284,7 +284,7 @@ const FoodItem = memo(({
                                         >
                                             <Minus size={14} strokeWidth={4} />
                                         </button>
-                                        <span className="w-8 text-center text-xs font-black text-gray-900 dark:text-white tabular-nums">{cartQty}</span>
+                                        <span className="w-8 text-center text-xs font-black text-[var(--theme-text-main)] tabular-nums">{cartQty}</span>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); onAdd(item, selectedSize); }} 
                                             className="w-8 h-8 flex items-center justify-center bg-emerald-500 text-white rounded-xl shadow-lg active:scale-75 transition-all"

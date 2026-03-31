@@ -576,8 +576,22 @@ const WaiterDashboard = () => {
                 document.getElementById('topbar-portal-row2')
             )}
 
-            {activeTab === 'active' && (
-                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showCounters ? 'max-h-[200px] opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}>
+            {activeTab === 'active' && showCounters && createPortal(
+                <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setShowCounters(false); }}>
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowCounters(false)} />
+                    <div className="relative bg-[var(--theme-bg-card)] rounded-3xl border-2 border-[var(--theme-border)] shadow-2xl w-full max-w-3xl overflow-hidden">
+                        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--theme-border)]">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange-500/20">
+                                    <Clock size={16} className="text-orange-500" />
+                                </div>
+                                <span className="text-sm font-black text-[var(--theme-text-main)] tracking-tight">Order Stats</span>
+                            </div>
+                            <button onClick={() => setShowCounters(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors text-[var(--theme-text-muted)]">
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="p-4">
                     {/* ── Mobile / Tablet: compact 2×2 grid (unchanged) ── */}
                     <div className="xl:hidden flex items-stretch gap-1.5 w-full">
                         <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[var(--theme-bg-dark)]/40 p-1.5 rounded-xl border border-[var(--theme-border)] shadow-sm min-w-0">
@@ -713,29 +727,38 @@ const WaiterDashboard = () => {
                                 </div>
                             </button>
                         ))}
+                        </div>
+                        </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showTables ? 'max-h-[800px] opacity-100 mb-6' : 'max-h-0 opacity-0 mb-0'}`}>
-                <div className="bg-[var(--theme-bg-card)] p-4 sm:p-5 rounded-3xl border-2 border-[var(--theme-border)] shadow-xl animate-in fade-in zoom-in-98 duration-500">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-                                <Grid size={20} className="text-emerald-500" />
+            {showTables && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setShowTables(false); }}>
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                    <div className="relative bg-[var(--theme-bg-card)] rounded-3xl border-2 border-[var(--theme-border)] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[var(--theme-border)] shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
+                                    <Grid size={20} className="text-emerald-500" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-[var(--theme-text-main)] tracking-tight">Table Map</h2>
+                                    <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest opacity-60">Floor Overview</p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className="text-lg font-black text-[var(--theme-text-main)] tracking-tight">Table Map</h2>
-                                <p className="text-[10px] text-[var(--theme-text-muted)] uppercase font-bold tracking-widest opacity-60">Floor Overview</p>
-                            </div>
+                            <button onClick={() => setShowTables(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors text-[var(--theme-text-muted)]">
+                                <X size={18} />
+                            </button>
                         </div>
-                        <button onClick={() => setShowTables(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors">
-                            <X size={18} />
-                        </button>
+                        <div className="overflow-y-auto p-4 sm:p-5 flex-1">
+                            <TableGrid allowedStatuses={['available']} showCleanAction={true} onReserve={handleReserveTable} onCancelReservation={handleCancelReservation} />
+                        </div>
                     </div>
-                    <TableGrid allowedStatuses={['available']} showCleanAction={true} onReserve={handleReserveTable} onCancelReservation={handleCancelReservation} />
-                </div>
-            </div>
+                </div>,
+                document.body
+            )}
 
             {/* ── Flex split: cards left + drawer right ────────────────────────── */}
             <div className="flex gap-0 relative" style={{ willChange: 'contents' }}>
