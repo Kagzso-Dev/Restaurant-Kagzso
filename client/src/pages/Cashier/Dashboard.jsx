@@ -416,11 +416,11 @@ const CashierDashboard = () => {
             {/* ── POS Layout ────────────────────────────────────── */}
             <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
 
-            {/* ── Row 1: Utility buttons pushed right ── */}
+            {/* ── Row 1: Utilities ── */}
             {document.getElementById('topbar-portal') && createPortal(
                 <div className="flex items-center w-full gap-1.5 animate-fade-in px-1">
-                    {/* Left: Filters */}
-                    <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-inner">
+                    {/* Left: Filters (Visible on lg+) */}
+                    <div className="hidden lg:flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-inner">
                          {['all', 'dine-in', 'takeaway']
                             .filter(t => settings?.takeawayEnabled !== false || t !== 'takeaway')
                             .filter(t => settings?.dineInEnabled !== false || t !== 'dine-in')
@@ -428,16 +428,15 @@ const CashierDashboard = () => {
                             <button
                                 key={t}
                                 onClick={() => setFilterType(t)}
-                                className={`px-2.5 md:px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-orange-500 text-white shadow-sm' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-orange-500 text-white shadow-sm' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
                             >
                                 {t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}
                             </button>
                         ))}
                     </div>
 
-                    {/* Right Utilities (relocated to right using ml-auto) */}
+                    {/* Right Utilities (ml-auto pushes them right) */}
                     <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                        {/* Pending count badge */}
                         <div className="bg-orange-500/10 border border-orange-500/20 text-orange-500 px-2.5 h-9 flex items-center justify-center rounded-xl text-[10px] font-black transition-all">
                             {orders.filter(o => filterType === 'all' || o.orderType === filterType).length}
                         </div>
@@ -460,21 +459,42 @@ const CashierDashboard = () => {
                 document.getElementById('topbar-portal')
             )}
 
+            {/* ── Row 2: Mobile Filters (Hidden on lg+) ── */}
+            {document.getElementById('topbar-portal-row2') && createPortal(
+                <div className="lg:hidden flex items-center w-full pb-1 gap-2 px-1 overflow-x-auto no-scrollbar">
+                    <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-inner">
+                         {['all', 'dine-in', 'takeaway']
+                            .filter(t => settings?.takeawayEnabled !== false || t !== 'takeaway')
+                            .filter(t => settings?.dineInEnabled !== false || t !== 'dine-in')
+                            .map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setFilterType(t)}
+                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${filterType === t ? 'bg-orange-500 text-white shadow-sm' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}
+                            >
+                                {t === 'all' ? 'All' : t === 'dine-in' ? 'Dine' : 'Take'}
+                            </button>
+                        ))}
+                    </div>
+                </div>,
+                document.getElementById('topbar-portal-row2')
+            )}
+
             {/* ── Row 2 (mobile only): Filters + Action ── */}
 
 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-3 flex-1 min-h-0">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 flex-1 min-h-0">
 
                     {/* ── Left: Order List ──────────────── */}
                     <div className={`
-                        md:col-span-2 bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)]
+                        md:col-span-8 bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)]
                         overflow-hidden flex flex-col min-h-0
                         ${showInvoice ? 'hidden md:flex' : 'flex'}
                     `}>
                         
                         <div className={`
                             flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 custom-scrollbar content-visibility-auto
-                            ${isCardView ? `grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 ${lgCols === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-2 content-start` : 'space-y-2.5'}
+                             ${isCardView ? `grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2 content-start` : 'space-y-2.5'}
                         `}>
                             {loading ? (
                                 Array(4).fill(0).map((_, i) => <div key={i} className="skeleton h-20 rounded-xl" />)
@@ -501,7 +521,7 @@ const CashierDashboard = () => {
 
                     {/* ── Right: Invoice Panel ──────────── */}
                     <div className={`
-                        md:col-span-3 bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)]
+                        md:col-span-4 bg-[var(--theme-bg-card)] rounded-2xl border border-[var(--theme-border)]
                         flex flex-col overflow-hidden relative min-h-0
                         ${showInvoice ? 'flex' : 'hidden md:flex'}
                     `}>
@@ -563,52 +583,56 @@ const CashierDashboard = () => {
                                         </div>
                                     )}
 
-                                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                                        <div>
-                                            <p className="text-xs text-[var(--theme-text-subtle)] font-medium">Amount Due</p>
-                                            <p className="text-2xl md:text-3xl font-black text-[var(--theme-text-main)]">
-                                                {formatPrice(selectedOrder.finalAmount)}
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-3 flex-wrap">
-                                            {selectedOrder.orderStatus !== 'cancelled' && selectedOrder.paymentStatus !== 'paid' && (
-                                                <button
-                                                    onClick={() => setCancelModal({ isOpen: true, order: selectedOrder })}
-                                                    className="flex items-center justify-center w-11 h-11 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-500/20 active:scale-95"
-                                                    title="Cancel Order"
-                                                >
-                                                    <XCircle size={20} strokeWidth={2.5} />
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => setShowPrintConfirm(true)}
-                                                className="flex items-center gap-2 px-4 md:px-5 py-3 bg-[var(--theme-bg-hover)] hover:bg-[var(--theme-border)] text-[var(--theme-text-main)] rounded-xl font-semibold text-sm transition-colors min-h-[44px] border border-[var(--theme-border)]"
-                                            >
-                                                <Printer size={17} />
-                                                Print
-                                            </button>
-                                            <button
-                                                onClick={handleOpenPayment}
-                                                disabled={isPayDisabled}
-                                                className={`
-                                                    flex items-center gap-2 px-5 md:px-7 py-3 rounded-xl font-black text-sm
-                                                    shadow-lg transition-all duration-200 min-h-[44px]
-                                                    ${isPayDisabled
-                                                        ? 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-subtle)] cursor-not-allowed'
-                                                        : 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white shadow-glow-green active:scale-95'
-                                                    }
-                                                `}
-                                            >
-                                                {paymentSuccess ? (
-                                                    <><CheckCircle size={17} /> Paid ✓</>
-                                                ) : !isKitchenReady ? (
-                                                    <><AlertTriangle size={17} /> Awaiting Kitchen</>
-                                                ) : (
-                                                    <><Banknote size={17} /> Pay Now</>
+                                    <div className="flex flex-col gap-5">
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div>
+                                                <p className="text-[10px] text-[var(--theme-text-subtle)] font-black uppercase tracking-widest leading-none mb-1">Amount Due</p>
+                                                <p className="text-3xl md:text-4xl font-black text-[var(--theme-text-main)] tracking-tighter tabular-nums">
+                                                    {formatPrice(selectedOrder.finalAmount)}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {selectedOrder.orderStatus !== 'cancelled' && selectedOrder.paymentStatus !== 'paid' && (
+                                                    <button
+                                                        onClick={() => setCancelModal({ isOpen: true, order: selectedOrder })}
+                                                        className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-500/20 active:scale-95"
+                                                        title="Cancel Order"
+                                                    >
+                                                        <XCircle size={18} strokeWidth={2.5} />
+                                                    </button>
                                                 )}
-                                            </button>
+                                                <button
+                                                    onClick={() => setShowPrintConfirm(true)}
+                                                    className="h-10 px-4 flex items-center gap-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-[var(--theme-text-main)] rounded-xl font-bold text-xs uppercase tracking-wide transition-all border border-[var(--theme-border)] active:scale-95"
+                                                >
+                                                    <Printer size={16} />
+                                                    Print
+                                                </button>
+                                            </div>
                                         </div>
+
+                                        <button
+                                            onClick={handleOpenPayment}
+                                            disabled={isPayDisabled}
+                                            className={`
+                                                w-full h-14 flex items-center justify-center gap-3 rounded-2xl font-black text-[15px] uppercase tracking-widest
+                                                shadow-xl transition-all duration-300 active:scale-[0.98]
+                                                ${isPayDisabled
+                                                    ? 'bg-[var(--theme-bg-hover)] text-[var(--theme-text-subtle)] cursor-not-allowed opacity-50'
+                                                    : 'bg-emerald-500 text-white shadow-glow-green hover:bg-emerald-600'
+                                                }
+                                            `}
+                                        >
+                                            {paymentSuccess ? (
+                                                <><CheckCircle size={22} strokeWidth={3} /> Paid ✓</>
+                                            ) : !isKitchenReady ? (
+                                                <><Clock size={20} className="animate-pulse" /> Awaiting Kitchen</>
+                                            ) : (
+                                                <><Banknote size={22} strokeWidth={3} /> Pay & Complete Order</>
+                                            )}
+                                        </button>
                                     </div>
+
                                 </div>
                             </div>
                         ) : (

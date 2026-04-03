@@ -6,7 +6,7 @@ import {
     LogOut, LayoutDashboard, Monitor, Utensils, ChefHat,
     Layers, Coffee, Settings, ClipboardList, ChevronLeft,
     ChevronRight, X, TrendingUp, Bell, History, XCircle, CheckCircle2, Armchair,
-    Package
+    Package, Grid
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -106,28 +106,33 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
         >
 
             {/* ── Header ─────────────────────────────────────────────── */}
-            <div className={`flex items-center border-b border-[var(--theme-border)] flex-shrink-0 pt-safe relative h-[70px] justify-center`}>
+            <div className={`flex items-center border-b border-[var(--theme-border)] flex-shrink-0 pt-safe relative h-[80px] justify-center`}>
                 
                 {/* Centered Logo & Brand Group */}
                 <div
                     onClick={() => handleNav('/')}
                     className={`flex items-center cursor-pointer group ${collapsed ? '' : 'space-x-3'}`}
                 >
-                    <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-white p-1.5 flex items-center justify-center shadow-sm border border-[var(--theme-border)] group-hover:scale-105 group-hover:shadow-md transition-all">
-                        <img src={logoImg} alt="KAGSZO" className="w-full h-full object-contain" />
+                    <div className="w-12 h-12 flex-shrink-0 relative group-hover:scale-110 transition-transform duration-300">
+                        {/* Hexagonal Blue Background Logo as in image */}
+                        <div className="absolute inset-0 bg-[#0ea5e9] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)] shadow-lg" />
+                        <div className="absolute inset-0 flex items-center justify-center text-white text-xl font-black">
+                            K
+                        </div>
                     </div>
 
                     {!collapsed && (
                         <div className="flex flex-col justify-center text-left">
-                            <h1 className="text-[13px] sm:text-sm font-black tracking-widest text-[var(--theme-text-main)] truncate leading-tight uppercase">
+                            <h1 className="text-[14px] font-black tracking-widest text-[var(--theme-text-main)] truncate leading-tight uppercase">
                                 KAGZSO
                             </h1>
-                            <p className="text-[8px] sm:text-[9px] text-[var(--theme-text-subtle)] font-bold uppercase tracking-widest mt-0.5">
-                                Management
+                            <p className="text-[9px] text-[var(--theme-text-subtle)] font-bold uppercase tracking-widest mt-0.5">
+                                RESTAURANT
                             </p>
                         </div>
                     )}
                 </div>
+
 
                 {/* Close button – visible only on mobile drawer (<768px) */}
                 {!collapsed && onClose && (
@@ -143,26 +148,27 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
 
             {/* ── User Profile ────────────────────────────────────────── */}
             {!collapsed && (
-                <div className="px-4 py-4 flex-shrink-0">
-                    <div className="bg-[var(--theme-bg-muted)] rounded-xl p-3 border border-[var(--theme-border)] flex items-center space-x-3 shadow-sm">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0 ring-2 ring-[var(--theme-bg-dark)] shadow-md">
-                            {user.username?.charAt(0).toUpperCase()}
+                <div className="px-5 py-6 flex-shrink-0">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-sm font-black text-white shadow-xl ring-2 ring-white/10 ring-offset-2 ring-offset-[var(--theme-sidebar-bg)]">
+                            {user.username?.charAt(0).toUpperCase() || 'W'}
                         </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-sm font-black text-[var(--theme-text-main)] truncate uppercase tracking-tight">{user.username}</p>
-                            <p className="text-[10px] text-orange-400 font-black uppercase tracking-widest mt-0.5 truncate">{user.role}</p>
+                        <div className="text-center mt-1">
+                            <p className="text-xs font-black text-[var(--theme-text-main)] uppercase tracking-tight">{user.username}</p>
+                            <p className="text-[9px] text-orange-500 font-bold uppercase tracking-[0.2em] mt-0.5">{user.role}</p>
                         </div>
                     </div>
                 </div>
             )}
 
             {collapsed && (
-                <div className="flex justify-center py-4 flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold shadow-md">
-                        {user.username?.charAt(0).toUpperCase()}
+                <div className="flex justify-center py-6 flex-shrink-0">
+                    <div className="w-11 h-11 rounded-full bg-[#3b82f6] flex items-center justify-center text-sm font-black text-white shadow-lg border-2 border-white/20">
+                        {user.username?.charAt(0).toUpperCase() || 'W'}
                     </div>
                 </div>
             )}
+
 
             {/* ── Navigation ──────────────────────────────────────────── */}
             <nav className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-2 pb-2">
@@ -207,42 +213,35 @@ const Sidebar = ({ collapsed = false, onToggleCollapse, onClose }) => {
 
                         {user.role === 'waiter' && (
                             <>
-                                <NavItem to="/waiter" icon={LayoutDashboard} label="Waiter Dashboard" color="text-pink-400" />
-                                <NavItem to="/waiter/working-process" icon={ClipboardList} label="Working Process" color="text-blue-400" />
-                                <NavItem to="/waiter/kitchen-view" icon={ChefHat} label="Kitchen View" color="text-emerald-400" />
-                                <NavItem to="/waiter/history" icon={History} label="Order History" color="text-purple-400" />
+                                <NavItem to="/waiter" icon={Grid} label="Dashboard" color="text-orange-500" />
+                                <NavItem to="/dine-in" icon={Armchair} label="Table Map" color="text-rose-500" />
+                                <NavItem to="/waiter/working-process" icon={ClipboardList} label="Orders" color="text-blue-500" />
+                                <NavItem to="/waiter/kitchen-view" icon={ChefHat} label="Kitchen" color="text-emerald-500" />
+                                <NavItem to="/waiter/history" icon={History} label="History" color="text-purple-500" />
                             </>
                         )}
+
                     </>
                 )}
             </nav>
 
-            {/* ── Collapse Toggle (Desktop only) ──────────────────────── */}
+            {/* ── Arrows (Expand/Collapse as in image) ──────────────────────── */}
             {onToggleCollapse && (
                 <button
                     onClick={onToggleCollapse}
-                    className="hidden md:flex items-center justify-center p-4 border-t border-b border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-hover)] transition-all duration-200 active:scale-95 flex-shrink-0 relative overflow-hidden"
+                    className="group flex flex-col items-center justify-center p-4 text-rose-500 opacity-20 hover:opacity-100 transition-all active:scale-90 hover:scale-105"
                     title={collapsed ? 'Expand' : 'Collapse'}
                 >
-                    <div className={`flex items-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${collapsed ? 'scale-110' : 'scale-100'}`}>
-                        {collapsed ? (
-                            /* >> collapsed — RED flowing arrows */
-                            <div className="flex items-center text-rose-500">
-                                <ChevronRight size={20} strokeWidth={3} className="animate-chevron-r1" />
-                                <ChevronRight size={20} strokeWidth={3} className="-ml-3 opacity-60 animate-chevron-r2" />
-                                <ChevronRight size={20} strokeWidth={3} className="-ml-3 opacity-30 animate-chevron-r3" />
-                            </div>
-                        ) : (
-                            /* << expanded — BLUE flowing arrows */
-                            <div className="flex items-center text-blue-500">
-                                <ChevronLeft size={20} strokeWidth={3} className="animate-chevron-1" />
-                                <ChevronLeft size={20} strokeWidth={3} className="-ml-3 opacity-60 animate-chevron-2" />
-                                <ChevronLeft size={20} strokeWidth={3} className="-ml-3 opacity-30 animate-chevron-3" />
-                            </div>
-                        )}
+
+                    <div className="flex items-center group-hover:gap-0.5 transition-all duration-500">
+                        <ChevronRight size={16} strokeWidth={4} className="animate-arrow-flow text-rose-500/40" />
+                        <ChevronRight size={16} strokeWidth={4} className="-ml-2 animate-arrow-flow delay-200 text-rose-500/60" />
+                        <ChevronRight size={16} strokeWidth={4} className="-ml-2 animate-arrow-flow delay-400 text-rose-500" />
                     </div>
+
                 </button>
             )}
+
 
 
             {/* ── Theme Switcher ───────────────────────────────────────── */}

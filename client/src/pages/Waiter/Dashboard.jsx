@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api';
-import { Utensils, Package, Grid, List, ShoppingBag, Clock, History, WifiOff, ChevronRight, ChevronLeft, RefreshCw, X, Armchair, LogOut } from 'lucide-react';
+import { Utensils, Package, Grid, List, ShoppingBag, Clock, History, WifiOff, ChevronRight, ChevronLeft, RefreshCw, X, Armchair, LogOut, Monitor } from 'lucide-react';
 import TableGrid from '../../components/TableGrid';
 import CancelOrderModal from '../../components/CancelOrderModal';
 import OrderDetailsModal from '../../components/OrderDetailsModal';
@@ -39,79 +39,79 @@ const WaiterBoxCard = memo(({ order, formatPrice }) => {
     const elapsed = useElapsed(order.createdAt);
     const urgency = (Date.now() - new Date(order.createdAt)) > 600000;
     const isReady = order.orderStatus?.toLowerCase() === 'ready';
+    const isAccepted = order.orderStatus?.toLowerCase() === 'accepted';
+    const isPending = order.orderStatus?.toLowerCase() === 'pending';
 
     const bgColor =
-        order.orderStatus === 'pending' ? 'bg-orange-50 border-orange-200' :
-            order.orderStatus === 'accepted' ? 'bg-blue-50 border-blue-200' :
-                order.orderStatus === 'preparing' ? 'bg-indigo-50 border-indigo-200' :
-                    order.orderStatus === 'ready' ? 'bg-emerald-50 border-emerald-200' :
+        isPending ? 'bg-orange-50/80 border-orange-200' :
+            isAccepted ? 'bg-blue-50/80 border-blue-200' :
+                order.orderStatus === 'preparing' ? 'bg-indigo-50/80 border-indigo-200' :
+                    isReady ? 'bg-emerald-50/80 border-emerald-200' :
                         'bg-white border-gray-200';
 
     const borderAccent =
-        order.orderStatus === 'pending' ? 'border-l-orange-500' :
-            order.orderStatus === 'accepted' ? 'border-l-blue-500' :
+        isPending ? 'border-l-orange-500' :
+            isAccepted ? 'border-l-blue-500' :
                 order.orderStatus === 'preparing' ? 'border-l-indigo-500' :
-                    order.orderStatus === 'ready' ? 'border-l-emerald-500' :
+                    isReady ? 'border-l-emerald-500' :
                         'border-l-gray-400';
 
     const visibleItems = order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED') || [];
 
     return (
         <div className={`
-            relative flex flex-col rounded-xl border border-l-4 shadow-sm transition-all duration-200
-            hover:shadow-md active:scale-[0.98] cursor-pointer overflow-hidden h-full
+            relative flex flex-col rounded-2xl border border-l-[6px] shadow-sm transition-all duration-200
+            hover:shadow-lg active:scale-[0.98] cursor-pointer overflow-hidden h-full min-h-[160px]
             ${bgColor} ${borderAccent} ${isReady ? 'animate-pulse' : ''}
         `}>
-            {/* ── Header ── */}
-            <div className="px-2 pt-2.5 pb-2 border-b border-black/[0.04]">
-                <div className="flex items-center justify-between gap-1 mb-1">
-                    <h3 className="text-[13px] font-black text-gray-900 tracking-tight leading-none truncate pr-1">
-                        {String(order.orderNumber).startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
-                    </h3>
-                    <StatusBadge status={order.orderStatus} items={order.items || []} size="xs" />
-                </div>
-
-                <div className="flex flex-col gap-1 mt-1.5">
-                    <div className="flex items-center justify-between gap-1">
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/60 border border-black/5 rounded-md text-[9px] font-black text-gray-700 shadow-sm truncate max-w-[50%]">
-                            <Utensils size={8} className="text-orange-500 shrink-0" />
-                            {order.orderType === 'dine-in'
-                                ? `T${order.tableId?.number || order.tableId || '?'}`
-                                : `TK${order.tokenNumber || '?'}`}
-                        </span>
-                        <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold shrink-0 ${urgency ? 'text-red-600 bg-red-100 px-1 py-0.5 rounded-md' : 'text-gray-400'}`}>
-                            <Clock size={8} />{elapsed.replace(' ', '')}
-                        </span>
-                    </div>
-                </div>
+            {/* ── Top Row: Order # and Status Badge ── */}
+            <div className="px-3 pt-3 flex items-center justify-between">
+                <h3 className="text-lg font-black text-gray-900 tracking-tighter leading-none">
+                    {String(order.orderNumber).startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
+                </h3>
+                <StatusBadge status={order.orderStatus} items={order.items || []} size="sm" />
             </div>
 
-            {/* ── Items ── */}
-            <div className="flex-1 px-2 py-2 space-y-1 min-h-[60px] max-h-[120px] overflow-y-auto custom-scrollbar">
+            {/* ── Middle Row: Table/Token and Clock ── */}
+            <div className="px-3 py-2 flex items-center justify-between border-b border-black/[0.04]">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/80 border border-black/5 rounded-lg text-[10px] font-black text-gray-700 shadow-sm shrink-0">
+                    <Utensils size={10} className="text-orange-500 shrink-0" />
+                    {order.orderType === 'dine-in'
+                        ? `T${order.tableId?.number || order.tableId || '?'}`
+                        : `TK${order.tokenNumber || '?'}`}
+                </span>
+                <span className={`inline-flex items-center gap-1 text-[10px] font-black shrink-0 ${urgency ? 'text-red-600 bg-red-100 px-2 py-0.5 rounded-lg' : 'text-red-500/80'}`}>
+                    <Clock size={10} />{elapsed.replace(' ', '')}
+                </span>
+            </div>
+
+            {/* ── Items List ── */}
+            <div className="flex-1 px-3 py-3 space-y-1.5 min-h-[60px] max-h-[140px] overflow-y-auto no-scrollbar">
                 {visibleItems.map((item, i) => (
-                    <div key={i} className="flex items-start gap-1.5">
-                        <div className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center text-[9px] font-black bg-black/5 text-gray-700">
+                    <div key={i} className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center text-[10px] font-black bg-black/[0.06] text-gray-800">
                             {item.quantity}
                         </div>
-                        <span className="flex-1 text-[11px] font-bold text-gray-900 leading-tight line-clamp-2">{item.name}{item.variant ? ` (${item.variant.name})` : ''}</span>
+                        <span className="flex-1 text-[12px] font-black text-gray-800 leading-tight truncate">
+                            {item.name}{item.variant ? ` (${item.variant.name})` : ''}
+                        </span>
                     </div>
                 ))}
             </div>
 
             {/* ── Footer ── */}
-            <div className="px-2 py-2 border-t border-black/[0.04] bg-black/[0.02] mt-auto">
-                <div className="flex items-center justify-between gap-1">
-                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter shrink-0">
-                        {order.orderType === 'dine-in' ? 'DINE' : 'TAKE'}
-                    </span>
-                    <span className="text-[11px] font-black text-gray-900 tabular-nums">
-                        {formatPrice(order.finalAmount)}
-                    </span>
-                </div>
+            <div className="px-3 py-2.5 bg-black/[0.02] flex items-center justify-between mt-auto">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0">
+                    {order.orderType === 'dine-in' ? 'DINE' : 'TAKE'}
+                </span>
+                <span className="text-[13px] font-black text-gray-900 tabular-nums">
+                    {formatPrice(order.finalAmount)}
+                </span>
             </div>
         </div>
     );
 });
+
 
 /* ── Order Card (List box style) ─────────────────────────────────────────── */
 const OrderCard = memo(({ order, formatPrice }) => {
@@ -453,9 +453,9 @@ const WaiterDashboard = () => {
             {/* ── Desktop/Tablet: Action Bar ── */}
             {document.getElementById('topbar-portal') && createPortal(
                 <div className="flex items-center justify-between w-full animate-fade-in px-1 gap-2">
-                    {/* Left side: Filters (Relocated from Row 2) */}
-                    <div className="hidden sm:flex items-center">
-                        <div className="flex items-center p-0.5 bg-[var(--theme-bg-dark)] rounded-xl border border-[var(--theme-border)] shadow-sm h-9 w-fit">
+                    {/* Left side: Filters */}
+                    <div className="hidden lg:flex items-center">
+                        <div className="flex items-center p-1 bg-white border border-gray-200 rounded-2xl shadow-sm h-11 w-fit">
                              {['all', 'dine-in', 'takeaway']
                                 .filter(t => t !== 'takeaway' || settings?.takeawayEnabled !== false)
                                 .filter(t => t !== 'dine-in' || settings?.dineInEnabled !== false)
@@ -463,10 +463,10 @@ const WaiterDashboard = () => {
                                     <button
                                         key={t}
                                         onClick={() => setFilterType(t)}
-                                        className={`px-4 h-full rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-w-[80px] ${
+                                        className={`px-6 h-full rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap min-w-[100px] ${
                                             filterType === t 
-                                                ? 'bg-orange-500 text-white shadow-md' 
-                                                : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-bg-card)]'
+                                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20 active:scale-95' 
+                                                : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
                                         }`}
                                     >
                                         {t === 'all' ? 'ALL' : t.replace('-', ' ')}
@@ -476,54 +476,41 @@ const WaiterDashboard = () => {
                     </div>
 
                     {/* Right side: Actions + Utilities */}
-                    <div className="flex items-center gap-2 ml-auto">
-                        {/* Primary Order Actions (Relocated to Right) */}
-                        <div className="hidden md:flex items-center gap-2 mr-2 border-r border-[var(--theme-border)] pr-2">
+                    <div className="flex items-center gap-3 ml-auto">
+                        {/* Primary Order Actions */}
+                        <div className="hidden xl:flex items-center gap-3 pr-3 border-r border-gray-200">
                             {user?.role !== 'cashier' && settings?.dineInEnabled !== false && (
-                                <button onClick={() => navigate('/dine-in')} className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-600/20 whitespace-nowrap min-h-[40px] active:scale-95">
-                                    <Utensils size={14} strokeWidth={3} /> Dine In
+                                <button onClick={() => navigate('/dine-in')} className="flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-600/10 whitespace-nowrap min-h-[44px] active:scale-95 border-b-4 border-orange-800/40">
+                                    <Utensils size={16} strokeWidth={3} /> Dine In
                                 </button>
                             )}
                             {user?.role !== 'cashier' && settings?.takeawayEnabled !== false && (
-                                <button onClick={() => navigate('/take-away')} className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/20 whitespace-nowrap min-h-[40px] active:scale-95">
-                                    <Package size={14} strokeWidth={3} /> Takeaway
+                                <button onClick={() => navigate('/take-away')} className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/10 whitespace-nowrap min-h-[44px] active:scale-95 border-b-4 border-blue-800/40">
+                                    <Package size={16} strokeWidth={3} /> Takeaway
                                 </button>
                             )}
                         </div>
 
                         {/* Utility controls & Refresh */}
-                        <div className="flex items-center gap-1.5">
-                            {/* Mobile utilities */}
-                            <div className="flex sm:hidden items-center gap-1 shrink-0">
-                                <button onClick={() => setShowCounters(!showCounters)} className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/15 border-orange-500/40 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)]'}`}>
-                                    <Clock size={16} strokeWidth={2.5} />
-                                </button>
-                            </div>
-
-                            {/* Desktop/Tablet utilities */}
-                            <div className="hidden sm:flex items-center gap-1.5">
-                                <button onClick={() => setShowCounters(prev => !prev)} title="Stats"
-                                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showCounters ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
-                                    <Clock size={16} strokeWidth={2.5} />
-                                </button>
-                                <button onClick={() => setIsProductionMode(!isProductionMode)} title={isProductionMode ? 'Grid view' : 'List view'}
-                                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isProductionMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
-                                    {isProductionMode ? <Grid size={16} strokeWidth={2.5} /> : <List size={16} strokeWidth={2.5} />}
-                                </button>
-                                {settings?.tableMapEnabled !== false && (
-                                    <button onClick={() => setShowTables(t => !t)} title="Tables"
-                                        className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${showTables ? 'bg-green-500/15 border-green-500/40 text-green-500 shadow-sm shadow-green-500/20' : 'bg-green-500/5 border-green-500/20 text-green-500 hover:bg-green-500/15 hover:border-green-500/40'}`}>
-                                        <Armchair size={16} strokeWidth={2.5} />
-                                    </button>
-                                )}
-                            </div>
+                        <div className="flex items-center gap-2">
+                             <button onClick={() => setShowCounters(prev => !prev)} title="Stats"
+                                className={`w-11 h-11 flex items-center justify-center rounded-2xl border transition-all active:scale-90 ${showCounters ? 'bg-orange-500/10 border-orange-500/30 text-orange-500 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 shadow-sm'}`}>
+                                <Clock size={20} strokeWidth={2.5} />
+                            </button>
+                            
+                            <button onClick={() => setIsProductionMode(!isProductionMode)} title={isProductionMode ? 'Grid view' : 'List view'}
+                                className={`w-11 h-11 flex items-center justify-center rounded-2xl border transition-all active:scale-90 ${isProductionMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 shadow-sm'}`}>
+                                {isProductionMode ? <Grid size={20} strokeWidth={2.5} /> : <List size={20} strokeWidth={2.5} />}
+                            </button>
 
                             <button onClick={() => { if (refreshing) return; setRefreshing(true); window.dispatchEvent(new CustomEvent('pos-refresh')); setTimeout(() => setRefreshing(false), 1000); }} title="Refresh"
-                                className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ml-1 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500' : 'bg-[var(--theme-bg-dark)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)]'}`}>
-                                <RefreshCw size={18} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
+
+                                className={`w-11 h-11 flex items-center justify-center rounded-2xl border transition-all active:scale-90 ${refreshing ? 'border-orange-500/40 bg-orange-500/10 text-orange-500 shadow-inner' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 shadow-sm'}`}>
+                                <RefreshCw size={20} strokeWidth={2.5} className={refreshing ? 'animate-spin' : ''} />
                             </button>
                         </div>
                     </div>
+
                 </div>,
                 document.getElementById('topbar-portal')
             )}
@@ -793,13 +780,14 @@ const WaiterDashboard = () => {
                             )}
                         </div>
                     ) : (
-                        <div className={`grid p-2 w-full mx-auto ${
+                        <div className={`grid p-3 w-full mx-auto ${
                             isProductionMode
-                                ? 'gap-2 grid-cols-2 sm:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-5'
+                                ? 'gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8'
                                 : selectedOrder
                                     ? 'gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
-                                    : 'gap-4 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
+                                    : 'gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
                         }`}>
+
                             {displayOrders.map(order => (
                                 isProductionMode
                                     ? <TokenSquare key={order._id} order={order} onClick={() => setSelectedOrder(order)} isSelected={selectedOrder?._id === order._id} />

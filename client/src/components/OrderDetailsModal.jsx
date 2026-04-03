@@ -85,9 +85,20 @@ const OrderDetailsModal = ({
         <div className="flex flex-col h-full">
             <div className={`relative flex flex-col items-center text-center px-6 py-6 border-b border-[var(--theme-border)] flex-shrink-0 gap-1.5 ${variant === 'panel' ? 'bg-[var(--theme-bg-dark)]/10' : ''}`}>
                 {variant === 'panel' && (
-                    <button onClick={onClose} className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[var(--theme-text-muted)]">
-                        <X size={18} />
-                    </button>
+                    <div className="absolute right-4 top-4 flex items-center gap-2">
+                        {!isCancelled && !isPaid && (
+                            <button
+                                onClick={() => printBill(order, formatPrice, settings)}
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-orange-500 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-all active:scale-95"
+                                title="Print Bill"
+                            >
+                                <Printer size={24} strokeWidth={2.5} />
+                            </button>
+                        )}
+                        <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[var(--theme-text-muted)] border border-[var(--theme-border)]">
+                            <X size={20} strokeWidth={2.5} />
+                        </button>
+                    </div>
                 )}
                 <div className="flex flex-col gap-1.5 w-full">
                     <div className="flex items-center justify-between w-full px-2">
@@ -109,15 +120,6 @@ const OrderDetailsModal = ({
                                         {String(order.orderNumber || '').startsWith('ORD-') ? String(order.orderNumber).replace('ORD-', '#') : `#${order.orderNumber}`}
                                     </h2>
                                     <StatusBadge status={order.orderStatus} items={order.items || []} size="sm" />
-                                    {!isCancelled && !isPaid && onCancelOrder && (
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); onCancelOrder(order); }}
-                                            className="ml-1 w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-95 border border-red-500/20"
-                                            title="Cancel Order"
-                                        >
-                                            <X size={14} strokeWidth={3} />
-                                        </button>
-                                    )}
                                 </div>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="text-[9px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest bg-[var(--theme-bg-dark)]/20 px-1.5 py-0.5 rounded">
@@ -128,6 +130,7 @@ const OrderDetailsModal = ({
                         </div>
                     </div>
                 </div>
+
                 <div className="flex items-center gap-2 flex-wrap justify-center mt-1">
                     <span className="px-2.5 py-1 bg-gray-100 dark:bg-white/5 border border-[var(--theme-border)] rounded-lg text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-wider shadow-sm">
                         {order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').length} Items
@@ -217,12 +220,24 @@ const OrderDetailsModal = ({
                 <div className="space-y-4">
                     <div className="flex items-center justify-between pb-2 border-b-2 border-[var(--theme-border)]">
                         <h3 className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-[0.2em]">Bill Items ({order.items?.length})</h3>
-                        {userRole === 'waiter' && !isCancelled && !isPaid && (
-                            <button onClick={() => navigate('/dine-in', { state: { orderId: order._id } })} className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black rounded-lg shadow-sm flex items-center gap-1.5 uppercase transition-all active:scale-95">
-                                <Plus size={12} strokeWidth={3} /> Add Item
-                            </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                             {!isCancelled && !isPaid && onCancelOrder && (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onCancelOrder(order); }}
+                                    className="px-2 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white text-[9px] font-black rounded-lg border border-red-500/20 transition-all active:scale-95 uppercase flex items-center gap-1"
+                                    title="Cancel Order"
+                                >
+                                    <X size={12} strokeWidth={3} /> Cancel Order
+                                </button>
+                            )}
+                            {userRole === 'waiter' && !isCancelled && !isPaid && (
+                                <button onClick={() => navigate('/dine-in', { state: { orderId: order._id } })} className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black rounded-lg shadow-sm flex items-center gap-1.5 uppercase transition-all active:scale-95">
+                                    <Plus size={12} strokeWidth={3} /> Add Item
+                                </button>
+                            )}
+                        </div>
                     </div>
+
                     <div className="space-y-2">
                         {order.items?.filter(i => i.status?.toUpperCase() !== 'CANCELLED').map((item, i) => {
                             const cancelled = item.status?.toUpperCase() === 'CANCELLED';

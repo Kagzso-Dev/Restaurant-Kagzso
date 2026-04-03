@@ -42,7 +42,9 @@ export const useTablesData = () => {
                 if (data.action === 'create' && data.table) {
                     setTables((prev) => {
                         if (prev.find(t => t._id === data.table._id)) return prev;
-                        return [...prev, data.table].sort((a, b) => parseInt(a.number) - parseInt(b.number));
+                        return [...prev, data.table].sort((a, b) => 
+                            String(a.number).localeCompare(String(b.number), undefined, { numeric: true, sensitivity: 'base' })
+                        );
                     });
                     return;
                 }

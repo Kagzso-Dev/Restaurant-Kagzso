@@ -84,14 +84,17 @@ const importData = async () => {
         // ── Users ────────────────────────────────────────────────────────────
         console.log('Creating staff...');
         const staff = [
-            { id: ID.unique(), username: 'admin',   passwordHash: await hash('admin123'),   role: 'admin',   name: 'Admin' },
-            { id: ID.unique(), username: 'waiter',  passwordHash: await hash('waiter123'),  role: 'waiter',  name: 'Waiter' },
-            { id: ID.unique(), username: 'kitchen', passwordHash: await hash('kitchen123'), role: 'kitchen', name: 'Kitchen' },
-            { id: ID.unique(), username: 'cashier', passwordHash: await hash('cashier123'), role: 'cashier', name: 'Cashier' },
+            { id: 'staff_admin',   username: 'admin',   passwordHash: await hash('admin123'),   role: 'admin',   name: 'Admin' },
+            { id: 'staff_waiter',  username: 'waiter',  passwordHash: await hash('waiter123'),  role: 'waiter',  name: 'Waiter' },
+            { id: 'staff_kitchen', username: 'kitchen', passwordHash: await hash('kitchen123'), role: 'kitchen', name: 'Kitchen' },
+            { id: 'staff_cashier', username: 'cashier', passwordHash: await hash('cashier123'), role: 'cashier', name: 'Cashier' },
         ];
 
         for (const u of staff) {
-            console.log(`Creating user: ${u.username} (${u.role})...`);
+            console.log(`Ensuring user: ${u.username} (${u.role})...`);
+            // Delete if exists
+            await databases.deleteDocument(databaseId, COLLECTIONS.users, u.id).catch(() => {});
+            
             await withRetry(
                 () => databases.createDocument(databaseId, COLLECTIONS.users, u.id, {
                     username:     u.username,
@@ -103,9 +106,10 @@ const importData = async () => {
                 `creating user ${u.username}`
             );
             console.log(`SUCCESS: Created user ${u.username}`);
-            await delay(500);
+            await delay(300);
         }
-        const waiterId = staff.find(s => s.role === 'waiter').id;
+        const waiterId = 'staff_waiter';
+
 
         // ── Settings ─────────────────────────────────────────────────────────
         console.log('Creating settings...');
@@ -138,137 +142,168 @@ const importData = async () => {
         // ── Categories ───────────────────────────────────────────────────────
         console.log('Creating categories...');
         const categories = [
-            { id: ID.unique(), name: 'Starters', description: 'Appetizers' },
-            { id: ID.unique(), name: 'Main Course', description: 'Heavy meals' },
-            { id: ID.unique(), name: 'Beverages', description: 'Drinks' },
+            { id: ID.unique(), name: 'Starters', description: 'Appetizers & Quick Bites', color: '#f97316' },
+            { id: ID.unique(), name: 'Main Course', description: 'Authentic Indian Curries', color: '#8b5cf6' },
+            { id: ID.unique(), name: 'Chinese', description: 'Indo-Chinese Fusion', color: '#ef4444' },
+            { id: ID.unique(), name: 'Breads', description: 'Fresh Tandoori Breads', color: '#10b981' },
+            { id: ID.unique(), name: 'Beverages', description: 'Cold Drinks & Mocktails', color: '#3b82f6' },
+            { id: ID.unique(), name: 'Desserts', description: 'Sweet Endings', color: '#ec4899' },
         ];
         for (const c of categories) {
             await withRetry(
                 () => databases.createDocument(databaseId, COLLECTIONS.categories, c.id, {
                     name: c.name,
                     description: c.description,
-                    color: '#f97316',
+                    color: c.color,
                     status: 'active'
                 }),
                 `creating category ${c.name}`
             );
-            await delay(500);
+            await delay(300);
         }
         console.log('SUCCESS: Created categories');
 
         // ── Menu Items ───────────────────────────────────────────────────────
         console.log('Creating menu items...');
-        const menuItems = [
-            { id: ID.unique(), name: 'Paneer Tikka', price: 250, category_id: categories[0].id, is_veg: true },
-            { id: ID.unique(), name: 'Chicken Wings', price: 300, category_id: categories[0].id, is_veg: false },
-            { id: ID.unique(), name: 'Butter Chicken', price: 400, category_id: categories[1].id, is_veg: false },
-            { id: ID.unique(), name: 'Dal Makhani', price: 200, category_id: categories[1].id, is_veg: true },
-            { id: ID.unique(), name: 'Coke', price: 50, category_id: categories[2].id, is_veg: true },
+        const menuItemsData = [
+            // Starters
+            { name: 'Paneer Tikka', price: 280, cat: 0, veg: true },
+            { name: 'Hara Bhara Kabab', price: 240, cat: 0, veg: true },
+            { name: 'Chicken Wings', price: 320, cat: 0, veg: false },
+            { name: 'Fish Amritsari', price: 380, cat: 0, veg: false },
+            // Main Course
+            { name: 'Butter Chicken', price: 450, cat: 1, veg: false },
+            { name: 'Kadhai Paneer', price: 320, cat: 1, veg: true },
+            { name: 'Dal Makhani', price: 280, cat: 1, veg: true },
+            { name: 'Mutton Rogan Josh', price: 550, cat: 1, veg: false },
+            // Chinese
+            { name: 'Veg Manchurian', price: 260, cat: 2, veg: true },
+            { name: 'Chilli Chicken', price: 340, cat: 2, veg: false },
+            { name: 'Hakka Noodles', price: 220, cat: 2, veg: true },
+            // Breads
+            { name: 'Butter Naan', price: 60, cat: 3, veg: true },
+            { name: 'Garlic Naan', price: 80, cat: 3, veg: true },
+            { name: 'Tandoori Roti', price: 30, cat: 3, veg: true },
+            // Beverages
+            { name: 'Coke', price: 60, cat: 4, veg: true },
+            { name: 'Virgin Mojito', price: 180, cat: 4, veg: true },
+            { name: 'Cold Coffee', price: 150, cat: 4, veg: true },
+            // Desserts
+            { name: 'Gulab Jamun', price: 120, cat: 5, veg: true },
+            { name: 'Brownie with Ice Cream', price: 220, cat: 5, veg: true },
         ];
-        for (const m of menuItems) {
+
+        const menuItems = [];
+        for (const m of menuItemsData) {
+            const mid = ID.unique();
             await withRetry(
-                () => databases.createDocument(databaseId, COLLECTIONS.menu_items, m.id, {
+                () => databases.createDocument(databaseId, COLLECTIONS.menu_items, mid, {
                     name: m.name,
                     price: parseFloat(m.price),
-                    category_id: m.category_id,
-                    is_veg: m.is_veg,
+                    category_id: categories[m.cat].id,
+                    is_veg: m.veg,
                     availability: true
                 }),
                 `creating menu item ${m.name}`
             );
-            await delay(500);
+            menuItems.push({ id: mid, name: m.name, price: m.price });
+            await delay(300);
         }
         console.log('SUCCESS: Created menu items');
 
         // ── Tables ───────────────────────────────────────────────────────────
         console.log('Creating tables...');
         const allTables = [];
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= 15; i++) {
             const tid = ID.unique();
             await withRetry(
                 () => databases.createDocument(databaseId, COLLECTIONS.tables, tid, {
                     number: i,
                     table_number: i,
-                    capacity: 4,
-                    status: 'available'
+                    capacity: i <= 5 ? 2 : i <= 12 ? 4 : 8,
+                    status: i <= 5 ? 'occupied' : i === 8 ? 'booked' : 'available'
                 }),
                 `creating table ${i}`
             );
-            allTables.push({ id: tid });
+            allTables.push({ id: tid, number: i });
             await delay(300);
         }
-        console.log('SUCCESS: Created 10 tables');
+        console.log('SUCCESS: Created 15 tables');
 
         // ── Sample Orders ────────────────────────────────────────────────────
         console.log('Creating sample orders...');
         const now = new Date();
 
+        // 5 Completed Orders
         for (let i = 0; i < 5; i++) {
             const date = new Date(now);
-            date.setHours(date.getHours() - (i % 24));
-            if (i > 10) date.setDate(date.getDate() - 1);
-
-            const item1 = menuItems[i % menuItems.length];
-            const item2 = menuItems[(i + 1) % menuItems.length];
-            const total = Number(item1.price) + Number(item2.price);
-            const tableId = allTables[i % allTables.length].id;
-            const payMethod = i % 2 === 0 ? 'cash' : 'upi';
-
-            const prepStart = new Date(date); prepStart.setMinutes(date.getMinutes() - 20);
-            const readyAt = new Date(date); readyAt.setMinutes(date.getMinutes() - 5);
-
+            date.setHours(date.getHours() - (i + 1));
+            
+            const total = 1200;
+            const table = allTables[i + 10];
             const orderId = ID.unique();
+
             await withRetry(
                 () => databases.createDocument(databaseId, COLLECTIONS.orders, orderId, {
-                    order_number: `ORD-${100 + i}`,
-                    token_number: 100 + i,
+                    order_number: `ORD-${1000 + i}`,
+                    token_number: 1000 + i,
                     order_type: 'dine-in',
-                    table_id: tableId,
+                    table_id: table.id,
                     order_status: 'completed',
                     payment_status: 'paid',
-                    payment_method: payMethod,
+                    payment_method: i % 2 === 0 ? 'cash' : 'upi',
                     total_amount: parseFloat(total),
-                    tax: 0.0,
-                    discount: 0.0,
                     final_amount: parseFloat(total),
                     waiter_id: waiterId,
-                    prep_started_at: prepStart.toISOString(),
-                    ready_at: readyAt.toISOString(),
-                    payment_at: date.toISOString(),
+                    kot_status: 'Closed',
                     completed_at: date.toISOString(),
-                    kot_status: 'Closed'
+                    payment_at: date.toISOString()
                 }),
-                `creating order ORD-${100 + i}`
+                `creating order ORD-${1000 + i}`
             );
-            await delay(500);
-
-            await withRetry(
-                () => databases.createDocument(databaseId, COLLECTIONS.order_items, ID.unique(), {
-                    order_id: orderId,
-                    menu_item_id: item1.id,
-                    name: item1.name,
-                    price: parseFloat(item1.price),
-                    quantity: 1,
-                    status: 'READY'
-                }),
-                `creating order item 1 for order ${orderId}`
-            );
-            await delay(200);
-
-            await withRetry(
-                () => databases.createDocument(databaseId, COLLECTIONS.order_items, ID.unique(), {
-                    order_id: orderId,
-                    menu_item_id: item2.id,
-                    name: item2.name,
-                    price: parseFloat(item2.price),
-                    quantity: 1,
-                    status: 'READY'
-                }),
-                `creating order item 2 for order ${orderId}`
-            );
-            await delay(200);
+            await delay(300);
         }
-        console.log('SUCCESS: Created sample orders');
+
+        // 3 Active/Pending Orders (to show in Dashboard)
+        const activeStatuses = ['pending', 'preparing', 'ready'];
+        for (let i = 0; i < 3; i++) {
+            const status = activeStatuses[i];
+            const table = allTables[i];
+            const orderId = ID.unique();
+            const token = 2000 + i;
+
+            await withRetry(
+                () => databases.createDocument(databaseId, COLLECTIONS.orders, orderId, {
+                    order_number: `ORD-${token}`,
+                    token_number: token,
+                    order_type: 'dine-in',
+                    table_id: table.id,
+                    order_status: status,
+                    payment_status: 'unpaid',
+                    total_amount: 850.50,
+                    final_amount: 850.50,
+                    waiter_id: waiterId,
+                    kot_status: status === 'pending' ? 'Open' : 'Running'
+                }),
+                `creating active order ORD-${token}`
+            );
+
+            // Add an item to this active order
+            await databases.createDocument(databaseId, COLLECTIONS.order_items, ID.unique(), {
+                order_id: orderId,
+                menu_item_id: menuItems[0].id,
+                name: menuItems[0].name,
+                price: parseFloat(menuItems[0].price),
+                quantity: 2,
+                status: status === 'pending' ? 'PENDING' : status === 'preparing' ? 'COOKING' : 'READY'
+            });
+
+            await delay(300);
+        }
+
+        console.log('SUCCESS: Generated full data set');
+        console.log('\nSeed complete!\n');
+
 
         console.log('\nSeed complete!\n');
     } catch (error) {

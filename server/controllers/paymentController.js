@@ -21,8 +21,12 @@ const initiatePayment = async (req, res) => {
         if (preCheck.paymentStatus === 'paid')   return res.status(400).json({ message: 'Order is already paid' });
         if (preCheck.orderStatus   !== 'ready')  return res.status(400).json({ message: 'Payment not allowed. Kitchen process not completed.' });
 
-        // Atomic: only transition unpaid → payment_pending
-        const order = await Order.atomicPaymentStatusUpdate(orderId, 'unpaid', 'payment_pending');
+        // Atomic: allow transition from 'unpaid' OR 'pending' → payment_pending
+        let order = await Order.atomicPaymentStatusUpdate(orderId, 'unpaid', 'payment_pending');
+        if (!order) {
+            order = await Order.atomicPaymentStatusUpdate(orderId, 'pending', 'payment_pending');
+        }
+
         if (!order) {
             const existing = await Order.findById(orderId);
             if (!existing)                                return res.status(404).json({ message: 'Order not found' });

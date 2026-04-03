@@ -24,11 +24,11 @@ const getTables = async (req, res) => {
 // @route   POST /api/tables
 // @access  Private (Admin)
 const createTable = async (req, res) => {
-    const number = parseInt(req.body.number);
+    const number = req.body.number;
     const capacity = parseInt(req.body.capacity);
     try {
-        if (!number || isNaN(number) || number < 1) {
-            return res.status(400).json({ message: 'Table number must be a positive integer' });
+        if (!number || String(number).trim() === '') {
+            return res.status(400).json({ message: 'Table name/number is required' });
         }
         if (!capacity || isNaN(capacity) || capacity < 1) {
             return res.status(400).json({ message: 'Capacity must be a positive integer' });

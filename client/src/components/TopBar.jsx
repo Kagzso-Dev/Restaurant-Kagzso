@@ -12,7 +12,7 @@ const TopBar = memo(({ onMenuClick }) => {
             style={{ backgroundColor: 'var(--theme-topbar-bg)', backdropFilter: 'blur(12px)' }}
         >
             {/* ── Main row ── */}
-            <div className="flex items-center w-full px-3 md:px-4 gap-3 h-[54px] md:h-full">
+            <div className="flex items-center w-full px-3 md:px-4 gap-2 md:gap-4 h-[54px] md:h-full">
                 {/* Hamburger Trigger (Mobile/Tablet) */}
                 <button
                     onClick={onMenuClick}

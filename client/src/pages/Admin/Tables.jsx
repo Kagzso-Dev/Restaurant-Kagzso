@@ -143,7 +143,9 @@ const AdminTables = () => {
                 headers: { Authorization: `Bearer ${user.token}` },
             });
             setTables((prev) =>
-                [...prev, res.data].sort((a, b) => parseInt(a.number) - parseInt(b.number))
+                [...prev, res.data].sort((a, b) => 
+                    String(a.number).localeCompare(String(b.number), undefined, { numeric: true, sensitivity: 'base' })
+                )
             );
             setIsModalOpen(false);
         } catch (err) {

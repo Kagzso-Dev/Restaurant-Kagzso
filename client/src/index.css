@@ -1899,3 +1899,18 @@ body {
 }
 
 /* ─── END PERFORMANCE OPTIMIZATIONS ────────────────────────────────────── */
+
+/* ─── CUSTOM ANIMATIONS ────────────────────────────────────────────────── */
+@keyframes arrow-flow {
+  0% { transform: translateX(-4px); opacity: 0.1; }
+  50% { transform: translateX(0); opacity: 0.8; }
+  100% { transform: translateX(4px); opacity: 0.1; }
+}
+
+.animate-arrow-flow {
+  animation: arrow-flow 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.delay-200 { animation-delay: 0.2s; }
+.delay-400 { animation-delay: 0.4s; }
+

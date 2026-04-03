@@ -139,15 +139,15 @@ const Layout = () => {
 
             {/* ── Main Content Area ────────────────────────────────────── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {/* Top Bar with hamburger menu trigger - Hidden for Admins to provide more screen space */}
-                {user.role !== 'admin' && (
+                {/* Top Bar with hamburger menu trigger - Hidden for Admins and on Menu pages to provide more screen space */}
+                {user.role !== 'admin' && !['/admin/menu', '/dine-in', '/take-away'].includes(location.pathname) && (
                     <TopBar onMenuClick={handleMenuClick} sidebarCollapsed={sidebarCollapsed} />
                 )}
 
                 {/* Content Area */}
                 <main className={`flex-1 flex flex-col overflow-x-hidden pt-safe pb-4 md:pb-0 ${location.pathname === '/dine-in' || location.pathname === '/take-away' || location.pathname.startsWith('/cashier') || location.pathname.startsWith('/waiter') || location.pathname === '/kitchen' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-                    {/* Floating Mobile Trigger for Admins only - Premium White Glassmorphism */}
-                    {isMobile && user.role === 'admin' && (
+                    {/* Floating Mobile Trigger for Admins and Menu pages - Premium White Glassmorphism */}
+                    {isMobile && (user.role === 'admin' || ['/admin/menu', '/dine-in', '/take-away'].includes(location.pathname)) && (
                         <div className="fixed top-4 left-4 z-[60] animate-fade-in">
                             <button
                                 onClick={handleMenuClick}

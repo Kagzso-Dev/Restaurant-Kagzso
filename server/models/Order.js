@@ -167,7 +167,6 @@ const Order = {
         const orderType = ['dine-in', 'takeaway'].includes(rawType) ? rawType : 'dine-in';
 
         const orderStatus = 'pending';
-        const paymentStatus = 'pending';
 
         // 2. Validate required numeric values & Defaults
         const totalAmount = Number(data.totalAmount) || 0;

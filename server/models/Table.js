@@ -71,7 +71,7 @@ const Table = {
             COLLECTIONS.tables,
             ID.unique(),
             {
-                number: parseInt(number),
+                number: number,
                 capacity: parseInt(capacity),
                 status: 'available'
             }
