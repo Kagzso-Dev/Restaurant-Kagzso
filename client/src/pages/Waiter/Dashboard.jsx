@@ -780,12 +780,12 @@ const WaiterDashboard = () => {
                             )}
                         </div>
                     ) : (
-                        <div className={`grid p-3 w-full mx-auto ${
+                        <div className={`grid p-2 sm:p-3 w-full mx-auto ${
                             isProductionMode
                                 ? 'gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8'
                                 : selectedOrder
-                                    ? 'gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
-                                    : 'gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+                                    ? 'gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-2'
+                                    : 'gap-2 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
                         }`}>
 
                             {displayOrders.map(order => (
